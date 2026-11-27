@@ -1,0 +1,3 @@
+scores = {"ana": 91, "bo": 78, "cy": 85}
+for name, score in scores { print(f"{name}: {score}") }
+print("best:", scores.keys.sortedBy(k => scores[k]!).last!)

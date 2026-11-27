@@ -1,0 +1,14 @@
+import eval
+import std.env
+
+fn main() {
+  let vars = {"pi": 3.141592653589793, "e": 2.718281828459045}
+  var inputs = env.args()
+  if inputs.isEmpty { inputs = ["1 + 2 * 3", "2 ^ 3 ^ 2", "-(4 - 6) * sqrt(16)", "max(3, pi) / 0", "2 +", "10 % 4 + foo"] }
+  for text in inputs {
+    match eval.calc(text, vars) {
+        .Ok(v) => print(f"{text} = {v}")
+        .Err(e) => print(f"{text} -> error: {e.message}")
+    }
+  }
+}

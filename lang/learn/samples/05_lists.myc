@@ -1,0 +1,19 @@
+fruits = ["apple", "banana", "cherry"]
+
+// First and last item
+print(fruits[0])
+print(fruits[-1])
+print(fruits.length)
+
+// Testing membership
+print("banana" in fruits)
+print("grape" not in fruits)
+
+// Adding an item
+fruits.push("mango")
+print(fruits)
+
+// List comprehension: transform and filter
+numbers = [1, 2, 3, 4, 5]
+evens_doubled = [n * 2 for n in numbers if n % 2 == 0]
+print(evens_doubled)

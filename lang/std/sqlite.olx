@@ -1,0 +1,13 @@
+// SQLite via Node's built-in node:sqlite (experimental in Node). File databases need an fs grant; ":memory:" needs none.
+pub extern class Db {
+  static fn open(path: String) -> Result<Db, Error>
+  /// Run statements that return no rows. Parameters bind to `?` placeholders.
+  fn exec(sql: String, params: [Any] = []) -> Result<Void, Error>
+  /// Run a query; each row is a map from column name to Int, Float, String or nil.
+  fn query(sql: String, params: [Any] = []) -> Result<[{String: Any}], Error>
+  fn close()
+}
+
+pub fn open(path: String = ":memory:") -> Result<Db, Error> {
+  return Db.open(path)
+}

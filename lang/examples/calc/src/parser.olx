@@ -1,0 +1,105 @@
+import lexer.{Token, tokenize}
+
+pub enum Expr {
+  Num(Float)
+  Var(String)
+  Neg(Expr)
+  Bin(String, Expr, Expr)
+  Call(String, [Expr])
+}
+
+class Parser {
+  let tokens: [Token]
+  var pos = 0
+
+  fn peek() -> Token? { return if self.pos < self.tokens.length { self.tokens[self.pos] } else { nil } }
+  fn advance() { self.pos += 1 }
+
+  fn precedence(op: String) -> Int {
+    return match op { "+" => 1, "-" => 1, "*" => 2, "/" => 2, "%" => 2, "^" => 3, _ => 0 }
+  }
+
+  // precedence climbing; "^" is right associative
+  fn expression(minPrec: Int) -> Result<Expr, Error> {
+    var left = self.unary()?
+    while true {
+      match self.peek() {
+          .Op(op) => {
+          let p = self.precedence(op)
+          if p < minPrec { break }
+          self.advance()
+          let right = self.expression(if op == "^" { p } else { p + 1 })?
+          left = Expr.Bin(op, left, right)
+        }
+        _ => break
+      }
+    }
+    return Ok(left)
+  }
+
+  fn unary() -> Result<Expr, Error> {
+    match self.peek() {
+        .Op("-") => {
+        self.advance()
+        return Ok(Expr.Neg(self.unary()?))
+      }
+      _ => return self.primary()
+    }
+  }
+
+  fn primary() -> Result<Expr, Error> {
+    match self.peek() {
+        .Num(n) => {
+        self.advance()
+        return Ok(Expr.Num(n))
+      }
+        .Ident(name) => {
+        self.advance()
+        match self.peek() {
+            .LParen => {
+            self.advance()
+            var args: [Expr] = []
+            match self.peek() {
+                .RParen => {}
+              _ => {
+                args.push(self.expression(1)?)
+                while true {
+                  match self.peek() {
+                      .Comma => { self.advance()
+                      args.push(self.expression(1)?) }
+                    _ => break
+                  }
+                }
+              }
+            }
+            match self.peek() {
+                .RParen => { self.advance()
+                return Ok(Expr.Call(name, args)) }
+              _ => return Err(Error(f"expected ')' after the arguments of {name}"))
+            }
+          }
+          _ => return Ok(Expr.Var(name))
+        }
+      }
+        .LParen => {
+        self.advance()
+        let inner = self.expression(1)?
+        match self.peek() {
+            .RParen => { self.advance()
+            return Ok(inner) }
+          _ => return Err(Error("expected ')'"))
+        }
+      }
+      nil => return Err(Error("unexpected end of input"))
+      _ => return Err(Error("unexpected token"))
+    }
+  }
+}
+
+pub fn parse(text: String) -> Result<Expr, Error> {
+  let tokens = tokenize(text)?
+  let p = Parser(tokens: tokens)
+  let e = p.expression(1)?
+  if p.pos < tokens.length { return Err(Error("unexpected input after the expression")) }
+  return Ok(e)
+}

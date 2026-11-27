@@ -1,0 +1,10 @@
+// Hashing and randomness from Node's crypto (OpenSSL).
+pub extern fn sha256(text: String) -> String
+pub extern fn sha1(text: String) -> String
+pub extern fn hmacSha256(key: String, text: String) -> String
+/// n random bytes as hex, from the operating system's CSPRNG.
+pub extern fn randomHex(n: Int) -> String
+pub extern fn uuid() -> String
+pub extern fn base64Encode(text: String) -> String
+pub extern fn base64Decode(text: String) -> Result<String, Error>
+pub extern fn hexEncode(text: String) -> String

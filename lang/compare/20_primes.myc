@@ -1,0 +1,10 @@
+fn isPrime(n) {
+  if n < 2 { return false }
+  for d in 2..n {
+    if d * d > n { break }
+    if n % d == 0 { return false }
+  }
+  return true
+}
+
+print([n for n in 0..30 if isPrime(n)])

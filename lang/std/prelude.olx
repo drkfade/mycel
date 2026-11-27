@@ -1,0 +1,269 @@
+// The prelude: always in scope. Types here are `extern`: their bodies live in src/natives.
+// Everything user-visible about builtin types is declared in this file, so `ply check` and the
+// diagnostics know exactly what exists.
+
+extern fn print(...values: Any)
+extern fn write(...values: Any)
+/// Python-style input: shows the prompt, waits for one line, returns it without the newline.
+extern fn input(prompt: String = "") -> String
+extern fn panic(message: String) -> Never
+extern fn assert(condition: Bool, message: String = "assertion failed")
+extern fn str(value: Any) -> String
+extern fn repr(value: Any) -> String
+extern fn len(value: Any) -> Int
+extern fn typeName(value: Any) -> String
+
+interface Printable { fn toString() -> String }
+interface Equatable {}
+interface Hashable {}
+interface Comparable {}
+interface Numeric {}
+interface Iterator<T> { fn next() -> T? }
+interface Iterable<T> { fn iter() -> Iterator<T> }
+
+extern class Int: Comparable, Equatable, Hashable, Numeric, Printable {
+  get abs: Int
+  get isEven: Bool
+  get isOdd: Bool
+  get sign: Int
+  fn toFloat() -> Float
+  fn toString() -> String
+  fn toChar() -> Char
+  fn pow(exp: Int) -> Int
+  fn min(other: Int) -> Int
+  fn max(other: Int) -> Int
+  fn clamp(lo: Int, hi: Int) -> Int
+  fn toRadix(radix: Int) -> String
+  /// Whole-number integer division (like Python's //): 7.div(2) == 3.
+  fn div(other: Int) -> Int
+  static fn parse(text: String) -> Int?
+  static get maxValue: Int
+  static get minValue: Int
+}
+extern class Float: Comparable, Equatable, Hashable, Numeric, Printable {
+  get abs: Float
+  get isNaN: Bool
+  get isFinite: Bool
+  fn floor() -> Int
+  fn ceil() -> Int
+  fn round() -> Int
+  fn trunc() -> Int
+  fn toInt() -> Int
+  fn toString() -> String
+  fn sqrt() -> Float
+  fn pow(exp: Float) -> Float
+  fn min(other: Float) -> Float
+  fn max(other: Float) -> Float
+  fn clamp(lo: Float, hi: Float) -> Float
+  fn fixed(digits: Int) -> String
+  static fn parse(text: String) -> Float?
+  static get infinity: Float
+  static get nan: Float
+}
+extern class Bool: Equatable, Hashable, Printable { fn toString() -> String }
+extern class Char: Comparable, Equatable, Hashable, Printable {
+  get isDigit: Bool
+  get isLetter: Bool
+  get isUpper: Bool
+  get isLower: Bool
+  get isWhitespace: Bool
+  get code: Int
+  fn upper() -> Char
+  fn lower() -> Char
+  fn toString() -> String
+  static fn fromCode(code: Int) -> Char
+}
+extern class String: Comparable, Equatable, Hashable, Printable, Iterable<Char> {
+  get length: Int
+  get isEmpty: Bool
+  fn upper() -> String
+  fn lower() -> String
+  fn trim() -> String
+  fn trimStart() -> String
+  fn trimEnd() -> String
+  fn split(sep: String) -> [String]
+  fn lines() -> [String]
+  fn chars() -> [Char]
+  fn contains(part: String) -> Bool
+  fn contains(part: Char) -> Bool
+  fn startsWith(prefix: String) -> Bool
+  fn endsWith(suffix: String) -> Bool
+  fn replace(find: String, with: String) -> String
+  fn indexOf(part: String) -> Int?
+  fn repeat(n: Int) -> String
+  fn padLeft(width: Int, fill: String = " ") -> String
+  fn padRight(width: Int, fill: String = " ") -> String
+  fn reversed() -> String
+  fn toInt() -> Int?
+  fn toFloat() -> Float?
+  fn toString() -> String
+  fn substring(from: Int, to: Int) -> String
+  fn iter() -> Iterator<Char>
+  fn bytes() -> [Int]
+}
+extern class Array<T>: Iterable<T> {
+  init()
+  get length: Int
+  get isEmpty: Bool
+  get first: T?
+  get last: T?
+  /// The element at index, or nil when out of range (indexing with [i] panics instead).
+  fn at(index: Int) -> T?
+  fn push(item: T)
+  fn pop() -> T?
+  fn insert(item: T, at: Int)
+  fn removeAt(index: Int) -> T
+  fn clear()
+  fn append(items: [T])
+  fn map<U>(f: (T) -> U) -> [U]
+  fn flatMap<U>(f: (T) -> [U]) -> [U]
+  fn filter(f: (T) -> Bool) -> [T]
+  fn reduce<U>(initial: U, f: (U, T) -> U) -> U
+  fn forEach(f: (T) -> Void)
+  fn any(f: (T) -> Bool) -> Bool
+  fn all(f: (T) -> Bool) -> Bool
+  fn find(f: (T) -> Bool) -> T?
+  fn findIndex(f: (T) -> Bool) -> Int?
+  fn count(f: (T) -> Bool) -> Int
+  fn contains(item: T) -> Bool
+  fn indexOf(item: T) -> Int?
+  fn sorted() -> [T]
+  fn sortedBy<K>(key: (T) -> K) -> [T]
+  fn reversed() -> [T]
+  fn join(sep: String = "") -> String
+  fn slice(from: Int, to: Int) -> [T]
+  fn take(n: Int) -> [T]
+  fn drop(n: Int) -> [T]
+  fn concat(other: [T]) -> [T]
+  fn enumerate() -> [(Int, T)]
+  fn zip<U>(other: [U]) -> [(T, U)]
+  fn unique() -> [T]
+  fn copy() -> [T]
+  fn iter() -> Iterator<T>
+}
+extern class Map<K, V>: Iterable<(K, V)> {
+  init()
+  get length: Int
+  get isEmpty: Bool
+  get keys: [K]
+  get values: [V]
+  get entries: [(K, V)]
+  fn has(key: K) -> Bool
+  fn contains(key: K) -> Bool
+  fn get(key: K) -> V?
+  fn get(key: K, default: V) -> V
+  fn getOr(key: K, default: V) -> V
+  fn set(key: K, value: V)
+  fn remove(key: K) -> V?
+  fn clear()
+  fn copy() -> {K: V}
+  fn merge(other: {K: V}) -> {K: V}
+  fn iter() -> Iterator<(K, V)>
+}
+extern class Set<T>: Iterable<T> {
+  init()
+  init(items: [T])
+  get length: Int
+  get isEmpty: Bool
+  fn add(item: T)
+  fn has(item: T) -> Bool
+  fn contains(item: T) -> Bool
+  fn remove(item: T) -> Bool
+  fn clear()
+  fn union(other: Set<T>) -> Set<T>
+  fn intersect(other: Set<T>) -> Set<T>
+  fn subtract(other: Set<T>) -> Set<T>
+  fn toArray() -> [T]
+  fn sorted() -> [T]
+  fn iter() -> Iterator<T>
+  operator &(other: Set<T>) -> Set<T>
+  operator |(other: Set<T>) -> Set<T>
+  operator -(other: Set<T>) -> Set<T>
+}
+extern class Range: Iterable<Int> {
+  get lo: Int
+  get hi: Int
+  get length: Int
+  get isEmpty: Bool
+  get first: Int?
+  get last: Int?
+  fn contains(n: Int) -> Bool
+  fn toArray() -> [Int]
+  fn iter() -> Iterator<Int>
+  fn map<U>(f: (Int) -> U) -> [U]
+  fn filter(f: (Int) -> Bool) -> [Int]
+  fn reduce<U>(initial: U, f: (U, Int) -> U) -> U
+  fn forEach(f: (Int) -> Void)
+  fn any(f: (Int) -> Bool) -> Bool
+  fn all(f: (Int) -> Bool) -> Bool
+  fn count(f: (Int) -> Bool) -> Int
+  fn sum() -> Int
+  fn step(by: Int) -> [Int]
+}
+extern class Gen<T>: Iterator<T>, Iterable<T> {
+  fn next() -> T?
+  fn toArray() -> [T]
+  fn iter() -> Iterator<T>
+}
+extern class Task<T> {}
+
+class Error: Printable {
+  let message: String
+  init(message: String) { self.message = message }
+  fn toString() -> String => f"{typeName(self)}: {self.message}"
+}
+class IoError: Error {}
+class ParseError: Error {}
+class CapabilityError: Error {}
+class NetError: Error {}
+class SqlError: Error {}
+class TimeoutError: Error {}
+
+enum Result<T, E> {
+  Ok(T)
+  Err(E)
+
+  get isOk: Bool => match self { .Ok(_) => true, .Err(_) => false }
+  get isErr: Bool => match self { .Ok(_) => false, .Err(_) => true }
+  fn unwrap() -> T {
+    match self {
+        .Ok(v) => return v
+        .Err(e) => panic(f"called unwrap() on an Err: {e}")
+    }
+  }
+  fn unwrapOr(fallback: T) -> T => match self { .Ok(v) => v, .Err(_) => fallback }
+  fn ok() -> T? => match self { .Ok(v) => v, .Err(_) => nil }
+  fn err() -> E? => match self { .Ok(_) => nil, .Err(e) => e }
+  fn map<U>(f: (T) -> U) -> Result<U, E> => match self { .Ok(v) => Ok(f(v)), .Err(e) => Err(e) }
+  fn mapErr<F>(f: (E) -> F) -> Result<T, F> => match self { .Ok(v) => Ok(v), .Err(e) => Err(f(e)) }
+  fn andThen<U>(f: (T) -> Result<U, E>) -> Result<U, E> => match self { .Ok(v) => f(v), .Err(e) => Err(e) }
+}
+
+// ----- Python-style helpers for lists: sum(xs), max(xs), min(xs), and max(a, b) / min(a, b) -----
+fn sum(values: [Int]) -> Int { var total = 0
+  for v in values { total += v }
+  return total }
+fn sum(values: [Float]) -> Float { var total = 0.0
+  for v in values { total += v }
+  return total }
+fn sum(values: Range) -> Int { return values.sum() }
+fn max(values: [Int]) -> Int { if values.isEmpty { panic("max() of an empty list") }
+  var best = values[0]
+  for v in values { if v > best { best = v } }
+  return best }
+fn max(values: [Float]) -> Float { if values.isEmpty { panic("max() of an empty list") }
+  var best = values[0]
+  for v in values { if v > best { best = v } }
+  return best }
+fn min(values: [Int]) -> Int { if values.isEmpty { panic("min() of an empty list") }
+  var best = values[0]
+  for v in values { if v < best { best = v } }
+  return best }
+fn min(values: [Float]) -> Float { if values.isEmpty { panic("min() of an empty list") }
+  var best = values[0]
+  for v in values { if v < best { best = v } }
+  return best }
+fn max(a: Int, b: Int) -> Int => if a > b { a } else { b }
+fn max(a: Float, b: Float) -> Float => if a > b { a } else { b }
+fn min(a: Int, b: Int) -> Int => if a < b { a } else { b }
+fn min(a: Float, b: Float) -> Float => if a < b { a } else { b }

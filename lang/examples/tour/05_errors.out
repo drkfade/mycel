@@ -1,0 +1,8 @@
+Ok(42)
+Err(Invalid: 'abc' is not a number)
+Err(Invalid: 200 is out of range)
+found 1
+checked 1
+missing: user 2
+checked 2
+true

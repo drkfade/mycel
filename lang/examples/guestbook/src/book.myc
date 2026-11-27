@@ -1,0 +1,23 @@
+import std.web
+
+/// The whole app: a page with the messages and a form, a JSON view, and the stylesheet from public/.
+pub fn makeApp() -> web.App {
+  var messages: [String] = []
+  app = web.App()
+  app.get("/", req => web.html(page(messages)))
+  app.post("/sign", req => {
+    let text = req.form.get("message", "").trim()
+    if text.isEmpty { return web.text("write something first", status: 422) }
+    messages.push(text)
+    return web.redirect("/")
+  })
+  app.get("/messages.json", req => web.json({"count": messages.length, "messages": messages}))
+  app.files("/static", "public")
+  return app
+}
+
+fn page(messages: [String]) -> String {
+  items = [f"<li>{web.escape(m)}</li>" for m in messages].join("")
+  return f"""<link rel="stylesheet" href="/static/style.css"><h1>Guestbook</h1><ul>{items}</ul>
+<form method="post" action="/sign"><input name="message"><button>Sign</button></form>"""
+}

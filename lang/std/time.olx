@@ -1,0 +1,97 @@
+import std.task
+
+/// Milliseconds since 1970-01-01 UTC.
+pub extern fn nowMs() -> Int
+/// Seconds since 1970-01-01 UTC, with fractions.
+pub fn now() -> Float { return nowMs().toFloat() / 1000.0 }
+/// A monotonic clock in milliseconds, for measuring durations.
+pub extern fn monotonicMs() -> Float
+/// ISO-8601 UTC text for a timestamp in milliseconds, e.g. 2026-11-01T12:00:00.000Z.
+pub extern fn iso(ms: Int) -> String
+pub extern fn parseIso(text: String) -> Int?
+/// year, month (1-12), day, hour, minute, second, weekday (0 = Sunday) in UTC.
+pub struct Parts { let year: Int, month: Int, day: Int, hour: Int, minute: Int, second: Int, weekday: Int }
+pub extern fn parts(ms: Int) -> Parts
+
+/// Current UTC date as "YYYY-MM-DD", like Python's date.today().
+pub fn today() -> String {
+  let p = parts(nowMs())
+  let m = if p.month < 10 { f"0{p.month}" } else { f"{p.month}" }
+  let d = if p.day < 10 { f"0{p.day}" } else { f"{p.day}" }
+  return f"{p.year}-{m}-{d}"
+}
+
+/// Pause execution for the given seconds, like Python's time.sleep().
+pub async fn sleep(seconds: Float) {
+  let ms = (seconds * 1000.0).floor()
+  await task.sleep(ms)
+}
+
+pub async fn sleep(seconds: Int) {
+  await task.sleep(seconds * 1000)
+}
+
+/// A duration of time, like Python's datetime.timedelta.
+pub struct Duration: Comparable, Equatable {
+  let ms: Int
+  fn toSeconds() -> Float { return self.ms.toFloat() / 1000.0 }
+  fn toMs() -> Int { return self.ms }
+  fn toMinutes() -> Float { return self.toSeconds() / 60.0 }
+  fn toHours() -> Float { return self.toMinutes() / 60.0 }
+  fn toDays() -> Float { return self.toHours() / 24.0 }
+  operator +(other: Duration) -> Duration => Duration(ms: self.ms + other.ms)
+  operator -(other: Duration) -> Duration => Duration(ms: self.ms - other.ms)
+  operator <(other: Duration) -> Bool => self.ms < other.ms
+  operator ==(other: Duration) -> Bool => self.ms == other.ms
+  operator *(factor: Int) -> Duration => Duration(ms: self.ms * factor)
+  operator *(factor: Float) -> Duration => Duration(ms: (self.ms.toFloat() * factor).round())
+  operator /(factor: Int) -> Duration {
+    if factor == 0 { panic("Duration division by zero") }
+    return Duration(ms: self.ms.div(factor))
+  }
+  operator /(factor: Float) -> Duration {
+    if factor == 0.0 { panic("Duration division by zero") }
+    return Duration(ms: (self.ms.toFloat() / factor).round())
+  }
+  operator /(other: Duration) -> Float {
+    if other.ms == 0 { panic("Duration division by zero") }
+    return self.ms.toFloat() / other.ms.toFloat()
+  }
+}
+
+pub fn parse(text: String) -> Int? => parseIso(text)
+
+pub fn milliseconds(n: Int) -> Duration { return Duration(ms: n) }
+pub fn seconds(n: Float) -> Duration { return Duration(ms: (n * 1000.0).floor()) }
+pub fn seconds(n: Int) -> Duration { return Duration(ms: n * 1000) }
+pub fn minutes(n: Float) -> Duration { return Duration(ms: (n * 60000.0).floor()) }
+pub fn minutes(n: Int) -> Duration { return Duration(ms: n * 60000) }
+pub fn hours(n: Float) -> Duration { return Duration(ms: (n * 3600000.0).floor()) }
+pub fn hours(n: Int) -> Duration { return Duration(ms: n * 3600000) }
+pub fn days(n: Float) -> Duration { return Duration(ms: (n * 86400000.0).floor()) }
+pub fn days(n: Int) -> Duration { return Duration(ms: n * 86400000) }
+
+/// Format a millisecond timestamp using Python-style format tokens: %Y, %m, %d, %H, %M, %S, %F, %T.
+pub fn format(ms: Int, formatStr: String) -> String {
+  let p = parts(ms)
+  let y = f"{p.year}"
+  let m = if p.month < 10 { f"0{p.month}" } else { f"{p.month}" }
+  let d = if p.day < 10 { f"0{p.day}" } else { f"{p.day}" }
+  let h = if p.hour < 10 { f"0{p.hour}" } else { f"{p.hour}" }
+  let min = if p.minute < 10 { f"0{p.minute}" } else { f"{p.minute}" }
+  let s = if p.second < 10 { f"0{p.second}" } else { f"{p.second}" }
+  return formatStr.replace("%Y", y).replace("%m", m).replace("%d", d).replace("%H", h).replace("%M", min).replace("%S", s).replace("%F", f"{y}-{m}-{d}").replace("%T", f"{h}:{min}:{s}")
+}
+
+/// Format the current time with the given format string (defaults to "%Y-%m-%d %H:%M:%S").
+pub fn format(formatStr: String = "%Y-%m-%d %H:%M:%S") -> String {
+  return format(nowMs(), formatStr)
+}
+
+extend Int {
+  pub operator *(d: Duration) -> Duration => d * self
+}
+
+extend Float {
+  pub operator *(d: Duration) -> Duration => d * self
+}

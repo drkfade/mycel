@@ -1,0 +1,26 @@
+// File system access. Every function needs a grant (`capabilities.fs.read` / `.write`); a denied call returns Err(CapabilityError).
+pub extern fn readText(path: String) -> Result<String, Error>
+pub extern fn writeText(path: String, text: String) -> Result<Void, Error>
+pub extern fn appendText(path: String, text: String) -> Result<Void, Error>
+pub extern fn exists(path: String) -> Result<Bool, Error>
+pub extern fn isDir(path: String) -> Result<Bool, Error>
+pub extern fn list(path: String) -> Result<[String], Error>
+pub extern fn mkdirs(path: String) -> Result<Void, Error>
+pub extern fn remove(path: String) -> Result<Void, Error>
+pub extern fn size(path: String) -> Result<Int, Error>
+// Pure path operations use the host platform's drive/UNC/separator rules.
+pub extern fn join(a: String, b: String) -> String
+pub extern fn dirname(path: String) -> String
+pub extern fn basename(path: String) -> String
+pub fn extension(path: String) -> String {
+  let name = basename(path)
+  if name == "." || name == ".." { return "" }
+  if name.startsWith(".") && !name.substring(1, name.length).contains(".") {
+    return ""
+  }
+  let parts = name.split(".")
+  if parts.length <= 1 { return "" }
+  let lastPart = parts.last ?? ""
+  if lastPart.isEmpty { return "" }
+  return "." + lastPart
+}

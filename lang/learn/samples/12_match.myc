@@ -1,0 +1,13 @@
+fn describeHttp(code: Int) -> String {
+  return match code {
+    200 => "OK: Success"
+    404 => "Not Found"
+    500..=599 => "Server Error"
+    _ => f"Other status: {code}"
+  }
+}
+
+print(describeHttp(200))
+print(describeHttp(404))
+print(describeHttp(503))
+print(describeHttp(418))

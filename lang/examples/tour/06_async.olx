@@ -1,0 +1,29 @@
+// async/await, spawn, gather with std.task, channels.
+import std.task
+
+async fn fetch(name: String, ms: Int) -> String {
+  await task.sleep(ms)
+  return f"{name} after {ms}ms"
+}
+
+async fn main() {
+  let slow = spawn fetch("slow", 30)
+  let fast = spawn fetch("fast", 5)
+  print(await fast)
+  print(await slow)
+  print(await task.all([fetch("a", 3), fetch("b", 1)]))
+
+  let jobs = task.Channel<Int>()
+  spawn produce(jobs)
+  var total = 0
+  while let n = await jobs.recv() { total += n }
+  print(f"total {total}")
+}
+
+async fn produce(c: task.Channel<Int>) {
+  for i in 1..=4 {
+    c.send(i * i)
+    await task.sleep(1)
+  }
+  c.close()
+}

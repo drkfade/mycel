@@ -1,0 +1,15 @@
+// File I/O needs a grant:  ply run 07_files.olx --allow-read=. --allow-write=.
+import std.fs
+
+fn main() {
+  let path = "tour_scratch.txt"
+  match fs.writeText(path, "line one\nline two\n") {
+      .Err(e) => { print(f"cannot write: {e.message}")
+      return }
+      .Ok(_) => {}
+  }
+  let text = fs.readText(path).unwrap()
+  for (i, line) in text.lines().enumerate() { print(f"{i + 1}: {line}") }
+  fs.remove(path).unwrap()
+  print(f"exists after remove: {fs.exists(path).unwrap()}")
+}

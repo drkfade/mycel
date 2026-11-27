@@ -1,0 +1,14 @@
+struct Point {
+  let x: Int
+  let y: Int
+}
+
+fn add(a: Int, b: Int) -> Int {
+  return a + b
+}
+
+fn main() {
+  let p = Point(x: 1, y: 2)
+  let total = add(p.x, p.y)
+  print(f"total {total}")
+}

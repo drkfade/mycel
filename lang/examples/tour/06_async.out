@@ -1,0 +1,4 @@
+fast after 5ms
+slow after 30ms
+["a after 3ms", "b after 1ms"]
+total 30

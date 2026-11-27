@@ -1,0 +1,23 @@
+import std.json
+// HTTP client and server. The client needs `capabilities.net.hosts`; the server needs `capabilities.net.listen` and binds 127.0.0.1.
+pub struct Response { let status: Int, body: String, headers: {String: String}
+  get ok: Bool { return self.status >= 200 && self.status < 300 }
+  fn json() -> Result<json.Json, Error> { return json.parse(self.body) }
+}
+pub struct Request { let method: String, path: String, query: {String: String}, headers: {String: String}, body: String
+  fn json() -> Result<json.Json, Error> { return json.parse(self.body) }
+}
+pub fn text(body: String, status: Int = 200) -> Response { return Response(status: status, body: body, headers: {"content-type": "text/plain; charset=utf-8"}) }
+pub fn jsonResponse(value: json.Json, status: Int = 200) -> Response { return Response(status: status, body: json.stringify(value), headers: {"content-type": "application/json"}) }
+
+pub extern async fn get(url: String, headers: {String: String} = {}) -> Result<Response, Error>
+pub extern async fn post(url: String, body: String, headers: {String: String} = {}) -> Result<Response, Error>
+pub extern async fn request(method: String, url: String, body: String = "", headers: {String: String} = {}) -> Result<Response, Error>
+
+pub extern class Server {
+  get port: Int
+  fn stop()
+}
+/// Start a server on 127.0.0.1:port (0 picks a free port; read it from `server.port`).
+pub extern async fn serve(port: Int, handler: (Request) -> Response) -> Result<Server, Error>
+pub extern async fn serveAsync(port: Int, handler: (Request) -> Task<Response>) -> Result<Server, Error>

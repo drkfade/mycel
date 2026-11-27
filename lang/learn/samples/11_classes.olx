@@ -1,0 +1,30 @@
+// A struct is an immutable value form
+struct Point { let x: Int, y: Int }
+
+p1 = Point(x: 10, y: 20)
+p2 = p1.with(y: 50)
+print(f"p1=({p1.x}, {p1.y}) p2=({p2.x}, {p2.y})")
+print(p1 == Point(x: 10, y: 20))
+
+// A class is a blueprint for objects with behaviour
+class Hero {
+  let name: String
+  var health: Int = 100
+
+  init(name: String) {
+    self.name = name
+  }
+
+  fn takeDamage(amount: Int) {
+    self.health -= amount
+  }
+
+  fn status() -> String {
+    return f"{self.name} has {self.health} HP"
+  }
+}
+
+hero = Hero(name: "Aria")
+print(hero.status())
+hero.takeDamage(25)
+print(hero.status())

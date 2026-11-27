@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Try Mycel in the browser
+    url: https://ol1x.xyz/mycel/play/
+    about: The playground runs Mycel with nothing installed.
+  - name: Learn Mycel
+    url: https://ol1x.xyz/mycel/learn/
+    about: The interactive tour.

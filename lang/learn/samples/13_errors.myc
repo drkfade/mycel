@@ -1,0 +1,26 @@
+// A function that might fail returns Result<Int, Error>
+fn parseAge(text: String) -> Result<Int, Error> {
+  if text.isEmpty {
+    return Err(Error("age cannot be empty"))
+  }
+  let age = text.toInt()
+  if age == nil {
+    return Err(Error(f"'{text}' is not a valid number"))
+  }
+  if age < 0 {
+    return Err(Error("age cannot be negative"))
+  }
+  return Ok(age)
+}
+
+fn check(input: String) {
+  match parseAge(input) {
+    .Ok(age) => print(f"Valid age: {age}")
+    .Err(e) => print(f"Error: {e.message}")
+  }
+}
+
+check("25")
+check("")
+check("abc")
+check("-5")

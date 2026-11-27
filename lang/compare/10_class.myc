@@ -1,0 +1,7 @@
+class Dog {
+  let name: String
+  fn speak() -> String { return f"{self.name} says woof" }
+}
+
+let d = Dog("Rex")
+print(d.speak())

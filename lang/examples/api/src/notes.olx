@@ -1,0 +1,52 @@
+import std.http
+import std.json
+
+pub struct Note { let id: Int, title: String }
+
+/// In-memory notes with a REST interface:  GET /notes  POST /notes  GET|DELETE /notes/<id>
+pub class NotesApi {
+  var notes: [Note] = []
+  var nextId = 1
+
+  fn handle(req: http.Request) -> http.Response {
+    let parts = req.path.split("/").filter((p) => !p.isEmpty)
+    if parts.isEmpty || parts[0] != "notes" { return error(404, "no such route") }
+    if parts.length == 1 {
+      if req.method == "GET" { return http.jsonResponse(json.Json.Arr(self.notes.map((n) => noteJson(n)))) }
+      if req.method == "POST" { return self.create(req) }
+      return error(405, "use GET or POST on /notes")
+    }
+    let id = Int.parse(parts[1])
+    if id == nil { return error(400, "note id must be a number") }
+    let found = self.notes.find((n) => n.id == id)
+    if found == nil { return error(404, f"note {id} does not exist") }
+    if req.method == "GET" { return http.jsonResponse(noteJson(found)) }
+    if req.method == "DELETE" {
+      self.notes = self.notes.filter((n) => n.id != id)
+      return http.text("deleted", status: 200)
+    }
+    return error(405, "use GET or DELETE on /notes/<id>")
+  }
+
+  fn create(req: http.Request) -> http.Response {
+    match req.json() {
+        .Err(e) => return error(400, f"body is not JSON: {e.message}")
+        .Ok(body) => {
+        let title = body.get("title")?.asString
+        if title == nil || title.trim().isEmpty { return error(422, "\"title\" is required") }
+        let note = Note(id: self.nextId, title: title)
+        self.nextId += 1
+        self.notes.push(note)
+        return http.jsonResponse(noteJson(note), status: 201)
+      }
+    }
+  }
+}
+
+fn noteJson(n: Note) -> json.Json {
+  return json.Json.Obj({"id": json.Json.Num(n.id.toFloat()), "title": json.Json.Str(n.title)})
+}
+
+fn error(status: Int, message: String) -> http.Response {
+  return http.jsonResponse(json.Json.Obj({"error": json.Json.Str(message)}), status: status)
+}

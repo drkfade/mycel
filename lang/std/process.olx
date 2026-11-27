@@ -1,0 +1,6 @@
+pub struct Output { let code: Int, stdout: String, stderr: String
+  get ok: Bool { return self.code == 0 }
+}
+/// Run a program without a shell. Needs `capabilities.process.run` listing the executable (or true).
+pub extern fn run(command: String, args: [String] = [], input: String = "", timeoutMs: Int = 30000) -> Result<Output, Error>
+pub extern fn pid() -> Int

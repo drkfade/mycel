@@ -1,0 +1,2 @@
+fruits = ["apple", "pear", "fig"]
+for i, f in fruits { print(i, f) }

@@ -1,0 +1,27 @@
+import std.test
+import std.fs
+import store
+import models.Todo
+
+test "save then load round-trips" {
+  let p = "data/test_roundtrip.json"
+  let todos = [Todo(id: 1, title: "write tests", done: false), Todo(id: 2, title: "ship", done: true)]
+  store.save(p, todos).unwrap()
+  test.assertEq(store.load(p).unwrap(), todos)
+  fs.remove(p).unwrap()
+}
+
+test "a missing file is an empty list" {
+  let none: [Todo] = []
+  test.assertEq(store.load("data/does_not_exist.json").unwrap(), none)
+}
+
+test "a corrupt file explains itself" {
+  let p = "data/test_corrupt.json"
+  fs.mkdirs("data").unwrap()
+  fs.writeText(p, "{\"not\": \"a list\"}").unwrap()
+  test.assertEq(store.load(p).err()?.message, "data/test_corrupt.json: expected a JSON array")
+  fs.writeText(p, "[{\"id\": \"x\"}]").unwrap()
+  test.assertEq(store.load(p).err()?.message, "todo: \"id\" must be an integer")
+  fs.remove(p).unwrap()
+}

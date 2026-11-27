@@ -1,0 +1,27 @@
+import std.json
+
+pub struct Todo {
+  let id: Int, title: String, done: Bool
+
+  fn toJson() -> json.Json {
+    return json.Json.Obj({
+        "id": json.Json.Num(self.id.toFloat()),
+        "title": json.Json.Str(self.title),
+        "done": json.Json.Bool(self.done),
+    })
+  }
+}
+
+/// Read one todo back from JSON, saying exactly which field is wrong.
+pub fn fromJson(j: json.Json) -> Result<Todo, Error> {
+  let id = j.get("id")?.asInt
+  let title = j.get("title")?.asString
+  let done = j.get("done")?.asBool
+  if id == nil { return Err(ParseError("todo: \"id\" must be an integer")) }
+  if title == nil { return Err(ParseError("todo: \"title\" must be a string")) }
+  return Ok(Todo(id: id, title: title, done: done ?? false))
+}
+
+pub fn toJsonList(todos: [Todo]) -> json.Json {
+  return json.Json.Arr(todos.map((t) => t.toJson()))
+}

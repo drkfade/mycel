@@ -1,0 +1,4 @@
+for s in ["12", "x7", "40"] {
+  if let n = s.toInt() { print(n * 2) }
+  else { print(f"not a number: {s}") }
+}

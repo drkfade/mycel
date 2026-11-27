@@ -1,0 +1,147 @@
+import std.fs
+
+// Python-style file and path operations with capability grants.
+// Reading needs --allow-read; writing needs --allow-write.
+//
+// Examples:
+//   import std.files
+//   files.write("hello.txt", "world").unwrap()
+//   let text = files.read("hello.txt").unwrap()
+//   let p = files.path("data").join("items.txt")
+//   if p.exists() { print(p.text().unwrap()) }
+
+pub struct Path {
+  let raw: String
+
+  get name: String {
+    return fs.basename(self.raw)
+  }
+
+  get extension: String {
+    return fs.extension(self.raw)
+  }
+
+  get stem: String {
+    let n = self.name
+    let ext = self.extension
+    if ext.isEmpty { return n }
+    return n.substring(0, n.length - ext.length)
+  }
+
+  get parent: Path {
+    return Path(raw: fs.dirname(self.raw))
+  }
+
+  fn text() -> Result<String, Error> {
+    return fs.readText(self.raw)
+  }
+
+  fn read() -> Result<String, Error> {
+    return self.text()
+  }
+
+  fn lines() -> Result<[String], Error> {
+    return lines(self.raw)
+  }
+
+  fn write(content: String) -> Result<Void, Error> {
+    return fs.writeText(self.raw, content)
+  }
+
+  fn append(content: String) -> Result<Void, Error> {
+    return fs.appendText(self.raw, content)
+  }
+
+  fn exists() -> Bool {
+    return match fs.exists(self.raw) { .Ok(b) => b, .Err(_) => false }
+  }
+
+  fn isDir() -> Bool {
+    return match fs.isDir(self.raw) { .Ok(b) => b, .Err(_) => false }
+  }
+
+  fn isFile() -> Bool {
+    return self.exists() && !self.isDir()
+  }
+
+  fn size() -> Result<Int, Error> {
+    return fs.size(self.raw)
+  }
+
+  fn list() -> Result<[Path], Error> {
+    match fs.list(self.raw) {
+      .Ok(names) => return .Ok([self.join(n) for n in names])
+      .Err(e) => return .Err(e)
+    }
+  }
+
+  fn join(part: String) -> Path {
+    return Path(raw: fs.join(self.raw, part))
+  }
+
+  fn mkdir() -> Result<Void, Error> {
+    return fs.mkdirs(self.raw)
+  }
+
+  fn remove() -> Result<Void, Error> {
+    return fs.remove(self.raw)
+  }
+
+  fn toString() -> String {
+    return self.raw
+  }
+
+  operator /(part: String) -> Path => self.join(part)
+  operator /(other: Path) -> Path => self.join(other.raw)
+}
+
+pub fn path(p: String) -> Path {
+  return Path(raw: p)
+}
+
+pub fn read(path: String) -> Result<String, Error> {
+  return fs.readText(path)
+}
+
+pub fn write(path: String, content: String) -> Result<Void, Error> {
+  return fs.writeText(path, content)
+}
+
+pub fn append(path: String, content: String) -> Result<Void, Error> {
+  return fs.appendText(path, content)
+}
+
+pub fn exists(path: String) -> Bool {
+  return match fs.exists(path) { .Ok(b) => b, .Err(_) => false }
+}
+
+pub fn list(path: String = ".") -> Result<[String], Error> {
+  return fs.list(path)
+}
+
+pub fn remove(path: String) -> Result<Void, Error> {
+  return fs.remove(path)
+}
+
+pub fn mkdir(path: String) -> Result<Void, Error> {
+  return fs.mkdirs(path)
+}
+
+pub fn isDir(path: String) -> Bool {
+  return match fs.isDir(path) { .Ok(b) => b, .Err(_) => false }
+}
+
+pub fn isFile(path: String) -> Bool {
+  return exists(path) && !isDir(path)
+}
+
+pub fn size(path: String) -> Result<Int, Error> {
+  return fs.size(path)
+}
+
+pub fn lines(path: String) -> Result<[String], Error> {
+  match fs.readText(path) {
+    .Ok(t) => return .Ok(t.lines())
+    .Err(e) => return .Err(e)
+  }
+}

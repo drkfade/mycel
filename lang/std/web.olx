@@ -1,0 +1,83 @@
+import std.http
+import std.json as js
+import std.fs
+// Web apps in a few lines, the way Express, Flask and Sinatra do it: routes with :params, JSON, forms, static files.
+//   app = web.App()
+//   app.get("/", req => web.html("<h1>Hello</h1>"))
+//   app.get("/hello/:name", req => web.text(f"Hi {req.params["name"]}"))
+//   app.run(8000)          // serves until you stop it (needs --allow-listen)
+
+pub struct Request {
+  let method: String, path: String, params: {String: String}, query: {String: String}, form: {String: String}, headers: {String: String}, body: String
+  fn json() -> Result<js.Json, Error> { return js.parse(self.body) }
+}
+
+pub fn text(body: String, status: Int = 200) -> http.Response { return http.text(body, status: status) }
+pub fn html(body: String, status: Int = 200) -> http.Response { return http.Response(status: status, body: body, headers: {"content-type": "text/html; charset=utf-8"}) }
+pub fn json(value: Any, status: Int = 200) -> http.Response { return http.Response(status: status, body: js.encode(value), headers: {"content-type": "application/json"}) }
+pub fn redirect(to: String) -> http.Response { return http.Response(status: 303, body: "", headers: {"location": to}) }
+/// Make text safe to put inside HTML (like Python's html.escape): & < > " ' become entities.
+pub fn escape(text: String) -> String { return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;") }
+pub fn notFound(message: String = "not found") -> http.Response { return http.text(message, status: 404) }
+
+struct Route { let method: String, parts: [String], handler: (Request) -> http.Response }
+
+fn segments(path: String) -> [String] { return path.split("/").filter(p => !p.isEmpty) }
+
+fn contentType(path: String) -> String {
+  let types = {"html": "text/html; charset=utf-8", "css": "text/css", "js": "text/javascript", "json": "application/json", "txt": "text/plain; charset=utf-8", "svg": "image/svg+xml", "md": "text/markdown; charset=utf-8"}
+  return types.get(fs.extension(path).lower().replace(".", ""), "text/plain; charset=utf-8")
+}
+
+extern fn decodeForm(body: String) -> {String: String}
+extern fn runForever(port: Int, handler: (http.Request) -> http.Response)
+
+pub class App {
+  var routes: [Route] = []
+  var folders: [(String, String)] = []
+
+  fn get(path: String, handler: (Request) -> http.Response) { self.routes.push(Route(method: "GET", parts: segments(path), handler: handler)) }
+  fn post(path: String, handler: (Request) -> http.Response) { self.routes.push(Route(method: "POST", parts: segments(path), handler: handler)) }
+  fn put(path: String, handler: (Request) -> http.Response) { self.routes.push(Route(method: "PUT", parts: segments(path), handler: handler)) }
+  fn delete(path: String, handler: (Request) -> http.Response) { self.routes.push(Route(method: "DELETE", parts: segments(path), handler: handler)) }
+  /// Serve the files in `folder` under the URL `prefix` (e.g. files("/static", "public")); needs --allow-read.
+  fn files(prefix: String, folder: String) { self.folders.push((prefix, folder)) }
+
+  fn handle(req: http.Request) -> http.Response {
+    let got = segments(req.path)
+    let form = if req.headers.get("content-type", "").startsWith("application/x-www-form-urlencoded") { decodeForm(req.body) } else { {} }
+    var wrongMethod = false
+    for r in self.routes {
+      if r.parts.length != got.length { continue }
+      var params: {String: String} = {}
+      var matched = true
+      for i, part in r.parts {
+        if part.startsWith(":") { params[part.substring(1, part.length)] = got[i] }
+        else if part != got[i] { matched = false; break }
+      }
+      if !matched { continue }
+      if r.method != req.method { wrongMethod = true; continue }
+      return r.handler(Request(method: req.method, path: req.path, params: params, query: req.query, form: form, headers: req.headers, body: req.body))
+    }
+    if req.method == "GET" {
+      for (prefix, folder) in self.folders {
+        let pre = segments(prefix)
+        if got.length <= pre.length || got.slice(0, pre.length) != pre { continue }
+        let rest = got.slice(pre.length, got.length)
+        if ".." in rest { return text("bad path", status: 400) }
+        let file = folder + "/" + rest.join("/")
+        match fs.readText(file) {
+          .Ok(body) => return http.Response(status: 200, body: body, headers: {"content-type": contentType(file)})
+          .Err(_) => continue
+        }
+      }
+    }
+    if wrongMethod { return text(f"{req.method} is not allowed here", status: 405) }
+    return notFound(f"no page at {req.path}")
+  }
+
+  /// Start serving and return the server (port 0 picks a free port) — for tests and programs that keep going.
+  async fn start(port: Int = 0) -> Result<http.Server, Error> { return await http.serve(port, r => self.handle(r)) }
+  /// Serve on 127.0.0.1:port until the program is stopped (Ctrl-C), like Flask's app.run().
+  fn run(port: Int = 8000) { runForever(port, r => self.handle(r)) }
+}

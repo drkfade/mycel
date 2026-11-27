@@ -1,0 +1,3 @@
+s = "  Hello, World  "
+print(s.trim().lower().replace("world", "there"))
+print(s.trim().startsWith("Hello"))

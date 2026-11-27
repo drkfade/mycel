@@ -1,0 +1,49 @@
+"use strict";
+// Mycel for VS Code: starts `mycel lsp` (setting `mycel.path`) and adds a Run command.
+const vscode = require("vscode");
+const path = require("path");
+const { LanguageClient } = require("vscode-languageclient/node");
+const { serverExecutable, runLine } = require("./launch");
+
+let client;
+
+function mycelPath() { return vscode.workspace.getConfiguration("mycel").get("path") || "mycel"; }
+
+async function startServer(context) {
+  // Restricted Mode: highlighting, themes and the file icon work; nothing that runs a program starts until the folder is trusted.
+  if (!vscode.workspace.isTrusted) return;
+  const cmd = mycelPath();
+  client = new LanguageClient("mycel", "Mycel Language Server",
+    serverExecutable(cmd),
+    { documentSelector: [{ scheme: "file", language: "mycel" }, { scheme: "untitled", language: "mycel" }] });
+  try { await client.start(); }
+  catch (e) {
+    client = undefined;
+    vscode.window.showWarningMessage(`Mycel: could not start \`${cmd} lsp\` (${e && e.message || e}). Highlighting still works; install Mycel or set "mycel.path" for errors, hover and completion.`);
+  }
+}
+
+async function runFile() {
+  const ed = vscode.window.activeTextEditor;
+  if (!ed || ed.document.languageId !== "mycel") return;
+  if (!vscode.workspace.isTrusted) { vscode.window.showInformationMessage("Mycel: trust this folder to run programs (Restricted Mode is on)."); return; }
+  if (ed.document.isUntitled) { vscode.window.showInformationMessage("Save the file first, then run it."); return; }
+  await ed.document.save();
+  let term = vscode.window.terminals.find((t) => t.name === "Mycel" && t.exitStatus === undefined);
+  if (!term) term = vscode.window.createTerminal({ name: "Mycel", cwd: path.dirname(ed.document.fileName) });
+  term.show(true); // keep focus in the editor
+  // quoted for the shell the terminal actually runs (PowerShell / cmd.exe on Windows, POSIX elsewhere)
+  term.sendText(runLine(mycelPath(), ed.document.fileName, vscode.env.shell));
+}
+
+async function activate(context) {
+  context.subscriptions.push(
+    vscode.commands.registerCommand("mycel.run", runFile),
+    vscode.commands.registerCommand("mycel.restartServer", async () => { if (client) await client.stop().catch(() => {}); await startServer(context); }),
+    vscode.workspace.onDidGrantWorkspaceTrust(() => startServer(context)),
+    vscode.workspace.onDidChangeConfiguration(async (e) => { if (e.affectsConfiguration("mycel.path")) { if (client) await client.stop().catch(() => {}); await startServer(context); } }),
+  );
+  await startServer(context);
+}
+async function deactivate() { if (client) await client.stop().catch(() => {}); }
+module.exports = { activate, deactivate };

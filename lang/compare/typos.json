@@ -1,0 +1,126 @@
+{
+  "01_hello": [
+    "print(",
+    "prnt("
+  ],
+  "02_greet": [
+    "{age + 1}",
+    "{agee + 1}"
+  ],
+  "03_sum_list": [
+    "print(sum(nums))",
+    "print(sum(num))"
+  ],
+  "04_fizzbuzz": [
+    "print(i)",
+    "print(j)"
+  ],
+  "05_word_count": [
+    "print(w, n)",
+    "print(w, m)"
+  ],
+  "06_reverse": [
+    "print(s.upper())",
+    "print(s.uper())"
+  ],
+  "07_max_min": [
+    "min(temps)",
+    "min(temp)"
+  ],
+  "08_factorial": [
+    "print(fact(20))",
+    "print(fac(20))"
+  ],
+  "09_fibonacci": [
+    "print(fib)",
+    "print(fibs)"
+  ],
+  "10_class": [
+    "print(d.speak())",
+    "print(d.speek())"
+  ],
+  "11_dict_scores": [
+    "{score}",
+    "{scor}"
+  ],
+  "12_comprehension": [
+    "print(squares)",
+    "print(square)"
+  ],
+  "13_enumerate": [
+    "print(i, f)",
+    "print(i, fruit)"
+  ],
+  "14_parse_errors": [
+    "not a number: {s}",
+    "not a number: {x}"
+  ],
+  "15_strings": {
+    "py": [
+      "print(s.strip().lower()",
+      "print(s.strip().lowr()"
+    ],
+    "myc": [
+      "print(s.trim().lower()",
+      "print(s.trim().lowr()"
+    ]
+  },
+  "16_average": [
+    "{avg:.2f}",
+    "{average:.2f}"
+  ],
+  "17_json": [
+    "print(data[\"name\"]",
+    "print(dat[\"name\"]"
+  ],
+  "18_sort_tuples": [
+    "print(name, age)",
+    "print(nam, age)"
+  ],
+  "19_vowels": [
+    "print(count)",
+    "print(cont)"
+  ],
+  "20_primes": {
+    "py": [
+      "    return True\n",
+      "    return Tru\n"
+    ],
+    "myc": [
+      "  return true\n}",
+      "  return tru\n}"
+    ]
+  },
+  "21_temperature": [
+    "{f:.1f}",
+    "{fahr:.1f}"
+  ],
+  "22_swap": [
+    "print(a, b)",
+    "print(a, c)"
+  ],
+  "23_lambda_sort": {
+    "py": [
+      "print(sorted(words))",
+      "print(sorted(word))"
+    ],
+    "myc": [
+      "print(words.sorted())",
+      "print(word.sorted())"
+    ]
+  },
+  "24_sets": {
+    "py": [
+      "b = {3, 4, 5}",
+      "bb = {3, 4, 5}"
+    ],
+    "myc": [
+      "b = Set([3, 4, 5])",
+      "bb = Set([3, 4, 5])"
+    ]
+  },
+  "25_args": [
+    "{len(args)}",
+    "{len(arg)}"
+  ]
+}

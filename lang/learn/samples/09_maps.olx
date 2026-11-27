@@ -1,0 +1,16 @@
+// A map pairs keys to values
+scores = {"Ada": 98, "Bob": 75}
+
+// Looking up values
+print(scores["Ada"])
+print(scores["Unknown"])
+print(scores.get("Unknown", 0))
+
+// Adding new keys and updating
+scores["Charlie"] = 82
+scores["Bob"] += 5
+
+// Iterating over key-value pairs
+for (name, score) in scores {
+  print(f"{name}: {score}")
+}

@@ -1,0 +1,182 @@
+// A friendly UI kit with one simple model for desktop and browser apps.
+// Window, button, text, input, list, image, row, column, and event handlers.
+//
+// Example:
+//   import std.ui
+//   var count = 0
+//   let label = ui.text("Count: 0")
+//   ui.window("Counter", [
+//     label,
+//     ui.row([
+//       ui.button("-", onClick: () => { count -= 1; label.setText(f"Count: {count}") }),
+//       ui.button("+", onClick: () => { count += 1; label.setText(f"Count: {count}") }),
+//     ])
+//   ])
+
+extern fn newId() -> String
+extern fn mountWindow(win: Window)
+extern fn notifyUpdate(id: String, prop: String, value: String)
+extern fn notifyChildren(id: String, children: [Element])
+extern fn closeWindow(id: String)
+extern fn registerHandler(id: String, event: String, handler: Any)
+
+pub class Element {
+  var id: String = ""
+  var kind: String = ""
+  var text: String = ""
+  var placeholder: String = ""
+  var src: String = ""
+  var alt: String = ""
+  var children: [Element] = []
+
+  fn setText(newText: String) {
+    self.text = newText
+    notifyUpdate(self.id, "text", newText)
+  }
+
+  fn value() -> String {
+    return self.text
+  }
+
+  fn setValue(newValue: String) {
+    self.text = newValue
+    notifyUpdate(self.id, "value", newValue)
+  }
+
+  fn setItems(items: [Element]) {
+    self.children = items
+    notifyChildren(self.id, items)
+  }
+
+  fn append(child: Element) {
+    self.children.push(child)
+    notifyChildren(self.id, self.children)
+  }
+
+  fn removeAt(index: Int) {
+    if index >= 0 && index < self.children.length {
+      self.children.removeAt(index)
+      notifyChildren(self.id, self.children)
+    }
+  }
+}
+
+pub class Window {
+  var id: String = ""
+  var title: String = ""
+  var width: Int = 400
+  var height: Int = 500
+  var content: Element? = nil
+
+  fn setContent(content: Element) {
+    self.content = content
+    mountWindow(self)
+  }
+
+  fn setTitle(newTitle: String) {
+    self.title = newTitle
+    notifyUpdate(self.id, "title", newTitle)
+  }
+
+  fn show() {
+    mountWindow(self)
+  }
+
+  fn close() {
+    closeWindow(self.id)
+  }
+}
+
+pub fn text(content: String = "") -> Element {
+  let el = Element()
+  el.id = newId()
+  el.kind = "text"
+  el.text = content
+  return el
+}
+
+pub fn button(label: String, onClick: (() -> Void)? = nil) -> Element {
+  let el = Element()
+  el.id = newId()
+  el.kind = "button"
+  el.text = label
+  if onClick != nil {
+    registerHandler(el.id, "click", onClick!)
+  }
+  return el
+}
+
+pub fn input(value: String = "", placeholder: String = "", onInput: ((String) -> Void)? = nil, onChange: ((String) -> Void)? = nil) -> Element {
+  let el = Element()
+  el.id = newId()
+  el.kind = "input"
+  el.text = value
+  el.placeholder = placeholder
+  let handler = onInput ?? onChange
+  if handler != nil {
+    registerHandler(el.id, "input", handler!)
+  }
+  return el
+}
+
+pub fn image(src: String, alt: String = "") -> Element {
+  let el = Element()
+  el.id = newId()
+  el.kind = "image"
+  el.src = src
+  el.alt = alt
+  return el
+}
+
+pub fn list(children: [Element] = []) -> Element {
+  let el = Element()
+  el.id = newId()
+  el.kind = "list"
+  el.children = children
+  return el
+}
+
+pub fn row(children: [Element] = []) -> Element {
+  let el = Element()
+  el.id = newId()
+  el.kind = "row"
+  el.children = children
+  return el
+}
+
+pub fn column(children: [Element] = []) -> Element {
+  let el = Element()
+  el.id = newId()
+  el.kind = "column"
+  el.children = children
+  return el
+}
+
+pub fn window(title: String, children: [Element]) -> Window {
+  let win = Window()
+  win.id = newId()
+  win.title = title
+  let col = column(children)
+  win.content = col
+  mountWindow(win)
+  return win
+}
+
+pub fn window(title: String, content: Element) -> Window {
+  let win = Window()
+  win.id = newId()
+  win.title = title
+  win.content = content
+  mountWindow(win)
+  return win
+}
+
+pub fn window(title: String) -> Window {
+  let win = Window()
+  win.id = newId()
+  win.title = title
+  let col = column([])
+  win.content = col
+  mountWindow(win)
+  return win
+}

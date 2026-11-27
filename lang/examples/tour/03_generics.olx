@@ -1,0 +1,35 @@
+// Generic functions, generic classes, bounds.
+fn largest<T: Comparable>(items: [T]) -> T? {
+  var best: T? = nil
+  for item in items {
+    if let b = best {
+      if item > b { best = item }
+    } else {
+      best = item
+    }
+  }
+  return best
+}
+
+class Stack<T> {
+  var items: [T] = []
+  fn push(item: T) { self.items.push(item) }
+  fn pop() -> T? { return self.items.pop() }
+  get size: Int { return self.items.length }
+}
+
+fn mapAll<A, B>(xs: [A], f: (A) -> B) -> [B] {
+  var out: [B] = []
+  for x in xs { out.push(f(x)) }
+  return out
+}
+
+fn main() {
+  print(largest([3, 9, 2]) ?? 0)
+  print(largest(["pear", "apple"]) ?? "none")
+  let s = Stack<String>()
+  s.push("a")
+  s.push("b")
+  print(f"{s.pop() ?? "-"} {s.size}")
+  print(mapAll([1, 2, 3], (n) => f"n{n}"))
+}

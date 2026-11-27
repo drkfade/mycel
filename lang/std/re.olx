@@ -1,0 +1,47 @@
+// Regular expressions (JavaScript syntax). Patterns are limited to 2000 characters and inputs to 1 MB.
+pub struct Match { let text: String, start: Int, end: Int, groups: [String?], named: {String: String} }
+pub extern class Regex {
+  static fn compile(pattern: String, flags: String = "") -> Result<Regex, Error>
+  fn isMatch(text: String) -> Bool
+  fn find(text: String) -> Match?
+  fn findAll(text: String) -> [Match]
+  fn replace(text: String, with: String) -> String
+  fn split(text: String) -> [String]
+}
+
+pub fn compile(pattern: String, flags: String = "") -> Result<Regex, Error> => Regex.compile(pattern, flags: flags)
+
+pub fn isMatch(pattern: String, text: String, flags: String = "") -> Bool {
+  match Regex.compile(pattern, flags: flags) {
+    .Ok(r) => return r.isMatch(text)
+    .Err(_) => return false
+  }
+}
+
+pub fn find(pattern: String, text: String, flags: String = "") -> Match? {
+  match Regex.compile(pattern, flags: flags) {
+    .Ok(r) => return r.find(text)
+    .Err(_) => return nil
+  }
+}
+
+pub fn findAll(pattern: String, text: String, flags: String = "") -> [Match] {
+  match Regex.compile(pattern, flags: flags) {
+    .Ok(r) => return r.findAll(text)
+    .Err(_) => return []
+  }
+}
+
+pub fn replace(pattern: String, text: String, with: String, flags: String = "") -> String {
+  match Regex.compile(pattern, flags: flags) {
+    .Ok(r) => return r.replace(text, with: with)
+    .Err(_) => return text
+  }
+}
+
+pub fn split(pattern: String, text: String, flags: String = "") -> [String] {
+  match Regex.compile(pattern, flags: flags) {
+    .Ok(r) => return r.split(text)
+    .Err(_) => return [text]
+  }
+}

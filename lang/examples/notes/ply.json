@@ -1,0 +1,6 @@
+{
+  "name": "notes",
+  "version": "1.0.0",
+  "description": "A notebook app using std.db for storage and std.files for export and backup",
+  "capabilities": { "fs": { "read": ["data"], "write": ["data"] } }
+}

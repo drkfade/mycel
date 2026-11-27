@@ -1,0 +1,235 @@
+import std.sqlite
+
+// Simple databases and key-value stores over SQLite.
+// Needs write permission to the database file (run with --allow-write).
+//
+// Key-Value store:
+//   let kv = db.openKV("settings.db").unwrap()
+//   kv.set("theme", "dark")
+//   print(kv.get("theme", default: "light"))
+//
+// Tables:
+//   let d = db.open("app.db").unwrap()
+//   let users = d.table("users", {"id": "integer primary key", "name": "text"}).unwrap()
+//   users.insert({"name": "Ada"}).unwrap()
+//   for u in users.all().unwrap() { print(u["name"]) }
+
+pub class KV {
+  let db: sqlite.Db
+
+  fn set(key: String, value: String) -> Result<Void, Error> {
+    return self.db.exec("INSERT OR REPLACE INTO _kv (key, value) VALUES (?, ?)", [key, value])
+  }
+
+  fn get(key: String, default: String = "") -> String {
+    match self.db.query("SELECT value FROM _kv WHERE key = ?", [key]) {
+      .Ok(rows) => {
+        if rows.isEmpty { return default }
+        return str(rows[0]["value"])
+      }
+      .Err(_) => return default
+    }
+  }
+
+  fn getOpt(key: String) -> String? {
+    match self.db.query("SELECT value FROM _kv WHERE key = ?", [key]) {
+      .Ok(rows) => {
+        if rows.isEmpty { return nil }
+        return str(rows[0]["value"])
+      }
+      .Err(_) => return nil
+    }
+  }
+
+  fn has(key: String) -> Bool {
+    match self.db.query("SELECT 1 FROM _kv WHERE key = ?", [key]) {
+      .Ok(rows) => return !rows.isEmpty
+      .Err(_) => return false
+    }
+  }
+
+  fn remove(key: String) -> Result<Void, Error> {
+    return self.db.exec("DELETE FROM _kv WHERE key = ?", [key])
+  }
+
+  fn keys() -> [String] {
+    match self.db.query("SELECT key FROM _kv ORDER BY key") {
+      .Ok(rows) => return [str(r["key"]) for r in rows]
+      .Err(_) => return []
+    }
+  }
+
+  fn count() -> Int {
+    match self.db.query("SELECT COUNT(*) as c FROM _kv") {
+      .Ok(rows) => {
+        if rows.isEmpty { return 0 }
+        let c = rows[0]["c"]
+        return Int.parse(str(c)) ?? 0
+      }
+      .Err(_) => return 0
+    }
+  }
+
+  fn clear() -> Result<Void, Error> {
+    return self.db.exec("DELETE FROM _kv")
+  }
+
+  fn close() {
+    self.db.close()
+  }
+}
+
+pub class Table {
+  let db: sqlite.Db
+  let name: String
+
+  fn insert(row: {String: Any}) -> Result<Void, Error> {
+    if row.isEmpty {
+      return self.db.exec(f"INSERT INTO {self.name} DEFAULT VALUES")
+    }
+    var cols: [String] = []
+    var placeholders: [String] = []
+    var params: [Any] = []
+    for k, v in row {
+      cols.push(k)
+      placeholders.push("?")
+      params.push(v)
+    }
+    let colList = cols.join(", ")
+    let valList = placeholders.join(", ")
+    let sql = f"INSERT INTO {self.name} ({colList}) VALUES ({valList})"
+    return self.db.exec(sql, params)
+  }
+
+  fn all() -> Result<[{String: Any}], Error> {
+    return self.db.query(f"SELECT * FROM {self.name}")
+  }
+
+  fn find(where: {String: Any} = {}) -> Result<[{String: Any}], Error> {
+    if where.isEmpty { return self.all() }
+    var clauses: [String] = []
+    var params: [Any] = []
+    for k, v in where {
+      clauses.push(f"{k} IS ?")
+      params.push(v)
+    }
+    let condList = clauses.join(" AND ")
+    let sql = f"SELECT * FROM {self.name} WHERE {condList}"
+    return self.db.query(sql, params)
+  }
+
+  fn findOne(where: {String: Any}) -> Result<{String: Any}?, Error> {
+    match self.find(where) {
+      .Ok(rows) => {
+        if rows.isEmpty { return .Ok(nil) }
+        return .Ok(rows[0])
+      }
+      .Err(e) => return .Err(e)
+    }
+  }
+
+  fn update(where: {String: Any}, values: {String: Any}) -> Result<Void, Error> {
+    if values.isEmpty { return .Ok(()) }
+    var setClauses: [String] = []
+    var params: [Any] = []
+    for k, v in values {
+      setClauses.push(f"{k} = ?")
+      params.push(v)
+    }
+    var whereClauses: [String] = []
+    for k, v in where {
+      whereClauses.push(f"{k} IS ?")
+      params.push(v)
+    }
+    let setList = setClauses.join(", ")
+    let condList = whereClauses.join(" AND ")
+    let whereSql = if whereClauses.isEmpty { "" } else { f" WHERE {condList}" }
+    let sql = f"UPDATE {self.name} SET {setList}{whereSql}"
+    return self.db.exec(sql, params)
+  }
+
+  fn delete(where: {String: Any} = {}) -> Result<Void, Error> {
+    var whereClauses: [String] = []
+    var params: [Any] = []
+    for k, v in where {
+      whereClauses.push(f"{k} IS ?")
+      params.push(v)
+    }
+    let condList = whereClauses.join(" AND ")
+    let whereSql = if whereClauses.isEmpty { "" } else { f" WHERE {condList}" }
+    let sql = f"DELETE FROM {self.name}{whereSql}"
+    return self.db.exec(sql, params)
+  }
+
+  fn count(where: {String: Any} = {}) -> Result<Int, Error> {
+    var whereClauses: [String] = []
+    var params: [Any] = []
+    for k, v in where {
+      whereClauses.push(f"{k} IS ?")
+      params.push(v)
+    }
+    let condList = whereClauses.join(" AND ")
+    let whereSql = if whereClauses.isEmpty { "" } else { f" WHERE {condList}" }
+    let sql = f"SELECT COUNT(*) as c FROM {self.name}{whereSql}"
+    match self.db.query(sql, params) {
+      .Ok(rows) => {
+        if rows.isEmpty { return .Ok(0) }
+        let c = rows[0]["c"]
+        let countVal = Int.parse(str(c)) ?? 0
+        return .Ok(countVal)
+      }
+      .Err(e) => return .Err(e)
+    }
+  }
+}
+
+pub class Database {
+  let db: sqlite.Db
+
+  fn table(name: String, schema: {String: String} = {}) -> Result<Table, Error> {
+    if !schema.isEmpty {
+      var defs: [String] = []
+      for col, ty in schema {
+        defs.push(f"{col} {ty}")
+      }
+      let colDefs = defs.join(", ")
+      let sql = f"CREATE TABLE IF NOT EXISTS {name} ({colDefs})"
+      match self.db.exec(sql) {
+        .Ok(_) => {}
+        .Err(e) => return .Err(e)
+      }
+    }
+    return .Ok(Table(db: self.db, name: name))
+  }
+
+  fn exec(sql: String, params: [Any] = []) -> Result<Void, Error> {
+    return self.db.exec(sql, params)
+  }
+
+  fn query(sql: String, params: [Any] = []) -> Result<[{String: Any}], Error> {
+    return self.db.query(sql, params)
+  }
+
+  fn close() {
+    self.db.close()
+  }
+}
+
+pub fn open(path: String = ":memory:") -> Result<Database, Error> {
+  match sqlite.Db.open(path) {
+    .Ok(d) => return .Ok(Database(db: d))
+    .Err(e) => return .Err(e)
+  }
+}
+
+pub fn openKV(path: String = ":memory:") -> Result<KV, Error> {
+  match sqlite.Db.open(path) {
+    .Ok(d) => {
+      match d.exec("CREATE TABLE IF NOT EXISTS _kv (key TEXT PRIMARY KEY, value TEXT)") {
+        .Ok(_) => return .Ok(KV(db: d))
+        .Err(e) => return .Err(e)
+      }
+    }
+    .Err(e) => return .Err(e)
+  }
+}

@@ -1,0 +1,17 @@
+// A function with untyped parameters and return
+fn add(a, b) {
+  return a + b
+}
+
+// Compact arrow function for one-liners
+fn double(x) => x * 2
+
+// Function with a default parameter
+fn greet(name, greeting = "Hello") {
+  return f"{greeting}, {name}!"
+}
+
+print(add(20, 22))
+print(double(7))
+print(greet("Ada"))
+print(greet("Bob", greeting: "Welcome"))

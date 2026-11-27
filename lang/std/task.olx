@@ -1,0 +1,21 @@
+// Concurrency: tasks are cooperative (one thread, interleaved at `await`).
+pub extern async fn sleep(ms: Int)
+pub extern async fn all<T>(tasks: [Task<T>]) -> [T]
+/// The first task to finish. To wait on channels, use `select`: racing `recv()` calls loses a value.
+pub extern async fn race<T>(tasks: [Task<T>]) -> T
+pub extern async fn timeout<T>(ms: Int, task: Task<T>) -> Result<T, Error>
+/// Wait on several channels at once (Go's select): gives (which, value) for the first channel with a value; the value is
+/// nil when that channel is closed. The other channels keep their values (race over recv() calls would lose one).
+pub extern async fn select<T>(channels: [Channel<T>]) -> (Int, T?)
+/// The same, or nil when nothing arrives within `timeout` milliseconds.
+pub extern async fn select<T>(channels: [Channel<T>], timeout: Int) -> (Int, T?)?
+
+/// An unbounded multi-producer queue. `recv` waits for a value and gives nil once the channel is closed and drained.
+pub extern class Channel<T> {
+  init()
+  get length: Int
+  get isClosed: Bool
+  fn send(value: T)
+  fn close()
+  async fn recv() -> T?
+}

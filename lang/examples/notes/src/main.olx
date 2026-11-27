@@ -1,0 +1,66 @@
+import std.env
+import std.files
+import store
+
+let dbPath = "data/notes.db"
+
+fn usage() {
+  print("usage: ply run -- add <title> <content> | list | export <id> <dir> | import <file>")
+}
+
+fn run(args: [String]) -> Result<Void, Error> {
+  if args.isEmpty {
+    usage()
+    return .Ok(())
+  }
+  let nb = store.openNotebook(dbPath)?
+  match args[0] {
+    "add" => {
+      if args.length < 3 {
+        usage()
+        return .Err(Error("add requires title and content"))
+      }
+      let id = nb.add(args[1], args[2])?
+      print(f"saved note #{id}")
+    }
+    "list" => {
+      let notes = nb.all()?
+      if notes.isEmpty {
+        print("no notes found")
+      }
+      for n in notes {
+        print(f"#{n.id}: {n.title} - {n.content}")
+      }
+    }
+    "export" => {
+      if args.length < 3 {
+        usage()
+        return .Err(Error("export requires id and target directory"))
+      }
+      let id = Int.parse(args[1]) ?? -1
+      let path = nb.exportNote(id, args[2])?
+      print(f"exported to {path}")
+    }
+    "import" => {
+      if args.length < 2 {
+        usage()
+        return .Err(Error("import requires file path"))
+      }
+      let id = nb.importNote(args[1])?
+      print(f"imported note #{id}")
+    }
+    _ => {
+      usage()
+      return .Err(Error(f"unknown command: {args[0]}"))
+    }
+  }
+  nb.close()
+  return .Ok(())
+}
+
+fn main() {
+  match run(env.args()) {
+    .Ok(_) => {}
+    .Err(e) => print(f"error: {e.message}")
+  }
+}

@@ -1,0 +1,48 @@
+pub let PI = 3.141592653589793
+pub let E = 2.718281828459045
+pub extern fn sin(x: Float) -> Float
+pub extern fn cos(x: Float) -> Float
+pub extern fn tan(x: Float) -> Float
+pub extern fn asin(x: Float) -> Float
+pub extern fn acos(x: Float) -> Float
+pub extern fn atan(x: Float) -> Float
+pub extern fn atan2(y: Float, x: Float) -> Float
+pub extern fn exp(x: Float) -> Float
+pub extern fn log(x: Float) -> Float
+pub extern fn log2(x: Float) -> Float
+pub extern fn log10(x: Float) -> Float
+pub extern fn sqrt(x: Float) -> Float
+pub extern fn pow(x: Float, y: Float) -> Float
+/// A uniformly random Float in [0, 1). Not for cryptography (see std.crypto).
+pub extern fn random() -> Float
+/// A random Int in [lo, hi).
+pub extern fn randomInt(lo: Int, hi: Int) -> Int
+pub fn hypot(a: Float, b: Float) -> Float {
+  let x = a.abs
+  let y = b.abs
+  if x == Float.infinity || y == Float.infinity { return Float.infinity }
+  if x.isNaN || y.isNaN { return Float.nan }
+  let m = max(x, y)
+  if m == 0.0 { return 0.0 }
+  let r1 = x / m
+  let r2 = y / m
+  return m * (r1 * r1 + r2 * r2).sqrt()
+}
+pub fn gcd(a: Int, b: Int) -> Int {
+  var x = a.abs
+  var y = b.abs
+  while y != 0 {
+    let t = x % y
+    x = y
+    y = t
+  }
+  return x
+}
+pub fn lcm(a: Int, b: Int) -> Int {
+  if a == 0 || b == 0 { return 0 }
+  return (a.abs.div(gcd(a, b))) * b.abs
+}
+pub fn clamp(val: Int, lo: Int, hi: Int) -> Int => val.clamp(lo, hi)
+pub fn clamp(val: Float, lo: Float, hi: Float) -> Float => val.clamp(lo, hi)
+pub fn radians(degrees: Float) -> Float { return degrees * PI / 180.0 }
+pub fn degrees(radians: Float) -> Float { return radians * 180.0 / PI }

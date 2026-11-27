@@ -1,0 +1,43 @@
+import std.test
+import std.files
+import store
+import models.Note
+
+test "database CRUD operations on notes" {
+  let nb = store.openNotebook(":memory:").unwrap()
+  let id1 = nb.add("todo", "buy groceries").unwrap()
+  let id2 = nb.add("ideas", "build a fast compiler").unwrap()
+  test.assertEq(id1, 1)
+  test.assertEq(id2, 2)
+
+  let n1 = nb.get(1).unwrap()!
+  test.assertEq(n1.title, "todo")
+  test.assertEq(n1.content, "buy groceries")
+
+  let all = nb.all().unwrap()
+  test.assertEq(all.length, 2)
+  nb.close()
+}
+
+test "file export and import round-trip with std.files" {
+  let p = files.path("data")
+  if !p.exists() {
+    p.mkdir().unwrap()
+  }
+  let nb = store.openNotebook(":memory:").unwrap()
+  let id = nb.add("greeting", "Hello from Mycel!").unwrap()
+  let exported = nb.exportNote(id, "data").unwrap()
+  test.assert(files.exists(exported), "exported file should exist")
+  test.assertEq(files.read(exported).unwrap(), "Hello from Mycel!")
+
+  // Import into a new notebook
+  let nb2 = store.openNotebook(":memory:").unwrap()
+  let importedId = nb2.importNote(exported).unwrap()
+  let imported = nb2.get(importedId).unwrap()!
+  test.assertEq(imported.title, "greeting")
+  test.assertEq(imported.content, "Hello from Mycel!")
+
+  files.remove(exported).unwrap()
+  nb.close()
+  nb2.close()
+}

@@ -1,0 +1,32 @@
+import std.test
+import std.http
+import std.json
+import notes
+
+async fn start() -> http.Server {
+  let api = notes.NotesApi()
+  return (await http.serve(0, (req) => api.handle(req))).unwrap()
+}
+
+test "create, read, list and delete over real HTTP" {
+  let server = await start()
+  let base = f"http://127.0.0.1:{server.port}"
+  let r = (await http.post(base + "/notes", "{\"title\": \"a\"}")).unwrap()
+  test.assertEq(r.status, 201)
+  test.assertEq(r.json().unwrap().get("id")?.asInt, 1)
+  let list = (await http.get(base + "/notes")).unwrap()
+  test.assertEq(list.json().unwrap().asArray?.length, 1)
+  test.assertEq((await http.request("DELETE", base + "/notes/1")).unwrap().status, 200)
+  test.assertEq((await http.get(base + "/notes/1")).unwrap().status, 404)
+  server.stop()
+}
+
+test "bad input gets a 4xx with a reason" {
+  let server = await start()
+  let base = f"http://127.0.0.1:{server.port}"
+  let notJson = (await http.post(base + "/notes", "{oops")).unwrap()
+  test.assertEq(notJson.status, 400)
+  test.assertEq((await http.get(base + "/notes/abc")).unwrap().status, 400)
+  test.assertEq((await http.get(base + "/elsewhere")).unwrap().status, 404)
+  server.stop()
+}

@@ -1,0 +1,25 @@
+import std.fs
+import std.json
+import models.{Todo, fromJson, toJsonList}
+
+/// A missing file is an empty list; any other problem is an error.
+pub fn load(path: String) -> Result<[Todo], Error> {
+  if !fs.exists(path)? { return Ok([]) }
+  let text = fs.readText(path)?
+  let doc = json.parse(text)?
+  match doc.asArray {
+    nil => return Err(ParseError(f"{path}: expected a JSON array"))
+    items => {
+      var todos: [Todo] = []
+      for item in items! { todos.push(fromJson(item)?) }
+      return Ok(todos)
+    }
+  }
+}
+
+pub fn save(path: String, todos: [Todo]) -> Result<Void, Error> {
+  let parent = path.split("/").slice(0, path.split("/").length - 1).join("/")
+  if !parent.isEmpty { fs.mkdirs(parent)? }
+  fs.writeText(path, json.pretty(toJsonList(todos)))?
+  return Ok(())
+}

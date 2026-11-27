@@ -1,0 +1,43 @@
+import parser.{Expr, parse}
+import std.math
+
+pub fn evaluate(e: Expr, env: {String: Float}) -> Result<Float, Error> {
+  return match e {
+      .Num(n) => Ok(n)
+      .Var(name) => match env[name] { nil => Err(Error(f"unknown variable '{name}'")), v => Ok(v!) }
+      .Neg(inner) => evaluate(inner, env).map((v) => -v)
+      .Bin(op, l, r) => {
+      let a = evaluate(l, env)?
+      let b = evaluate(r, env)?
+      return match op {
+        "+" => Ok(a + b)
+        "-" => Ok(a - b)
+        "*" => Ok(a * b)
+        "/" => if b == 0.0 { Err(Error("division by zero")) } else { Ok(a / b) }
+        "%" => Ok(a % b)
+        _ => Ok(math.pow(a, b))
+      }
+    }
+      .Call(name, args) => {
+      var vals: [Float] = []
+      for a in args { vals.push(evaluate(a, env)?) }
+      return call(name, vals)
+    }
+  }
+}
+
+fn call(name: String, args: [Float]) -> Result<Float, Error> {
+  match (name, args.length) {
+    ("sqrt", 1) => return if args[0] < 0.0 { Err(Error("sqrt of a negative number")) } else { Ok(math.sqrt(args[0])) }
+    ("abs", 1) => return Ok(args[0].abs)
+    ("max", 2) => return Ok(args[0].max(args[1]))
+    ("min", 2) => return Ok(args[0].min(args[1]))
+    ("sin", 1) => return Ok(math.sin(args[0]))
+    _ => return Err(Error(f"unknown function {name} with {args.length} argument(s)"))
+  }
+}
+
+pub fn calc(text: String, env: {String: Float} = {}) -> Result<Float, Error> {
+  let e = parse(text)?
+  return evaluate(e, env)
+}

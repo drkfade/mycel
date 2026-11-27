@@ -1,0 +1,6 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "description": "A small REST API (notes) with its own client, on a local port",
+  "capabilities": { "net": { "hosts": ["127.0.0.1"], "listen": true } }
+}

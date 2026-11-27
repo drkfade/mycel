@@ -1,0 +1,1 @@
+{ "name": "calc", "version": "1.0.0", "description": "A calculator language: lexer, recursive-descent parser, evaluator", "main": "src/main.olx" }

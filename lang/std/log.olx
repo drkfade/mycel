@@ -1,0 +1,12 @@
+pub enum Level { Debug, Info, Warn, Error }
+var threshold = 1
+pub fn setLevel(level: Level) {
+  threshold = match level { .Debug => 0, .Info => 1, .Warn => 2, .Error => 3 }
+}
+fn emit(rank: Int, tag: String, message: String) {
+  if rank >= threshold { print(f"[{tag}] {message}") }
+}
+pub fn debug(message: String) { emit(0, "debug", message) }
+pub fn info(message: String) { emit(1, "info", message) }
+pub fn warn(message: String) { emit(2, "warn", message) }
+pub fn error(message: String) { emit(3, "error", message) }

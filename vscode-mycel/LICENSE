@@ -1,0 +1,17 @@
+Mycel editor support is licensed under either of
+
+  * Apache License, Version 2.0 (LICENSE-APACHE,
+    https://www.apache.org/licenses/LICENSE-2.0)
+  * MIT license (LICENSE-MIT, https://opensource.org/licenses/MIT)
+
+at your option.
+
+SPDX-License-Identifier: Apache-2.0 OR MIT
+Copyright (c) 2026 drky
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion by you, as defined in the Apache-2.0 license, shall be dual
+licensed as above, without any additional terms or conditions.
+
+The name "Mycel" and the Mycel logo are not licensed here; see NOTICE and
+TRADEMARK.md in the Mycel repository.

@@ -1,0 +1,6 @@
+// Your first Mycel program.
+fn main() {
+  print("hello world")
+  let total = 40 + 60
+  print(f"Your total sum is {total}")
+}

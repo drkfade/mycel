@@ -1,0 +1,21 @@
+// Labeled loops (from Go, Java and Swift): leave an outer loop from inside an inner one.
+let grid = [[4, 8, 15], [16, -23, 42], [7, 0, 1]]
+
+var where = "nowhere"
+search: for (r, row) in grid.enumerate() {
+  for (c, value) in row.enumerate() {
+    if value < 0 {
+      where = f"row {r}, column {c}"
+      break search // stops both loops
+    }
+  }
+}
+print(f"first negative at {where}")
+
+// `continue outer` skips the rest of this row and moves to the next one
+rows: for row in grid {
+  for value in row {
+    if value == 0 { continue rows }
+  }
+  print(f"no zero in {row}")
+}

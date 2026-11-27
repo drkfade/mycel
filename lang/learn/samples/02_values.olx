@@ -1,0 +1,13 @@
+// Different kinds of values
+print("Text string")
+print(42)
+print(3.14)
+print(true)
+
+// Doing maths
+print(10 + 5)
+print(10 - 4)
+print(6 * 7)
+print(7 / 2)
+print(7.div(2))
+print(7 % 2)

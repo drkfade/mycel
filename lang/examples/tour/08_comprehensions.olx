@@ -1,0 +1,15 @@
+// Comprehensions (from Python): build a list or a map in one readable line.
+let words = ["mycel", "is", "small"]
+
+// [value for item in items if condition]
+print([w.upper() for w in words if len(w) > 2])
+
+// {key: value for item in items}
+print({w: len(w) for w in words})
+
+// several `for` clauses nest left to right, like nested loops
+print([f"{x}{y}" for x in ["a", "b"] for y in 1..=2])
+
+// patterns work: walk a map's (key, value) pairs
+let stock = {"apples": 3, "pears": 0, "plums": 7}
+print([fruit for (fruit, n) in stock if n > 0])

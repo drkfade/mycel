@@ -1,0 +1,22 @@
+import std.http
+import notes
+
+async fn main() {
+  let api = notes.NotesApi()
+  let server = (await http.serve(0, (req) => api.handle(req))).unwrap()
+  let base = f"http://127.0.0.1:{server.port}"
+
+  let created = (await http.post(base + "/notes", "{\"title\": \"write the docs\"}")).unwrap()
+  print(f"POST /notes -> {created.status} {created.body}")
+  let bad = (await http.post(base + "/notes", "{\"title\": \"  \"}")).unwrap()
+  print(f"POST /notes (blank) -> {bad.status} {bad.body}")
+  let one = (await http.get(base + "/notes/1")).unwrap()
+  print(f"GET /notes/1 -> {one.status} {one.body}")
+  let missing = (await http.get(base + "/notes/7")).unwrap()
+  print(f"GET /notes/7 -> {missing.status} {missing.body}")
+  let all = (await http.get(base + "/notes")).unwrap()
+  print(f"GET /notes -> {all.status} {all.body}")
+  let gone = (await http.request("DELETE", base + "/notes/1")).unwrap()
+  print(f"DELETE /notes/1 -> {gone.status} {gone.body}")
+  server.stop()
+}

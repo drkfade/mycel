@@ -1,0 +1,27 @@
+import std.test
+import std.http
+import book
+
+test "the page, a signed message, the JSON view and the stylesheet over real HTTP" {
+  server = (await book.makeApp().start(0)).unwrap()
+  base = f"http://127.0.0.1:{server.port}"
+  form = {"content-type": "application/x-www-form-urlencoded"}
+  test.assertEq((await http.get(base + "/")).unwrap().status, 200)
+  signed = (await http.post(base + "/sign", "message=hello+there", headers: form)).unwrap()
+  test.assertEq(signed.status, 200)
+  test.assert(signed.body.contains("<li>hello there</li>"), signed.body)
+  test.assertEq((await http.get(base + "/messages.json")).unwrap().body, """{"count":1,"messages":["hello there"]}""")
+  test.assert((await http.get(base + "/static/style.css")).unwrap().body.contains("font-family"))
+  tricky = (await http.post(base + "/sign", "message=%3Cscript%3Ex%3C%2Fscript%3E", headers: form)).unwrap()
+  test.assert(tricky.body.contains("<li>&lt;script&gt;x&lt;/script&gt;</li>"), "messages are HTML-escaped")
+  server.stop()
+}
+
+test "an empty message is refused and unknown pages are 404" {
+  server = (await book.makeApp().start(0)).unwrap()
+  base = f"http://127.0.0.1:{server.port}"
+  test.assertEq((await http.post(base + "/sign", "message=", headers: {"content-type": "application/x-www-form-urlencoded"})).unwrap().status, 422)
+  test.assertEq((await http.get(base + "/nope")).unwrap().status, 404)
+  test.assertEq((await http.request("DELETE", base + "/")).unwrap().status, 405)
+  server.stop()
+}

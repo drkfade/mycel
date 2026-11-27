@@ -1,0 +1,79 @@
+import std.db
+import std.files
+import models.Note
+
+pub class Notebook {
+  let database: db.Database
+  let table: db.Table
+
+  fn add(title: String, content: String) -> Result<Int, Error> {
+    let nextId = (match self.table.count() { .Ok(c) => c, .Err(_) => 0 }) + 1
+    match self.table.insert({"id": nextId, "title": title, "content": content}) {
+      .Ok(_) => return .Ok(nextId)
+      .Err(e) => return .Err(e)
+    }
+  }
+
+  fn get(id: Int) -> Result<Note?, Error> {
+    match self.table.findOne({"id": id}) {
+      .Ok(rowOpt) => {
+        if rowOpt == nil { return .Ok(nil) }
+        let r = rowOpt
+        let noteId = Int.parse(str(r["id"])) ?? id
+        return .Ok(Note(id: noteId, title: str(r["title"]), content: str(r["content"])))
+      }
+      .Err(e) => return .Err(e)
+    }
+  }
+
+  fn all() -> Result<[Note], Error> {
+    match self.table.all() {
+      .Ok(rows) => {
+        var list: [Note] = []
+        for r in rows {
+          let id = Int.parse(str(r["id"])) ?? 0
+          list.push(Note(id: id, title: str(r["title"]), content: str(r["content"])))
+        }
+        return .Ok(list)
+      }
+      .Err(e) => return .Err(e)
+    }
+  }
+
+  fn exportNote(id: Int, dirPath: String) -> Result<String, Error> {
+    let noteOpt = self.get(id)?
+    if noteOpt == nil { return .Err(Error(f"no note with id {id}")) }
+    let note = noteOpt
+    let outDir = files.path(dirPath)
+    if !outDir.exists() {
+      outDir.mkdir()?
+    }
+    let target = outDir.join(f"{note.title}.md")
+    target.write(note.content)?
+    return .Ok(target.raw)
+  }
+
+  fn importNote(filePath: String) -> Result<Int, Error> {
+    let p = files.path(filePath)
+    if !p.exists() { return .Err(Error(f"file not found: {filePath}")) }
+    let text = p.text()?
+    let title = p.stem
+    return self.add(title, text)
+  }
+
+  fn close() {
+    self.database.close()
+  }
+}
+
+pub fn openNotebook(dbPath: String = ":memory:") -> Result<Notebook, Error> {
+  if dbPath != ":memory:" {
+    let parent = files.path(dbPath).parent
+    if !parent.exists() {
+      parent.mkdir()?
+    }
+  }
+  let d = db.open(dbPath)?
+  let t = d.table("notes", {"id": "integer primary key", "title": "text", "content": "text"})?
+  return .Ok(Notebook(database: d, table: t))
+}

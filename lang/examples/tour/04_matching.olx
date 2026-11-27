@@ -1,0 +1,39 @@
+// Enums with payloads and exhaustive pattern matching.
+enum Json {
+  Null
+  Num(Float)
+  Str(String)
+  List([Json])
+}
+
+fn render(j: Json) -> String {
+  return match j {
+      .Null => "null"
+      .Num(n) => f"{n}"
+      .Str(s) => f"\"{s}\""
+      .List(items) => "[" + items.map((i) => render(i)).join(", ") + "]"
+  }
+}
+
+fn classify(n: Int) -> String {
+  return match n {
+    0 => "zero"
+    1..=9 => "digit"
+    x if x < 0 => "negative"
+    _ => "large"
+  }
+}
+
+fn main() {
+  print(render(.List([.Num(1.0), .Str("two"), .Null, .List([])])))
+  for n in [0, 7, -3, 100] { write(f"{classify(n)} ") }
+  print("")
+  match (3, "x") {
+    (3, s) => print(f"three and {s}")
+    _ => print("other")
+  }
+  match [1, 2, 3, 4] {
+    [first, ..rest] => print(f"first {first}, rest {rest}")
+    [] => print("empty")
+  }
+}

@@ -1,0 +1,49 @@
+import std.env
+import store
+import models.Todo
+
+let path = "data/todos.json"
+
+fn usage() {
+  print("usage: ply run -- add <title> | list | done <id> | rm <id>")
+}
+
+fn run(args: [String]) -> Result<Void, Error> {
+  var todos = store.load(path)?
+  if args.isEmpty { usage()
+    return Ok(()) }
+  match args[0] {
+    "add" => {
+      if args.length < 2 { return Err(Error("add needs a title")) }
+      let id = (todos.map((t) => t.id).sorted().last ?? 0) + 1
+      todos.push(Todo(id: id, title: args.slice(1, args.length).join(" "), done: false))
+      store.save(path, todos)?
+      print(f"added #{id}")
+    }
+    "list" => {
+      if todos.isEmpty { print("nothing to do") }
+      for t in todos { print(f"{"[x]" if t.done else "[ ]"} #{t.id} {t.title}") }
+    }
+    "done" | "rm" => {
+      let id = Int.parse(args.at(1) ?? "") ?? -1
+      match todos.findIndex((t) => t.id == id) {
+        nil => return Err(Error(f"no todo #{id}"))
+        i => {
+          if args[0] == "done" { todos[i!] = todos[i!].with(done: true) } else { todos.removeAt(i!) }
+          store.save(path, todos)?
+          print(f"{args[0]} #{id}")
+        }
+      }
+    }
+    _ => { usage()
+      return Err(Error(f"unknown command {args[0]}")) }
+  }
+  return Ok(())
+}
+
+fn main() {
+  match run(env.args()) {
+      .Ok(_) => {}
+      .Err(e) => print(f"error: {e.message}")
+  }
+}

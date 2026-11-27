@@ -1,0 +1,120 @@
+# Public Windows acceptance: compiler suite, LSP, editor launch rules, an independent Windows SEA build,
+# sabotage, smoke/corpus on the built ZIP and PowerShell 5.1 + 7 installer tests on a real Windows runner.
+# Uses no secrets (read-only token), so pull requests from forks run it safely.
+# With release_sha256 (manual run) it also checks the published Mac-built ZIP from ol1x.xyz.
+name: Windows
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      release_sha256:
+        description: Reviewed SHA-256 of the published Windows ZIP at ol1x.xyz/mycel/download/ (optional)
+        required: false
+        type: string
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    # A hung step would otherwise run to the 360-minute default (Windows minutes count double).
+    timeout-minutes: 60
+    steps:
+      - name: Preserve source bytes
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.13.0
+      # windows-latest's default javac rejects --release 21 (first real run: "error: release version 21 not supported").
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install compiler development dependencies
+        working-directory: lang
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Parse PowerShell scripts and reject shell-closing statements
+        run: '& lang/release/windows/check-powershell.ps1'
+      - name: Compiler suite (no failures suppressed)
+        id: suite
+        working-directory: lang
+        run: npm test
+      - name: Language server regressions
+        if: always() && !cancelled()
+        run: |
+          node lang/lsp/test.js
+          if ($LASTEXITCODE -ne 0) { throw 'LSP regressions failed.' }
+          node --test lang/lsp/uris.test.js
+          if ($LASTEXITCODE -ne 0) { throw 'LSP Windows URI tests failed.' }
+      - name: Editor launch rules on a real Windows host (VS Code shims, IntelliJ lookup)
+        if: always() && !cancelled()
+        run: |
+          node --test vscode-mycel/test/launch.test.js
+          if ($LASTEXITCODE -ne 0) { throw 'VS Code launch tests failed.' }
+          $out = Join-Path $env:RUNNER_TEMP 'plylocate'
+          javac --release 21 -d $out intellij-ply/src/ply/PlyLocate.java intellij-ply/test/ply/PlyLocateTests.java
+          if ($LASTEXITCODE -ne 0) { throw 'PlyLocate compile failed.' }
+          java -cp $out ply.PlyLocateTests
+          if ($LASTEXITCODE -ne 0) { throw 'IntelliJ CLI lookup tests failed.' }
+      - name: Independently build Windows SEA
+        id: build
+        if: always() && !cancelled()
+        run: |
+          node lang/release/build-windows.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Windows SEA build failed.' }
+          node lang/release/package-windows.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Windows packaging failed.' }
+      - name: Portability sabotage on Windows (each copied mutation must fail windows.test, incl. Windows-only ones)
+        if: always() && steps.build.outcome == 'success'
+        run: |
+          node lang/release/windows/sabotage.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'A product mutation survived on Windows.' }
+      # Smoke the extracted locally built ZIP, not dist/mycel.exe: the ply.cmd alias exists only in the package
+      # (run 2: '"…\\dist\\ply.cmd"' is not recognized).
+      - name: Smoke locally built SEA (extracted package)
+        if: always() && steps.build.outcome == 'success'
+        run: |
+          $local = Join-Path $env:RUNNER_TEMP 'mycel-local'
+          Expand-Archive -LiteralPath lang/release/dist/Mycel-0.1.0-alpha-windows-x64.zip -DestinationPath $local
+          node lang/release/windows/smoke.mjs "$local/mycel.exe"
+          if ($LASTEXITCODE -ne 0) { throw 'Local-build smoke failed.' }
+      - name: Examples, tour and learn course on locally built SEA (as shipped and CRLF)
+        if: always() && steps.build.outcome == 'success'
+        run: |
+          node lang/release/windows/corpus.mjs "$env:RUNNER_TEMP/mycel-local/mycel.exe"
+          if ($LASTEXITCODE -ne 0) { throw 'Local-build corpus failed.' }
+      - name: Fetch published Mac cross-build
+        id: cross
+        if: always() && !cancelled() && inputs.release_sha256 != ''
+        env:
+          EXPECTED_SHA256: ${{ inputs.release_sha256 }}
+        run: |
+          if ($env:EXPECTED_SHA256 -notmatch '^[a-fA-F0-9]{64}$') { throw 'A reviewed ZIP hash is required.' }
+          $zip = Join-Path $env:RUNNER_TEMP 'mycel-cross.zip'
+          Invoke-WebRequest -Uri 'https://ol1x.xyz/mycel/download/Mycel-0.1.0-alpha-windows-x64.zip' -OutFile $zip
+          if ((Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash -ine $env:EXPECTED_SHA256) { throw 'Cross-build SHA-256 mismatch.' }
+          Expand-Archive -LiteralPath $zip -DestinationPath (Join-Path $env:RUNNER_TEMP 'mycel-cross')
+      - name: Smoke actual Mac-built SEA and alias
+        if: always() && steps.cross.outcome == 'success'
+        run: |
+          node lang/release/windows/smoke.mjs "$env:RUNNER_TEMP/mycel-cross/mycel.exe"
+          if ($LASTEXITCODE -ne 0) { throw 'Cross-build smoke failed.' }
+          node lang/release/windows/corpus.mjs "$env:RUNNER_TEMP/mycel-cross/mycel.exe"
+          if ($LASTEXITCODE -ne 0) { throw 'Cross-build corpus failed.' }
+      - name: Windows PowerShell 5.1 installer acceptance
+        if: always() && steps.build.outcome == 'success'
+        shell: powershell
+        run: |
+          & lang/release/windows/test-path-entries.ps1
+          & lang/release/windows/test-install-layout.ps1
+          & lang/release/windows/test-installers.ps1 -Archive lang/release/dist/Mycel-0.1.0-alpha-windows-x64.zip -Bootstrap lang/release/dist/install.ps1
+      - name: PowerShell 7 installer acceptance
+        if: always() && steps.build.outcome == 'success'
+        shell: pwsh
+        run: |
+          & lang/release/windows/test-path-entries.ps1
+          & lang/release/windows/test-install-layout.ps1
+          & lang/release/windows/test-installers.ps1 -Archive lang/release/dist/Mycel-0.1.0-alpha-windows-x64.zip -Bootstrap lang/release/dist/install.ps1
+# No upload-artifact, npm publish, release creation or deployment steps.

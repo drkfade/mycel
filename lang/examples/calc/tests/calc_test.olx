@@ -1,0 +1,21 @@
+import std.test
+import eval
+
+test "precedence and associativity" {
+  test.assertEq(eval.calc("1 + 2 * 3").unwrap(), 7.0)
+  test.assertEq(eval.calc("2 ^ 3 ^ 2").unwrap(), 512.0)
+  test.assertEq(eval.calc("(1 + 2) * 3").unwrap(), 9.0)
+  test.assertEq(eval.calc("10 - 4 - 3").unwrap(), 3.0)
+}
+
+test "functions and variables" {
+  test.assertEq(eval.calc("sqrt(16) + abs(-2)").unwrap(), 6.0)
+  test.assertEq(eval.calc("x * 2", {"x": 21.0}).unwrap(), 42.0)
+}
+
+test "errors are values with a reason" {
+  test.assertEq(eval.calc("1 / 0").err()?.message, "division by zero")
+  test.assertEq(eval.calc("2 +").err()?.message, "unexpected end of input")
+  test.assertEq(eval.calc("1 $ 2").err()?.message, "unexpected '$' at column 3")
+  test.assertTrue(eval.calc("nope(1)").isErr)
+}

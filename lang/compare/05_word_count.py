@@ -1,0 +1,6 @@
+text = "the cat and the hat and the bat"
+counts = {}
+for w in text.split(" "):
+    counts[w] = counts.get(w, 0) + 1
+for w, n in counts.items():
+    print(w, n)

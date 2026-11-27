@@ -1,0 +1,38 @@
+// Result, ?, typed errors, try/catch/finally. Panics are not catchable.
+class NotFound: Error {}
+class Invalid: Error {}
+
+fn parseAge(text: String) -> Result<Int, Error> {
+  let n = Int.parse(text)
+  if n == nil { return Err(Invalid(f"'{text}' is not a number")) }
+  if n! < 0 || n! > 150 { return Err(Invalid(f"{n!} is out of range")) }
+  return Ok(n!)
+}
+
+fn totalAge(a: String, b: String) -> Result<Int, Error> {
+  let x = parseAge(a)? // ? returns the error early
+  let y = parseAge(b)?
+  return Ok(x + y)
+}
+
+fn lookup(id: Int) {
+  if id != 1 { throw NotFound(f"user {id}") }
+}
+
+fn main() {
+  print(totalAge("30", "12"))
+  print(totalAge("30", "abc"))
+  print(totalAge("200", "1"))
+  for id in [1, 2] {
+    try {
+      lookup(id)
+      print(f"found {id}")
+    } catch e: NotFound {
+      print(f"missing: {e.message}")
+    } finally {
+      print(f"checked {id}")
+    }
+  }
+  let attempt = try lookup(9)
+  print(attempt.isErr)
+}

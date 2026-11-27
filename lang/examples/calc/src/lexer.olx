@@ -1,0 +1,50 @@
+// Turns text into tokens. Every failure is a Result, never a crash.
+pub enum Token {
+  Num(Float)
+  Ident(String)
+  Op(String)
+  LParen
+  RParen
+  Comma
+}
+
+pub fn tokenize(text: String) -> Result<[Token], Error> {
+  let chars = text.chars()
+  var out: [Token] = []
+  var i = 0
+  while i < chars.length {
+    let c = chars[i]
+    if c.isWhitespace {
+      i += 1
+    } else if c.isDigit || c == '.' {
+      var j = i
+      while j < chars.length && (chars[j].isDigit || chars[j] == '.') { j += 1 }
+      let raw = chars.slice(i, j).join("")
+      match Float.parse(raw) {
+        nil => return Err(Error(f"bad number '{raw}' at column {i + 1}"))
+        n => out.push(Token.Num(n!))
+      }
+      i = j
+    } else if c.isLetter {
+      var j = i
+      while j < chars.length && (chars[j].isLetter || chars[j].isDigit) { j += 1 }
+      out.push(Token.Ident(chars.slice(i, j).join("")))
+      i = j
+    } else if c == '(' {
+      out.push(Token.LParen)
+      i += 1
+    } else if c == ')' {
+      out.push(Token.RParen)
+      i += 1
+    } else if c == ',' {
+      out.push(Token.Comma)
+      i += 1
+    } else if "+-*/^%".contains(c.toString()) {
+      out.push(Token.Op(c.toString()))
+      i += 1
+    } else {
+      return Err(Error(f"unexpected '{c}' at column {i + 1}"))
+    }
+  }
+  return Ok(out)
+}

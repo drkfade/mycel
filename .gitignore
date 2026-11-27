@@ -1,0 +1,8 @@
+node_modules/
+lang/dist/
+lang/release/work/
+lang/release/dist/
+vscode-mycel/dist/
+intellij-ply/build/
+intellij-ply/dist/
+.DS_Store

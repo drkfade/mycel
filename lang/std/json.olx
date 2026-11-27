@@ -1,0 +1,62 @@
+/// A JSON value. Where a Json is expected, literals are JSON by themselves: `let v: json.Json = {"a": [1, true, nil]}`.
+pub enum Json {
+  Null
+  Bool(Bool)
+  Num(Float)
+  Str(String)
+  Arr([Json])
+  Obj({String: Json})
+
+  /// Items in an array/object, characters in a string, else 0 — so len(data["items"]) works.
+  get length: Int => match self { .Arr(a) => a.length, .Obj(o) => o.length, .Str(s) => s.length, _ => 0 }
+  get isEmpty: Bool => self.length == 0
+  get isNull: Bool => match self { .Null => true, _ => false }
+  get asString: String? => match self { .Str(s) => s, _ => nil }
+  get asFloat: Float? => match self { .Num(n) => n, _ => nil }
+  get asInt: Int? => match self { .Num(n) => if n.isFinite && n >= -9223372036854775808.0 && n < 9223372036854774785.0 && n == n.floor().toFloat() { n.toInt() } else { nil }, _ => nil }
+  get asBool: Bool? => match self { .Bool(b) => b, _ => nil }
+  get asArray: [Json]? => match self { .Arr(a) => a, _ => nil }
+  get asObject: {String: Json}? => match self { .Obj(o) => o, _ => nil }
+  get keys: [String] => match self { .Obj(o) => o.keys, _ => [] }
+  get values: [Json] => match self { .Obj(o) => o.values, _ => [] }
+  fn contains(key: String) -> Bool => match self { .Obj(o) => o.has(key), _ => false }
+  fn contains(val: Json) -> Bool => match self { .Arr(a) => a.contains(val), _ => false }
+  /// Member of an object, or nil when this is not an object or the key is missing.
+  fn get(key: String) -> Json? => match self { .Obj(o) => o[key], _ => nil }
+  /// Element of an array, or nil when out of range or not an array.
+  fn at(index: Int) -> Json? {
+    match self {
+      .Arr(a) => {
+        let idx = if index < 0 { a.length + index } else { index }
+        if idx >= 0 && idx < a.length { return a[idx] }
+        return nil
+      }
+      _ => return nil
+    }
+  }
+  fn stringify() -> String => stringify(self)
+  /// `data["name"]` like a Python dict / JS object: the member, or Null when missing or not an object.
+  operator [](key: String) -> Json => match self { .Obj(o) => o[key] ?? .Null, _ => .Null }
+  /// `items[0]`: the element, or Null when out of range or not an array.
+  operator [](index: Int) -> Json {
+    match self {
+      .Arr(a) => {
+        let idx = if index < 0 { a.length + index } else { index }
+        if idx >= 0 && idx < a.length { return a[idx] }
+        return Json.Null
+      }
+      _ => return Json.Null
+    }
+  }
+  /// Text as it is, everything else as JSON (so print(data["name"]) shows Ada, not Str("Ada")).
+  fn toString() -> String => match self { .Str(s) => s, _ => stringify(self) }
+}
+
+/// Parse JSON text. Numbers are Floats; integers up to 2^53 round-trip exactly.
+pub extern fn parse(text: String) -> Result<Json, Error>
+/// Compact JSON text for a Json value.
+pub extern fn stringify(value: Json) -> String
+/// Indented JSON text for a Json value.
+pub extern fn pretty(value: Json) -> String
+/// JSON text for any plain value: numbers, strings, arrays, maps with String keys, structs and classes (their fields), enums.
+pub extern fn encode(value: Any) -> String
