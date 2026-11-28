@@ -508,7 +508,7 @@ console.log("Generating site/public/mycel/ai-learn/mycel-for-ai.md...");
 
 let md = `# Mycel Reference for AI Models & Large Language Models
 
-> **Self-contained reference manual for Cloud and Local AI Models (Claude, ChatGPT, Gemini, Copilot, Llama, Qwen, Gemma)**
+> **Self-contained reference manual for Cloud and Local AI Models (Claude, ChatGPT, Gemini, Copilot, Llama, Gemma)**
 > Language: **Mycel** (\`.myc\`, \`.olx\`) | Manifest: \`ply.json\` | Compiler: \`mycel v0.1.0\`
 > Copyright (c) 2026 drky. All examples and compiler outputs in this document are verified against the real Mycel compiler.
 
@@ -1172,7 +1172,7 @@ footer a{color:var(--text-2)}
       <h3>Fine-Tuning Datasets</h3>
       <span class="tag ok">LoRA</span>
      </div>
-     <p>Downloadable verified JSONL datasets for local open-weights models (Gemma, Qwen, Llama). Includes instruction, error fix-it, and translation datasets.</p>
+     <p>Downloadable verified JSONL datasets for local open-weights models (Gemma, Llama, Mistral). Includes instruction, error fix-it, and translation datasets.</p>
     </div>
     <div class="btn-group">
      <a href="/mycel/fine-tune/" class="btn btn-primary">Browse Datasets</a>

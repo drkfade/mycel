@@ -474,7 +474,7 @@ console.log(`mycel-translate.jsonl: ${transStats.rows} rows, ${transStats.sizeKb
 // -----------------------------------------------------------------------------
 const datasetCard = `# Mycel Fine-Tuning Datasets (v0.1)
 
-Downloadable instruction-tuning, error-correction, and translation datasets for fine-tuning local open-weights language models (Llama, Qwen, Gemma, Mistral) on the Mycel programming language.
+Downloadable instruction-tuning, error-correction, and translation datasets for fine-tuning local open-weights language models (Llama, Gemma, Mistral) on the Mycel programming language.
 
 Every program in these datasets was executed and verified against the real Mycel compiler and runtime (\`mycel\` v0.1.0 on Node 24). There are no hand-written or fabricated outputs.
 
@@ -535,9 +535,9 @@ shuf mycel-instruct.jsonl > shuffled.jsonl
 head -n ${Math.floor(instructStats.rows * 0.9)} shuffled.jsonl > train.jsonl
 tail -n ${Math.ceil(instructStats.rows * 0.1)} shuffled.jsonl > valid.jsonl
 
-# Run LoRA training on Qwen2.5 or Gemma (4-bit)
+# Run LoRA training on Gemma (4-bit)
 python -m mlx_lm.lora \\
-  --model mlx-community/Qwen2.5-Coder-7B-Instruct-4bit \\
+  --model mlx-community/gemma-3-4b-it-4bit \\
   --train \\
   --data . \\
   --iters 600 \\
@@ -582,7 +582,7 @@ const htmlContent = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Fine-tuning &amp; LoRA training data for Mycel — datasets for local models</title>
-<meta name="description" content="Downloadable verified training data to fine-tune local open-weights language models (Llama, Qwen, Gemma) on the Mycel programming language. Includes instruction, error fix-it, and translation datasets.">
+<meta name="description" content="Downloadable verified training data to fine-tune local open-weights language models (Llama, Gemma, Mistral) on the Mycel programming language. Includes instruction, error fix-it, and translation datasets.">
 <meta name="theme-color" content="#0a0a0a">
 <link rel="icon" type="image/png" sizes="32x32" href="/mycel/brand/mycel-32.png">
 <link rel="apple-touch-icon" href="/mycel/brand/mycel-256.png">
@@ -692,7 +692,7 @@ footer a{color:var(--text-2)}
 <header class="hero"><div class="wrap">
  <div class="crumbs"><a href="/mycel/">Mycel</a> &rsaquo; Fine-tune</div>
  <h1>Training data for AI models</h1>
- <p class="lead">Downloadable, compiler-verified datasets to train or fine-tune local models (Qwen, Llama, Gemma, Mistral) on the Mycel language using MLX, LoRA, or SFT.</p>
+ <p class="lead">Downloadable, compiler-verified datasets to train or fine-tune local models (Llama, Gemma, Mistral) on the Mycel language using MLX, LoRA, or SFT.</p>
 </div></header>
 
 <main>
@@ -783,7 +783,7 @@ tail -n ${Math.ceil(instructStats.rows * 0.1)} shuffled.jsonl > valid.jsonl</pre
 
   <p style="font-size:14px;margin-top:12px">2. Run LoRA training with <code>mlx_lm.lora</code>:</p>
 <pre>python -m mlx_lm.lora \\
-  --model mlx-community/Qwen2.5-Coder-7B-Instruct-4bit \\
+  --model mlx-community/gemma-3-4b-it-4bit \\
   --train \\
   --data . \\
   --iters 600 \\
@@ -792,7 +792,7 @@ tail -n ${Math.ceil(instructStats.rows * 0.1)} shuffled.jsonl > valid.jsonl</pre
 
   <p style="font-size:14px;margin-top:12px">3. Test the adapted model with a Mycel prompt:</p>
 <pre>python -m mlx_lm.generate \\
-  --model mlx-community/Qwen2.5-Coder-7B-Instruct-4bit \\
+  --model mlx-community/gemma-3-4b-it-4bit \\
   --adapter-path adapters.npz \\
   --prompt "Write a Mycel function that checks if an integer is prime."</pre>
  </div>
