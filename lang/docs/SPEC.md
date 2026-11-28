@@ -143,7 +143,7 @@ missing cases.
 ## 7. Concurrency
 
 One thread, cooperative. `async fn` returns `Task<T>`; `await` unwraps it (allowed only in `async` code);
-`spawn call()` starts it without waiting; `std.task` provides `sleep`, `all`, `race`, `timeout`, `Channel<T>` and
+`spawn call()` starts it without waiting; `task` provides `sleep`, `all`, `race`, `timeout`, `Channel<T>` and
 `select(channels)` / `select(channels, timeout: ms)` (Go's select, as a function: the first channel with a value wins and
 the others keep theirs).
 `gen fn` produces a `Gen<T>` (`yield`, `yield*`). A dropped `Task` that fails is reported, never silently lost.
@@ -165,9 +165,9 @@ Imports use the module's real name: `import requests`, `import numpy as np`, `fr
 (`import json --python`, the same flags as `ply install`, anywhere in the statement) is needed only when two runtimes
 provide the name or for Python's standard library; a Mycel module of the same name wins without a flag. Mistakes are
 E0207 with the fix (installed under another name, wrong runtime, not installed). Each foreign module becomes a
-generated Mycel module whose functions return `Result<foreign.Value, Error>` (`std.foreign`); calling one needs
+generated Mycel module whose functions return `Result<foreign.Value, Error>` (`foreign`); calling one needs
 `capabilities.packages` (or `--allow-pkg`), because a package runs with the full power of the user's account.
-`mycel translate file.py` turns beginner Python into Mycel using Python's own parser; `std.pycompat` keeps Python's
+`mycel translate file.py` turns beginner Python into Mycel using Python's own parser; `pycompat` keeps Python's
 printing and arithmetic where the two languages differ.
 
 ## 9. Safety model
@@ -181,9 +181,9 @@ adds a hard heap cap and kills runaway native work. Known boundaries: see `STATU
 ## 10. Standard library
 
 Every module is written in Mycel (`std/*.olx` / `std/*.myc`) with typed interfaces and capability enforcement:
-* `std.ui` — Beginner-friendly UI kit (`window`, `text`, `button`, `input`, `list`, `image`, `row`, `column`, event handlers). First backend is the playground browser sandbox using a safe structured message protocol to DOM renderer without arbitrary HTML/JS injection.
-* `std.db` — Key-value store (`db.openKV()`, `set`, `get`, `has`, `remove`, `keys`) and simple typed tables (`db.open()`, `table`, `insert`, `all`, `find`, `findOne`, `update`, `delete`, `count`) over SQLite. Requires `--allow-write` when file-backed.
-* `std.files` — Python-style file and path operations (`files.path()`, `read`, `write`, `append`, `exists`, `list`, `remove`, `mkdir`, `lines`) and `Path` class (`name`, `extension`, `stem`, `parent`, `join`, `text`). Requires `--allow-read` / `--allow-write`.
-* `std.time` — Python-style time operations (`time.now()`, `time.today()`, `time.sleep()`, `time.format()`, `Duration`, `seconds`, `minutes`, `hours`, `days`).
-* `std.web` — Minimal web apps and routing (`web.App`, `html`, `json`, `redirect`, `files`).
-* `std.json`, `std.fs`, `std.http`, `std.sqlite`, `std.task`, `std.env`, `std.process`, `std.math`, `std.crypto`, `std.re`, `std.log`, `std.test`.
+* `ui` — Beginner-friendly UI kit (`window`, `text`, `button`, `input`, `list`, `image`, `row`, `column`, event handlers). First backend is the playground browser sandbox using a safe structured message protocol to DOM renderer without arbitrary HTML/JS injection.
+* `db` — Key-value store (`db.openKV()`, `set`, `get`, `has`, `remove`, `keys`) and simple typed tables (`db.open()`, `table`, `insert`, `all`, `find`, `findOne`, `update`, `delete`, `count`) over SQLite. Requires `--allow-write` when file-backed.
+* `files` — Python-style file and path operations (`files.path()`, `read`, `write`, `append`, `exists`, `list`, `remove`, `mkdir`, `lines`) and `Path` class (`name`, `extension`, `stem`, `parent`, `join`, `text`). Requires `--allow-read` / `--allow-write`.
+* `time` — Python-style time operations (`time.now()`, `time.today()`, `time.sleep()`, `time.format()`, `Duration`, `seconds`, `minutes`, `hours`, `days`).
+* `web` — Minimal web apps and routing (`web.App`, `html`, `json`, `redirect`, `files`).
+* `json`, `fs`, `http`, `sqlite`, `task`, `env`, `process`, `math`, `crypto`, `re`, `log`, `test`.

@@ -667,7 +667,7 @@ export const INSTRUCT_TASKS = [
   },
   {
     task: "Write a Mycel program that calculates the distance between two 2D point tuples.",
-    code: `import std.math\nfn dist(p1: (Float, Float), p2: (Float, Float)) -> Float {\n  let dx = p1.0 - p2.0\n  let dy = p1.1 - p2.1\n  return math.sqrt(dx * dx + dy * dy)\n}\nprint(dist((0.0, 0.0), (3.0, 4.0)))\n`
+    code: `import math\nfn dist(p1: (Float, Float), p2: (Float, Float)) -> Float {\n  let dx = p1.0 - p2.0\n  let dy = p1.1 - p2.1\n  return math.sqrt(dx * dx + dy * dy)\n}\nprint(dist((0.0, 0.0), (3.0, 4.0)))\n`
   },
   {
     task: "Write a Mycel program that returns multiple statistics (count, sum, average) as a 3-element tuple.",

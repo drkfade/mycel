@@ -43,7 +43,7 @@ try {
   fs.writeFileSync(path.join(work, 'loop.myc'), 'while true { }\r\n');
   run('worker timeout', ['run', 'loop.myc', '--isolated', '--max-seconds=0.1'], { status: 1, error: /time limit/ });
   fs.writeFileSync(path.join(work, 'data.txt'), 'owner-free synthetic data');
-  fs.writeFileSync(path.join(work, 'read.myc'), 'import std.fs\r\nprint(fs.readText("data.txt").isOk)\r\n');
+  fs.writeFileSync(path.join(work, 'read.myc'), 'import fs\r\nprint(fs.readText("data.txt").isOk)\r\n');
   run('read denied', ['run', 'read.myc'], { output: 'false\n' });
   run('read grant', ['run', 'read.myc', '--allow-read=.'], { output: 'true\n' });
   run('all paths grant', ['run', 'read.myc', '-A'], { output: 'true\n' });
@@ -51,7 +51,7 @@ try {
   fs.writeFileSync(path.join(outside, 'secret'), 'synthetic');
   fs.mkdirSync(path.join(work, 'allowed'));
   fs.symlinkSync(outside, path.join(work, 'allowed/link'), process.platform === 'win32' ? 'junction' : 'dir');
-  fs.writeFileSync(path.join(work, 'escape.myc'), 'import std.fs\nprint(fs.readText("allowed/link/secret").isErr)\n');
+  fs.writeFileSync(path.join(work, 'escape.myc'), 'import fs\nprint(fs.readText("allowed/link/secret").isErr)\n');
   run('junction escape denied', ['run', 'escape.myc', '--allow-read=allowed'], { output: 'true\n' });
   fs.writeFileSync(path.join(work, 'format.myc'), 'let  text="""a\r\nb"""\r\nprint(text)\r\n');
   run('fmt', ['fmt', 'format.myc']);

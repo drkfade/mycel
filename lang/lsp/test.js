@@ -105,11 +105,11 @@ test("errors carry the CLI's message, why/fix and a precise range; fixing clears
 
 test("std module completion and member completion", async () => {
   const c = client(); try {
-    const src = "import std.web\n\nfn main() {\n  let app = web.App()\n  web.\n}\n";
+    const src = "import web\n\nfn main() {\n  let app = web.App()\n  web.\n}\n";
     await open(c, src);
     const comp1 = await c.request("textDocument/completion", {
       textDocument: { uri },
-      position: { line: 0, character: "import std.".length }
+      position: { line: 0, character: "import ".length }
     });
     const stdMods = comp1.result.items.map((i) => i.label);
     assert.ok(stdMods.includes("web"), "web missing from std modules: " + JSON.stringify(stdMods));
@@ -177,7 +177,7 @@ test("quick-fixes for compiler suggestions: elif and {:}", async () => {
 
 test("go-to-definition across files", async () => {
   const c = client(); try {
-    const src = "import std.web\n\nfn main() {\n  let app = web.App()\n  let res = web.escape(\"hello\")\n}\n";
+    const src = "import web\n\nfn main() {\n  let app = web.App()\n  let res = web.escape(\"hello\")\n}\n";
     await open(c, src);
     const def = await c.request("textDocument/definition", {
       textDocument: { uri },

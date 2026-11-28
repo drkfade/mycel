@@ -159,7 +159,7 @@ fn main() {
 
 test("match as an expression containing await, nested", async () => {
   const src = `
-import std.task
+import task
 async fn val(n: Int) -> Int { await task.sleep(1)\n return n }
 async fn main() {
   let r = match await val(2) { 1 => "one", 2 => match await val(3) { 3 => "two-three", _ => "?" }, _ => "other" }

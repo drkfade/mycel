@@ -173,7 +173,7 @@ test("check --json gives machine-readable diagnostics", () => {
 test("permission flags grant exactly what is asked", () => {
   const d = mk();
   write(path.join(d, "a.txt"), "data");
-  write(path.join(d, "r.olx"), `import std.fs\nfn main() { print(fs.readText(${JSON.stringify(path.join(d, "a.txt"))}).isOk) }\n`);
+  write(path.join(d, "r.olx"), `import fs\nfn main() { print(fs.readText(${JSON.stringify(path.join(d, "a.txt"))}).isOk) }\n`);
   assert.equal(ply(d, ["run", "r.olx"]).out, "false\n");
   assert.equal(ply(d, ["run", "r.olx", `--allow-read=${d}`]).out, "true\n");
   assert.equal(ply(d, ["run", "r.olx", "-A"]).out, "true\n");
@@ -242,7 +242,7 @@ test("Mycel naming: .myc and .olx import each other, `ply` is an alias, bare `my
 
 test("`mycel file.myc args` runs the file like `python file.py`", () => {
   const d = mk();
-  write(path.join(d, "hi.myc"), `import std.env\nprint(f"hi {env.args()}")\n`);
+  write(path.join(d, "hi.myc"), `import env\nprint(f"hi {env.args()}")\n`);
   const r = spawnCli(path.resolve(__dirname, "..", "..", "bin", "mycel"), ["hi.myc", "a", "b"], { cwd: d, encoding: "utf8" });
   assert.equal(r.stdout, 'hi ["a", "b"]\n', r.stderr);
 });

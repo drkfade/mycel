@@ -1,6 +1,6 @@
 {
   "name": "guestbook",
   "version": "1.0.0",
-  "description": "A guestbook web app with std.web: a page, a form, JSON and a static stylesheet",
+  "description": "A guestbook web app with web: a page, a form, JSON and a static stylesheet",
   "capabilities": { "net": { "hosts": ["127.0.0.1"], "listen": true }, "fs": { "read": ["public"] } }
 }

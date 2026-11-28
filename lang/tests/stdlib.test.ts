@@ -9,7 +9,7 @@ const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "ply-test-"));
 
 test("std.json: parse, navigate, stringify, encode", async () => {
   const src = `
-import std.json
+import json
 struct P { let name: String, tags: [String] }
 fn main() {
   let j = json.parse("{\\"a\\": [1, 2.5, \\"x\\", null, true], \\"b\\": {\\"c\\": 3}}").unwrap()
@@ -25,7 +25,7 @@ fn main() {
 test("std.fs is denied without a grant and confined to granted roots", async () => {
   const dir = tmp(), other = tmp();
   fs.writeFileSync(path.join(other, "secret.txt"), "top secret");
-  const src = (p: string) => `import std.fs\nfn main() { match fs.readText(${JSON.stringify(p)}) { .Ok(t) => print(f"read {t}"), .Err(e) => print(f"{typeName(e)}: {e.message}") } }`;
+  const src = (p: string) => `import fs\nfn main() { match fs.readText(${JSON.stringify(p)}) { .Ok(t) => print(f"read {t}"), .Err(e) => print(f"{typeName(e)}: {e.message}") } }`;
   const none = await exec(src(path.join(other, "secret.txt")));
   assert.match(none.output, /^CapabilityError: fs\.read of .* denied: this run was not granted read access/);
   const wrong = await exec(src(path.join(other, "secret.txt")), { capabilities: { fs: { read: [dir] } } });
@@ -44,7 +44,7 @@ test("std.fs is denied without a grant and confined to granted roots", async () 
 test("std.fs write/list/remove round trip inside a granted directory", async () => {
   const dir = tmp();
   const src = `
-import std.fs
+import fs
 fn main() {
   let p = ${JSON.stringify(dir)} + "/a/b.txt"
   fs.mkdirs(${JSON.stringify(dir)} + "/a").unwrap()
@@ -65,9 +65,9 @@ fn main() {
 
 test("env, process and network are denied by default with typed errors", async () => {
   const src = `
-import std.env
-import std.process
-import std.http
+import env
+import process
+import http
 async fn main() {
   match env.get("HOME") { .Err(e) => print(typeName(e)), .Ok(_) => print("leak") }
   match process.run("echo", ["hi"]) { .Err(e) => print(typeName(e)), .Ok(_) => print("leak") }
@@ -78,7 +78,7 @@ async fn main() {
 
 test("std.process runs only granted programs, without a shell", async () => {
   const src = `
-import std.process
+import process
 fn main() {
   let r = process.run(${JSON.stringify(process.execPath)}, ["-e", ${JSON.stringify('process.stdout.write(process.argv.slice(1).join(" ") + "\\n")')}, "a b", "$HOME;ls"]).unwrap()
   print(r.stdout.trim())
@@ -91,7 +91,7 @@ fn main() {
 
 test("std.env: args always, variables only when granted", async () => {
   process.env.PLY_TEST_VAR = "visible";
-  const src = `import std.env\nfn main() { print(env.args())\n print(env.get("PLY_TEST_VAR").unwrap()) }`;
+  const src = `import env\nfn main() { print(env.args())\n print(env.get("PLY_TEST_VAR").unwrap()) }`;
   assert.equal(await out(src, { args: ["x", "y"], capabilities: { env: { read: ["PLY_TEST_VAR"] } } }), `["x", "y"]\nvisible`);
   const r = await exec(src, { args: ["x"], capabilities: { env: { read: ["OTHER"] } } });
   assert.match(r.error!.message, /reading environment variable PLY_TEST_VAR denied/);
@@ -99,8 +99,8 @@ test("std.env: args always, variables only when granted", async () => {
 
 test("std.http: local server and client round trip", async () => {
   const src = `
-import std.http
-import std.json
+import http
+import json
 async fn main() {
   let server = (await http.serve(0, (req) => {
     if req.path == "/json" { return http.jsonResponse(json.Json.Obj({"echo": json.Json.Str(req.body), "q": json.Json.Str(req.query["x"] ?? "")})) }
@@ -124,11 +124,11 @@ async fn main() {
 
 test("std.time, std.math, std.crypto, std.re, std.log", async () => {
   const src = `
-import std.time
-import std.math
-import std.crypto
-import std.re
-import std.log
+import time
+import math
+import crypto
+import re
+import log
 fn main() {
   print(time.iso(0))
   print(time.parts(86400000 * 365).year)
@@ -144,13 +144,13 @@ fn main() {
   log.debug("hidden")
 }`;
   assert.equal(await out(src), `1970-01-01T00:00:00.000Z\n1971\n5.0\n6\nba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\naGk=\n42-abc 2 42 abc\nX X\n[warn] careful`);
-  const bad = await out(`import std.re\nfn main() { print(re.Regex.compile("(").isErr) }`);
+  const bad = await out(`import re\nfn main() { print(re.Regex.compile("(").isErr) }`);
   assert.equal(bad, "true");
 });
 
 test("std.sqlite: queries return typed rows; files need a write grant", async () => {
   const src = `
-import std.sqlite
+import sqlite
 fn main() {
   let db = sqlite.Db.open(":memory:").unwrap()
   db.exec("create table t(id integer, name text, score real)").unwrap()
@@ -160,19 +160,19 @@ fn main() {
   print(db.exec("selec bad").isErr)
 }`;
   assert.equal(await out(src), `{"id": 1, "name": "ann", "score": 2.5}\n{"id": 2, "name": "bob", "score": nil}\ntrue`);
-  const f = await exec(`import std.sqlite\nfn main() { print(sqlite.Db.open("/tmp/x.db").isErr) }`);
+  const f = await exec(`import sqlite\nfn main() { print(sqlite.Db.open("/tmp/x.db").isErr) }`);
   assert.equal(f.output, "true\n");
 });
 
 test("std.test assertions fail the run with both values", async () => {
-  const src = `import std.test\nfn main() { test.assertEq([1, 2], [1, 3], "lists") }`;
+  const src = `import test\nfn main() { test.assertEq([1, 2], [1, 3], "lists") }`;
   const r = await exec(src);
   assert.match(r.error!.message, /lists: assertion failed: expected \[1, 3\], got \[1, 2\]/);
 });
 
 test("std.task channels and timeouts", async () => {
   const src = `
-import std.task
+import task
 async fn producer(c: task.Channel<Int>) { for i in 0..3 { c.send(i)\n await task.sleep(1) }\n c.close() }
 async fn main() {
   let c = task.Channel<Int>()
@@ -188,7 +188,7 @@ async fn main() {
 
 test("std.io.readLine reads host-provided stdin", async () => {
   const lines = ["alpha", "beta"];
-  const src = `import std.io\nasync fn main() { while let l = await io.readLine() { print(l.upper()) } }`;
+  const src = `import io\nasync fn main() { while let l = await io.readLine() { print(l.upper()) } }`;
   const o = await out(src, { stdin: { readLine: async () => lines.shift() ?? null } });
   assert.equal(o, "ALPHA\nBETA");
 });
@@ -200,14 +200,14 @@ test("host-supplied native modules", async () => {
 });
 
 test("type errors in std usage are explained", () => {
-  const e = errors(`import std.fs\nfn main() { let t: String = fs.readText("a") }`);
+  const e = errors(`import fs\nfn main() { let t: String = fs.readText("a") }`);
   assert.equal(e[0].code, "E0300");
   assert.match(e[0].message, /expected String, found Result<String, Error>/);
 });
 
 test("std.ui: window, elements, row/column layout, and event handlers", async () => {
   const src = `
-import std.ui
+import ui
 
 var clicks = 0
 let statusText = ui.text("Ready")
@@ -262,7 +262,7 @@ fn main() {
 
 test("std.time: today, sleep, durations and formatting", async () => {
   const src = `
-import std.time
+import time
 async fn main() {
   let d = time.today()
   print(d.length == 10)
@@ -288,7 +288,7 @@ test("std.files: read, write, append, lines and Path navigation", async () => {
   const dir = tmp();
   const filePath = path.join(dir, "doc.txt");
   const src = `
-import std.files
+import files
 fn main() {
   let p = files.path(${JSON.stringify(filePath)})
   print(p.name)
@@ -316,7 +316,7 @@ fn main() {
 
   // Capability denial check names --allow-read and --allow-write
   const deniedSrc = `
-import std.files
+import files
 fn main() {
   match files.read(${JSON.stringify(filePath)}) {
     .Ok(_) => print("unexpected ok"),
@@ -328,7 +328,7 @@ fn main() {
   assert.match(deniedRun, /--allow-read/);
 
   const deniedWrite = `
-import std.files
+import files
 fn main() {
   match files.write(${JSON.stringify(filePath)}, "data") {
     .Ok(_) => print("unexpected ok"),
@@ -344,7 +344,7 @@ test("std.db: key-value store, tables, queries and write grant requirement", asy
   const dir = tmp();
   const dbFile = path.join(dir, "test.db");
   const src = `
-import std.db
+import db
 fn main() {
   let kv = db.openKV().unwrap()
   kv.set("lang", "mycel").unwrap()
@@ -384,7 +384,7 @@ fn main() {
 
   // Database on disk without write grant must be denied with --allow-write
   const diskDeniedSrc = `
-import std.db
+import db
 fn main() {
   match db.openKV(${JSON.stringify(dbFile)}) {
     .Ok(_) => print("unexpected ok"),

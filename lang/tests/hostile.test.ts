@@ -61,7 +61,7 @@ test("unicode: strings index and slice by character, not UTF-16 unit", async () 
 test("paths with spaces", async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ply space "));
   const f = path.join(dir, "a file.txt");
-  const src = `import std.fs\nfn main() { fs.writeText(${JSON.stringify(f)}, "x").unwrap()\n print(fs.readText(${JSON.stringify(f)}).unwrap()) }`;
+  const src = `import fs\nfn main() { fs.writeText(${JSON.stringify(f)}, "x").unwrap()\n print(fs.readText(${JSON.stringify(f)}).unwrap()) }`;
   assert.equal(await out(src, { capabilities: { fs: { read: [dir], write: [dir] } } }), "x");
 });
 
@@ -78,7 +78,7 @@ test("deeply nested source does not crash the compiler", () => {
 });
 
 test("isolated run: a catastrophic regex is killed by the wall clock", async () => {
-  const src = `import std.re\nfn main() { let r = re.Regex.compile("(a+)+$").unwrap()\n print(r.isMatch("${"a".repeat(40)}!")) }`;
+  const src = `import re\nfn main() { let r = re.Regex.compile("(a+)+$").unwrap()\n print(r.isMatch("${"a".repeat(40)}!")) }`;
   const t0 = Date.now();
   const r = await runIsolated({ source: src, limits: { maxMillis: 600 } });
   assert.equal(r.error!.limit, "time");
@@ -102,7 +102,7 @@ test("isolated run returns output and results like a normal run", async () => {
 });
 
 test("concurrent runs do not share state or output", async () => {
-  const mk = (n: number) => exec(`import std.task\nvar counter = ${n}\nasync fn main() { for i in 0..3 { await task.sleep(2)\n counter += 1\n print(counter) } }`);
+  const mk = (n: number) => exec(`import task\nvar counter = ${n}\nasync fn main() { for i in 0..3 { await task.sleep(2)\n counter += 1\n print(counter) } }`);
   const [a, b] = await Promise.all([mk(100), mk(200)]);
   assert.equal(a.output, "101\n102\n103\n");
   assert.equal(b.output, "201\n202\n203\n");

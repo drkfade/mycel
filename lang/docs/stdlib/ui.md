@@ -1,13 +1,13 @@
 # ui
 
-`std.ui` displays a window in the Mycel playground. A normal `mycel run` has
+`ui` displays a window in the Mycel playground. A normal `mycel run` has
 no native window renderer yet; it prints a notice instead. Run a browser-safe UI
 from a source checkout with `mycel web main.myc` (or `mycel web .` inside a project), then visit the
 printed loopback URL. It reloads when source files change and displays compiler
 errors. It does not open a browser for you. Programs run in the browser sandbox:
-file, network, server-side `std.web`, SQLite and foreign-package access are not
+file, network, server-side `web`, SQLite and foreign-package access are not
 available there. Packaged releases do not yet include the browser assets. Canvas, keyboard and game-loop APIs are not available in
-`std.ui` yet.
+`ui` yet.
 
 In the playground, select **Add file** to create a sibling such as `words.myc`,
 then write `import words` in `main.myc`. The Run button always starts `main.myc`.
@@ -20,7 +20,7 @@ pub fn greeting() -> String { return "Hello!" }
 
 ```mycel
 # main.myc
-import std.ui
+import ui
 import words
 ui.window("Greeting", [ui.text(words.greeting())])
 ```

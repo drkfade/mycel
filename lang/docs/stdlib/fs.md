@@ -80,6 +80,6 @@ pub extern fn dirname(path: String) -> String
 
 `join`, `basename`, and `dirname` are pure path operations using the host's
 separator, drive and UNC rules; they do not read files or need a grant.
-`std.files.Path.parent` uses `dirname`. File operations resolve symlinks and
+`files.Path.parent` uses `dirname`. File operations resolve symlinks and
 check granted roots before accessing the filesystem. On Windows, file grants
 reject device namespaces, alternate data streams and DOS device aliases.

@@ -93,7 +93,7 @@ test("realpath rejects symlink escapes and dangling write targets", async () => 
     fs.symlinkSync(missing, path.join(dir, "dangling"), process.platform === "win32" ? "junction" : "dir");
     fs.rmdirSync(missing);
     for (const file of [path.join(dir, "link", "escape.txt"), path.join(dir, "dangling", "escape.txt")]) {
-      const r = await run({ source: `import std.fs\nmatch fs.writeText(${JSON.stringify(file)}, "secret") { .Err(e) => print(typeName(e)), .Ok(_) => print("written") }`, capabilities: { fs: { write: [dir] } } });
+      const r = await run({ source: `import fs\nmatch fs.writeText(${JSON.stringify(file)}, "secret") { .Err(e) => print(typeName(e)), .Ok(_) => print("written") }`, capabilities: { fs: { write: [dir] } } });
       assert.equal(r.output, "CapabilityError\n", r.error?.human);
     }
     assert.equal(fs.existsSync(path.join(outside, "escape.txt")), false);
@@ -105,7 +105,7 @@ test("both source aliases run CRLF nested mixed-extension imports with literal a
   try {
     fs.mkdirSync(path.join(dir, "nested"));
     fs.writeFileSync(path.join(dir, "nested", "greet.olx"), 'pub fn value() -> String => "hi Ω"\r\n');
-    fs.writeFileSync(path.join(dir, "main.myc"), 'import nested.greet\r\nimport std.env\r\nprint(greet.value())\r\nprint(env.args())\r\n');
+    fs.writeFileSync(path.join(dir, "main.myc"), 'import nested.greet\r\nimport env\r\nprint(greet.value())\r\nprint(env.args())\r\n');
     for (const command of ["mycel", "ply"]) {
       const r = spawnCli(path.join(bin, command), ["run", "main.myc", "--", "a b", "&whoami", "100%"], { cwd: dir, encoding: "utf8" });
       assert.equal(r.status, 0, r.stderr);
@@ -128,7 +128,7 @@ test("std.fs.remove deletes files and directories under a non-ASCII path", () =>
   const dir = temporary();
   try {
     fs.writeFileSync(path.join(dir, "main.myc"), [
-      "import std.fs",
+      "import fs",
       "fn main() {",
       '  fs.writeText("übung Ω.txt", "x").unwrap()',
       '  fs.mkdirs("tree ä/inner").unwrap()',
@@ -147,7 +147,7 @@ test("std.fs.remove deletes files and directories under a non-ASCII path", () =>
 test("process arguments stay literal with spaces, quotes and cmd metacharacters", async () => {
   const args = ["a b", 'a"b', "tail\\", "& whoami", "%USERPROFILE%", "$(id)", "|", "^", ""];
   const script = 'process.stdout.write(JSON.stringify(process.argv.slice(1)))';
-  const src = `import std.process\nlet result = process.run(${JSON.stringify(process.execPath)}, ${JSON.stringify(["-e", script, ...args])}).unwrap()\nprint(result.stdout)`;
+  const src = `import process\nlet result = process.run(${JSON.stringify(process.execPath)}, ${JSON.stringify(["-e", script, ...args])}).unwrap()\nprint(result.stdout)`;
   const result = await run({ source: src, capabilities: { process: { run: [process.execPath] } } });
   assert.equal(result.ok, true, result.error?.human);
   assert.equal(result.output, JSON.stringify(args) + "\n");
@@ -156,7 +156,7 @@ test("process arguments stay literal with spaces, quotes and cmd metacharacters"
 test("std.files and std.fs path operations use the host's path semantics", async () => {
   const paths = process.platform === "win32" ? ["C:\\work\\src\\main.myc", "\\\\server\\share\\data\\file.txt"] : ["/work/src/main.myc", "/volumes/share/data/file.txt"];
   for (const file of paths) {
-    const source = `import std.files\nimport std.fs\nlet p = files.path(${JSON.stringify(file)})\nprint(p.name)\nprint(p.parent.raw)\nprint(p.parent.join("next.myc").raw)`;
+    const source = `import files\nimport fs\nlet p = files.path(${JSON.stringify(file)})\nprint(p.name)\nprint(p.parent.raw)\nprint(p.parent.join("next.myc").raw)`;
     const r = await run({ source });
     assert.equal(r.ok, true, r.error?.human);
     assert.equal(r.output, [path.basename(file), path.dirname(file), path.join(path.dirname(file), "next.myc"), ""].join("\n"));
@@ -250,8 +250,8 @@ test("Windows env grants match names case-insensitively; POSIX stays exact", () 
 test("mycel run says a std.ui window is not shown instead of exiting silently", () => {
   const dir = temporary();
   try {
-    const file = path.join(dir, "ui.myc");
-    fs.writeFileSync(file, 'import std.ui\r\nfn main() {\r\n  ui.window("Counter", [ui.text("hi")])\r\n  print("after")\r\n}\r\n');
+    const file = path.join(dir, "app.myc");
+    fs.writeFileSync(file, 'import ui\r\nfn main() {\r\n  ui.window("Counter", [ui.text("hi")])\r\n  print("after")\r\n}\r\n');
     const r = spawnSync(process.execPath, [path.join(bin, "mycel"), "run", file], { encoding: "utf8", input: "" });
     assert.equal(r.status, 0, r.stderr);
     assert.equal(r.stdout, "after\n");

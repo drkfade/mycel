@@ -2,7 +2,7 @@
  * `mycel translate file.py [-o file.myc]` (tasks 55 & W61): Python → Mycel using Python's own parser
  * (`tools/pyast.py`: stdlib `ast` + `tokenize` comments — never a regex over Python). Each construct maps to the
  * idiomatic Mycel spelling; where Python and Mycel differ in semantics (True/None/quotes, `//` and `%` floor
- * rounding, banker's round, clamped slices, list `+`/`*`), the output calls `std.pycompat`. Foreign packages emit
+ * rounding, banker's round, clamped slices, list `+`/`*`), the output calls `pycompat`. Foreign packages emit
  * the final `--python` import syntax (`import x --python`, `from x import y --python`) and plain object syntax.
  * Untranslatable lines become `# TODO(translate) line N: ...` comments — never silently dropped.
  */
@@ -274,11 +274,11 @@ class Translator {
 
     const head = [`# Translated from ${this.file.split(/[\\/]/).pop()} by \`mycel translate\`. Read it through: Python and Mycel differ in places.`];
     const imports: string[] = [];
-    if (this.usesPy) imports.push("import std.pycompat as py");
-    if (this.usesMath) imports.push("import std.math");
-    if (this.usesEnv) imports.push("import std.env");
-    if (this.usesFiles) imports.push("import std.files");
-    if (this.usesRe) imports.push("import std.re");
+    if (this.usesPy) imports.push("import pycompat as py");
+    if (this.usesMath) imports.push("import math");
+    if (this.usesEnv) imports.push("import env");
+    if (this.usesFiles) imports.push("import files");
+    if (this.usesRe) imports.push("import re");
     if (this.usesBuiltins) {
       this.foreignPkgs.add("builtins");
       imports.push("import builtins as pyb__ --python");
@@ -548,7 +548,7 @@ class Translator {
     if (s._t === "FunctionDef") note = hasYield(s.body) ? "Python generator (`yield`) → `gen fn` producing `Gen<T>`" : "`def` → `fn` with `{ ... }` blocks and Mycel type annotations";
     else if (s._t === "ClassDef") note = s.decorator_list?.length ? "`@dataclass` → Mycel `class` with `init` and fields" : "Python `class` → Mycel `class` with typed fields and `init`";
     else if (s._t === "Import" || s._t === "ImportFrom") note = "imports use `import x --python` or `from x import y --python` (flag at the end)";
-    else if (s._t === "With") note = "`with open(...)` → `std.files` or `try / finally` resource cleanup";
+    else if (s._t === "With") note = "`with open(...)` → `files` or `try / finally` resource cleanup";
     else if (s._t === "For") note = "`range(n)` → `0..n`; `enumerate` → `for i, x in items`; `dict.items()` → `for k, v in d`";
     else if (s._t === "Try") note = "`except E:` → `catch e: Type`; `else:` runs only when `try` succeeded";
     else if (py !== myc) note = "adapted to Mycel syntax";
@@ -632,7 +632,7 @@ class Translator {
     const item = s.items[0];
     const ctx = item.context_expr;
     const isOpen = ctx?._t === "Call" && ctx.func._t === "Name" && ctx.func.id === "open" && ctx.args.length >= 1;
-    if (!isOpen) no("`with` blocks are not translated (files: use std.files; locks: not needed)");
+    if (!isOpen) no("`with` blocks are not translated (files: use files; locks: not needed)");
     const varName = item.optional_vars?._t === "Name" ? item.optional_vars.id : undefined;
     if (!varName) no("`with open(...)` without `as f` is not translated");
 
@@ -660,7 +660,7 @@ class Translator {
       ];
     }
 
-    // Native Mycel std.files path
+    // Native Mycel files path
     this.usesFiles = true;
     this.usesPy = true;
     const pathExpr = this.ex(ctx.args[0]);
@@ -1088,7 +1088,7 @@ class Translator {
   importOne(name: string, asname: string | undefined, s: N): string[] {
     if (name === "math" && !asname) { this.usesMath = true; return []; }
     if (name === "sys" && !asname) { this.usesEnv = true; return []; }
-    if (name === "re" && !asname) { return []; } // resolved lazily to .extract / std.re / foreign --python
+    if (name === "re" && !asname) { return []; } // resolved lazily to .extract / re / foreign --python
     if (["typing", "dataclasses", "__future__", "enum"].includes(name)) return [];
     const line = `import ${name}${asname ? ` as ${asname}` : ""} --python`;
     this.addForeignLine(name.split(".")[0], line);
@@ -1695,7 +1695,7 @@ class Translator {
       this.usesRe = true;
       return `[m__.text for m__ in re.findAll(${this.ex(pat)}, ${this.ex(e.args[1])})]`;
     }
-    return no(`re.${m}() is not translated (use .extract(...) or plain string helpers, or std.re)`);
+    return no(`re.${m}() is not translated (use .extract(...) or plain string helpers, or re)`);
   }
 
   method(e: N): string {
@@ -1705,7 +1705,7 @@ class Translator {
     if (recv._t === "Name" && recv.id === "sys" && this.usesEnv) return no(`sys.${m}() is not translated`);
     if (recv._t === "Call" && recv.func._t === "Name" && recv.func.id === "super") return `super.${m === "__init__" ? "init" : m}(${this.args(e)})`;
 
-    // File object from `with open(...) as f:` (std.files path)
+    // File object from `with open(...) as f:` (files path)
     if (recv._t === "Name") {
       const fv = this.scope.getFile(recv.id);
       if (fv && fv.mode === "read") {
@@ -1713,7 +1713,7 @@ class Translator {
         if (m === "readlines" && n === 0) { this.usesPy = true; return `py.splitLinesKeep(${fv.bufVar})`; }
       }
     }
-    // std.re Match methods
+    // re Match methods
     if (rt.k === "obj" && rt.cls === "__re_Match__") {
       if (m === "group") {
         if (n === 0 || (n === 1 && e.args[0]._t === "Constant" && e.args[0].value?.$i === "0")) return `${this.paren(this.ex(recv))}.text`;

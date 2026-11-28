@@ -23,7 +23,7 @@ print({n: [d for d in 1..=n if n % d == 0] for n in 4..=6})`),
 
 test("comprehensions: await inside one, variables do not leak, conditions must be Bool", async () => {
   assert.equal(await out(`
-import std.task
+import task
 async fn twice(n: Int) -> Int { await task.sleep(1)
  return n * 2 }
 async fn main() { print([await twice(x) for x in [1, 2]]) }`), "[2, 4]");
@@ -96,7 +96,7 @@ test("labeled loops: unknown label suggests the near one, duplicate labels, and 
 // ---------- JSON-native literals (JavaScript) ----------
 test("json literals: nested objects/arrays/numbers/bools/nil where a Json is expected", async () => {
   assert.equal(await out(`
-import std.json
+import json
 let user: json.Json = {"name": "Ada", "age": 36, "langs": ["mycel", "python"], "admin": false, "boss": nil, "score": -1.5}
 print(user.stringify())
 print(user["langs"][1].asString!)
@@ -109,7 +109,7 @@ print(maybe == nil)`), `{"name":"Ada","age":36,"langs":["mycel","python"],"admin
 });
 
 test("json literals: only literals lift; a variable gets a suggestion naming its variant", () => {
-  const e = errors(`import std.json\nlet name = "Bo"\nlet n = 2\nlet v: json.Json = {"name": name, "n": n}\nprint(v)`);
+  const e = errors(`import json\nlet name = "Bo"\nlet n = 2\nlet v: json.Json = {"name": name, "n": n}\nprint(v)`);
   assert.ok(e.some((d) => d.suggestion === "write `.Str(name)`"), JSON.stringify(e));
   assert.ok(e.some((d) => d.suggestion === "write `.Num(n.toFloat())`"), JSON.stringify(e));
   // a plain map literal elsewhere is still a typed map, not Json
@@ -119,7 +119,7 @@ test("json literals: only literals lift; a variable gets a suggestion naming its
 // ---------- select over channels (Go) ----------
 test("task.select: first channel wins, the others keep their values, closed gives nil, timeout gives nil", async () => {
   assert.equal(await out(`
-import std.task
+import task
 async fn later(c: task.Channel<String>, s: String, ms: Int) {
   await task.sleep(ms)
   c.send(s)

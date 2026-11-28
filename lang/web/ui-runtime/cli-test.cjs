@@ -5,7 +5,7 @@ const path = require('node:path');
 const { spawn } = require('node:child_process');
 (async () => {
  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mycel-web-cli-'));
- fs.writeFileSync(path.join(dir, 'main.myc'), 'import std.ui\nui.window("Hi", [ui.text("Hello")])');
+ fs.writeFileSync(path.join(dir, 'main.myc'), 'import ui\nui.window("Hi", [ui.text("Hello")])');
  const child = spawn(process.execPath, [path.resolve('lang/bin/mycel'), 'web', path.join(dir, 'main.myc')], { stdio: ['ignore', 'pipe', 'pipe'] });
  try {
   const url = await new Promise((resolve, reject) => {

@@ -68,7 +68,7 @@ test("playground: every starter example runs in the browser bundle with the expe
   // input() with no answer yet stops and asks; the sandbox has no file access; an endless loop hits the time limit
   const ask = await ctx.Mycel.runSource('let n = input("n? ")\nprint(n)', { inputs: [] });
   assert.equal(ask.needInput, true); assert.equal(ask.output, "n? ");
-  const fsr = await ctx.Mycel.runSource('import std.fs\nprint(fs.readText("/etc/hosts"))', {});
+  const fsr = await ctx.Mycel.runSource('import fs\nprint(fs.readText("/etc/hosts"))', {});
   assert.match(fsr.output, /CapabilityError: fs\.read of "\/etc\/hosts" denied/);
   const loop = await ctx.Mycel.runSource("while true { }", { maxMillis: 300 });
   assert.match(loop.error.message, /time limit of 300 ms exceeded|step limit of \d+ exceeded/); // whichever trips first; the page also kills the worker

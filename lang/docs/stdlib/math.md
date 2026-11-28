@@ -96,7 +96,7 @@ pub extern fn pow(x: Float, y: Float) -> Float
 pub extern fn random() -> Float
 ```
 
-A uniformly random Float in [0, 1). Not for cryptography (see std.crypto).
+A uniformly random Float in [0, 1). Not for cryptography (see crypto).
 
 ## randomInt
 

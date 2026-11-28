@@ -118,7 +118,7 @@ function getHabitFix(h) {
     case '`template ${x}`':
       return 'let x = 1\nprint(f"a {x}")';
     case "import x from 'y'":
-      return 'import std.fs\nprint("imported")';
+      return 'import fs\nprint("imported")';
     case 'number':
       return 'let x: Int = 5\nprint(x)';
     case 'string / boolean':
@@ -489,7 +489,7 @@ Every program in these datasets was executed and verified against the real Mycel
 ## How It Was Made & Verified
 
 1. **mycel-instruct.jsonl**:
-   - Covers 20+ language domains: primitives, 64-bit Int division (\`/\` vs \`.div()\`), strings, f-strings (\`{x:.2f}\`, \`{x=}\`), boolean logic, while/for loops, ranges, arrays/lists, comprehensions, maps, sets, tuples (\`.0\`, \`.1\`), functions (variadic, named args, defaults, closures), classes & inheritance, structs with \`.with(...)\`, enums with payload and exhaustive \`match\`, interfaces, extensions (\`extend Int\`), optionals (\`T?\`, \`nil\`, \`??\`, \`!=\`), Result error propagation (\`?\`), and standard libraries (\`std.json\`, \`std.math\`, \`std.time\`, \`std.crypto\`, \`std.re\`, \`std.env\`, \`std.fs\`).
+   - Covers 20+ language domains: primitives, 64-bit Int division (\`/\` vs \`.div()\`), strings, f-strings (\`{x:.2f}\`, \`{x=}\`), boolean logic, while/for loops, ranges, arrays/lists, comprehensions, maps, sets, tuples (\`.0\`, \`.1\`), functions (variadic, named args, defaults, closures), classes & inheritance, structs with \`.with(...)\`, enums with payload and exhaustive \`match\`, interfaces, extensions (\`extend Int\`), optionals (\`T?\`, \`nil\`, \`??\`, \`!=\`), Result error propagation (\`?\`), and standard libraries (\`json\`, \`math\`, \`time\`, \`crypto\`, \`re\`, \`env\`, \`fs\`).
    - Every program was executed using \`lang/bin/mycel run --allow-all\`. Only programs that exited with code 0 were retained, and their actual standard output is stored in \`meta.output\`. Programs reading interactive input have their inputs recorded in \`meta.inputs\`.
 
 2. **mycel-fix.jsonl**:
@@ -509,7 +509,7 @@ Each row is a single-line JSON object adhering to the standard multi-turn chat f
 {
   "messages": [
     { "role": "user", "content": "Write a Mycel program that computes the hypotenuse..." },
-    { "role": "assistant", "content": "import std.math\\nprint(math.hypot(3.0, 4.0))" }
+    { "role": "assistant", "content": "import math\\nprint(math.hypot(3.0, 4.0))" }
   ],
   "meta": {
     "output": "5.0"
@@ -667,7 +667,8 @@ section{padding:var(--s5) 0}
 h2{font-size:var(--fs-xl);font-weight:700;letter-spacing:-.03em;line-height:1.2;margin-bottom:var(--s3)}
 p{color:var(--text-2);max-width:720px;margin-bottom:var(--s3)}
 .tblwrap{margin-top:var(--s4);overflow-x:auto;border:1px solid var(--stroke);border-radius:var(--r-lg);background:var(--surface)}
-table{border-collapse:collapse;width:100%;min-width:540px;font-size:var(--fs-sm)}
+table{border-collapse:collapse;width:100%;font-size:var(--fs-sm)}
+@media(max-width:600px){th:nth-child(3),td:nth-child(3){display:none}th,td{padding-left:10px;padding-right:10px}}
 th,td{text-align:left;padding:12px var(--s4);border-bottom:1px solid var(--stroke);vertical-align:top}
 tr:last-child td{border-bottom:0}
 th{font:500 var(--fs-xs) var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);background:var(--bg-3)}
@@ -683,13 +684,13 @@ pre{font:400 var(--fs-sm)/1.65 var(--mono);padding:var(--s4);background:var(--co
 footer{padding:var(--s6) var(--s4);text-align:center;color:var(--text-2);font-size:var(--fs-sm);border-top:1px solid var(--stroke);margin-top:var(--s6)}
 footer a{color:var(--text-2)}
 </style>
+<link rel="stylesheet" href="/mycel/site.css?v=2ba6e2e275">
 </head>
 <body>
-<nav><div class="wrap"><a href="/"><b>olix</b></a><span><a href="/mycel/">mycel</a> / fine-tune</span></div></nav>
+<nav class="mycel-nav" aria-label="Mycel"><div class="mycel-nav-inner"><a class="mycel-brand" href="/mycel/"><img src="/mycel/brand/mycel-128.png" alt=""><span>mycel</span></a><div class="mycel-links"><a href="/mycel/learn/">learn</a><a href="/mycel/docs/">docs</a><a href="/mycel/play/">play</a><a href="/mycel/learn/#guides">guides</a><a class="mycel-download" href="/mycel/download/">download</a></div></div></nav>
 
 <header class="hero"><div class="wrap">
  <div class="crumbs"><a href="/mycel/">Mycel</a> &rsaquo; Fine-tune</div>
- <div class="badge"><i></i> verified v0.1 datasets</div>
  <h1>Training data for AI models</h1>
  <p class="lead">Downloadable, compiler-verified datasets to train or fine-tune local models (Qwen, Llama, Gemma, Mistral) on the Mycel language using MLX, LoRA, or SFT.</p>
 </div></header>
@@ -804,7 +805,7 @@ tail -n ${Math.ceil(instructStats.rows * 0.1)} shuffled.jsonl > valid.jsonl</pre
 </div></section>
 </main>
 
-<footer><a href="/">olix</a> &middot; <a href="/mycel/">Mycel</a> &middot; <a href="/mycel/ai-learn/">For AI Models</a> &middot; <a href="/mycel/learn/">Learn Mycel</a> &middot; <a href="/provenance/">&copy; 2026 drky (Apache-2.0)</a></footer>
+<footer><a href="/">olix</a> &middot; <a href="/mycel/">Mycel</a> &middot; <a href="/mycel/ai-learn/">For AI Models</a> &middot; <a href="/mycel/learn/">Learn Mycel</a> &middot; <a href="/provenance/">&copy; 2026 drky (Apache-2.0 OR MIT)</a> &middot; <a href="https://github.com/drkfade/mycel">GitHub</a> &middot; <a href="https://discord.gg/FbsU8f5bCA">Discord</a></footer>
 </body>
 </html>
 `;

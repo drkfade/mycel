@@ -1,4 +1,4 @@
-import std.test
+import test
 import tensor
 
 test "create, print and reshape" {

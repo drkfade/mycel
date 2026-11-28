@@ -9,7 +9,7 @@ class Element {
 const document = { createElement: tag => new Element(tag) };
 (async () => {
   let render;
-  const result = await runSource(`import std.ui
+  const result = await runSource(`import ui
 import words
 let label = ui.text(words.message())
 fn change() { label.setText("clicked") }

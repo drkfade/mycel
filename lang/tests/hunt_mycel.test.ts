@@ -63,7 +63,7 @@ test("BQ-mycel-7: same-line elif identifies elif as Python habit for else if", (
 
 test("BQ-mycel-8: fs.extension extracts last dot extension and returns empty string for dotfiles", async () => {
   const src = `
-import std.fs
+import fs
 print(fs.extension("foo.bar.baz"))
 print(fs.extension(".gitignore"))
 print(fs.extension("archive.tar.gz"))
@@ -76,7 +76,7 @@ print(fs.extension("Makefile"))
 
 test("BQ-mycel-9: std.re.Regex Match.start/end use character codepoint offsets so s[m.start..m.end] matches m.text on strings with emoji", { skip: "open: std.re Match.start/end codepoint offsets in stdlib.ts" }, async () => {
   const src = `
-import std.re
+import re
 let s = "🌍 hello world"
 let r = re.Regex.compile("world").unwrap()
 let m = r.find(s)!
@@ -89,7 +89,7 @@ print(m.start, m.end, s[m.start..m.end])
 
 test("BQ-mycel-10: std.task.race([]) panics on empty task list instead of hanging forever", { skip: "open: std.task.race([]) empty task list handling in stdlib.ts" }, async () => {
   const src = `
-import std.task
+import task
 async fn main() {
   let xs: [Task<Int>] = []
   let x = await task.race(xs)
@@ -104,8 +104,8 @@ async fn main() {
 
 test("BQ-mycel-11: std.fs.extension('..') and '.' return empty extension and preserve stem", async () => {
   const src = `
-import std.fs
-import std.files
+import fs
+import files
 print(fs.extension(".."))
 print(fs.extension("."))
 print(files.path("..").stem)
@@ -138,7 +138,7 @@ test("BQ-mycel-12: newcomer habits for is None, is not None, and method suggesti
 
 test("BQ-mycel-13: Json.asInt returns nil on large or non-finite Float values without panicking", async () => {
   const src = `
-import std.json
+import json
 let j1 = json.parse("1e30").unwrap()
 let j2 = json.Json.Num(1e30)
 let j3 = json.Json.Num(42.0)
@@ -157,7 +157,7 @@ test("BQ-mycel-14: std.files.lines normalizes CRLF and trailing newline, and Pat
   const tmp = path.join(dir, "test_lines_hunt.txt");
   fs.writeFileSync(tmp, "alpha\r\nbeta\r\n");
   const src = `
-import std.files
+import files
 let ls = files.lines(${JSON.stringify(tmp)}).unwrap()
 let p = files.path(${JSON.stringify(tmp)})
 let pls = p.lines().unwrap()
@@ -215,7 +215,7 @@ test("BQ-mycel-17: for x in [1, 2, 3]: explains a : block is Python instead of s
 
 test("BQ-mycel-18: std.json array indexing and at() support negative indexes", async () => {
   const src = `
-import std.json
+import json
 let j = json.parse("[10, 20, 30]").unwrap()
 print(j[-1], j[-2], j[-3], j[-4])
 print(j.at(-1), j.at(-2), j.at(-4))
@@ -227,7 +227,7 @@ print(j.at(-1), j.at(-2), j.at(-4))
 
 test("BQ-mycel-19: std.math.hypot does not overflow to inf or underflow to 0 for large/small numbers", async () => {
   const src = `
-import std.math
+import math
 print(math.hypot(1e200, 1e200))
 print(math.hypot(1e-200, 1e-200))
 print(math.hypot(3.0, 4.0))
@@ -240,8 +240,8 @@ print(math.hypot(0.0, 0.0))
 
 test("BQ-mycel-20: std.files.Path has value equality across distinct instances", async () => {
   const src = `
-import std.files
-import std.test
+import files
+import test
 let p1 = files.path("data/test.txt")
 let p2 = files.path("data/test.txt")
 let p3 = files.path("data/other.txt")
@@ -255,7 +255,7 @@ test.assertEq(p1, p2)
 
 test("BQ-mycel-21: task errors caught asynchronously after a delay are not reported as unobserved errors", async () => {
   const src = `
-import std.task
+import task
 async fn bad1() -> Int { throw Error("task error 1") }
 async fn bad2() -> Int { throw Error("task error 2") }
 async fn main() {
@@ -274,7 +274,7 @@ async fn main() {
 
 test("BQ-mycel-22: std.math.hypot handles Float.infinity and Float.nan per IEEE 754", async () => {
   const src = `
-import std.math
+import math
 print(math.hypot(Float.infinity, 0.0))
 print(math.hypot(0.0, Float.infinity))
 print(math.hypot(Float.infinity, Float.nan))
@@ -288,7 +288,7 @@ print(math.hypot(Float.nan, 0.0).isNaN)
 
 test("BQ-mycel-23: std.db Table.insert empty row, Table.update empty values, and where IS ? for nil", async () => {
   const src = `
-import std.db
+import db
 fn main() {
   let d = db.open(":memory:").unwrap()
   let t = d.table("items", {"id": "integer primary key", "val": "text"}).unwrap()
@@ -378,7 +378,7 @@ print(str(Float.nan).toFloat()?.isNaN)
 
 test("BQ-mycel-28: std.time.Duration supports arithmetic (+, -, *) and comparison (<, <=, >, >=)", async () => {
   const src = `
-import std.time
+import time
 let d1 = time.seconds(10)
 let d2 = time.seconds(20)
 let d3 = d1 + d2
@@ -394,7 +394,7 @@ print(d1 < d2, d1 <= d2, d1 > d2, d1 >= d2, d1 == time.seconds(10))
 
 test("BQ-mycel-29: std.files.Path supports path division operator /", async () => {
   const src = `
-import std.files
+import files
 let base = files.path("data")
 let p1 = base / "items.txt"
 let p2 = base / files.path("nested") / "file.json"
@@ -409,7 +409,7 @@ print(p1, p2)
 
 test("BQ-mycel-30: std.json Json supports isEmpty and contains / in operator", async () => {
   const src = `
-import std.json
+import json
 let emptyArr = json.parse("[]").unwrap()
 let emptyObj = json.parse("{}").unwrap()
 let obj = json.parse("{\\"name\\": \\"Ada\\", \\"age\\": 36}").unwrap()
@@ -479,7 +479,7 @@ test("BQ-mycel-35: parser and habits diagnose `pass` statement and `typeof` oper
 
 test("BQ-mycel-36: std.time.Duration supports division (by Int, Float, Duration), multiplication by Float, and time.parse", async () => {
   const src = `
-import std.time
+import time
 let d = time.seconds(10)
 let dHalf = d / 2
 let dFloat = d / 2.5
@@ -496,7 +496,7 @@ print(ts != nil)
 
 test("BQ-mycel-37: std.math provides lcm (least common multiple)", async () => {
   const src = `
-import std.math
+import math
 print(math.lcm(4, 6), math.lcm(12, 18), math.lcm(0, 5), math.lcm(-4, 6))
 `;
   const res = await run({ source: src });
@@ -506,7 +506,7 @@ print(math.lcm(4, 6), math.lcm(12, 18), math.lcm(0, 5), math.lcm(-4, 6))
 
 test("BQ-mycel-38: std.re provides top-level convenience functions", async () => {
   const src = `
-import std.re
+import re
 print(re.isMatch("[0-9]+", "123"))
 print(re.isMatch("[0-9]+", "abc"))
 let m = re.find("[0-9]+", "a123b")
@@ -523,7 +523,7 @@ print(re.split("[,;]", "a,b;c"))
 
 test("BQ-mycel-39: std.sqlite provides top-level open function", async () => {
   const src = `
-import std.sqlite
+import sqlite
 let db = sqlite.open(":memory:").unwrap()
 db.exec("CREATE TABLE test (id INT, val TEXT)").unwrap()
 db.exec("INSERT INTO test VALUES (?, ?)", [1, "sqlite"]).unwrap()
@@ -538,8 +538,8 @@ db.close()
 
 test("BQ-mycel-40: std.fs.extension returns empty string for files ending with dot", async () => {
   const src = `
-import std.fs
-import std.files
+import fs
+import files
 print(fs.extension("file."), fs.extension("archive.tar.gz"), fs.extension(".gitignore"))
 let p = files.path("file.")
 print(p.extension, p.stem)
@@ -551,7 +551,7 @@ print(p.extension, p.stem)
 
 test("BQ-mycel-41: std.math.lcm avoids 64-bit integer overflow when product exceeds I64_MAX", async () => {
   const src = `
-import std.math
+import math
 print(math.lcm(5000000000, 5000000000))
 print(math.lcm(4000000000, 6000000000))
 `;
@@ -631,7 +631,7 @@ test("BQ-mycel-45: habits diagnose JSON, Math, open, abs, parseInt, parseFloat, 
 
 test("BQ-mycel-46: std.files.Path provides read() method as alias for text()", async () => {
   const src = `
-import std.files
+import files
 let p = files.path("data.txt")
 files.write("data.txt", "hello mycel").unwrap()
 print(p.read().unwrap())
@@ -644,7 +644,7 @@ files.remove("data.txt").unwrap()
 
 test("BQ-mycel-47: std.time.Duration supports reverse multiplication (Int * Duration, Float * Duration)", async () => {
   const src = `
-import std.time
+import time
 let d1 = 3 * time.seconds(5)
 let d2 = 1.5 * time.seconds(10)
 print(d1.toSeconds(), d2.toSeconds())
@@ -656,7 +656,7 @@ print(d1.toSeconds(), d2.toSeconds())
 
 test("BQ-mycel-48: std.math provides clamp for Int and Float", async () => {
   const src = `
-import std.math
+import math
 print(math.clamp(5, 10, 20), math.clamp(15, 10, 20), math.clamp(25, 10, 20))
 print(math.clamp(5.0, 10.0, 20.0), math.clamp(15.5, 10.0, 20.0), math.clamp(25.0, 10.0, 20.0))
 `;
@@ -667,7 +667,7 @@ print(math.clamp(5.0, 10.0, 20.0), math.clamp(15.5, 10.0, 20.0), math.clamp(25.0
 
 test("BQ-mycel-49: std.json.Json provides keys and values accessors", async () => {
   const src = `
-import std.json
+import json
 let obj = json.parse("{\\"a\\": 1, \\"b\\": 2}").unwrap()
 let arr = json.parse("[1, 2]").unwrap()
 print(obj.keys, obj.values.length)

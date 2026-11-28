@@ -293,51 +293,51 @@ const EXAMPLES = [
   },
   {
     id: "ex37_std_math",
-    title: "Standard Library `std.math`",
+    title: "Standard Library `math`",
     category: "Standard Library",
-    code: `import std.math\nprint("PI:", math.PI > 3.14)\nprint("sqrt(144.0):", math.sqrt(144.0))\nprint("hypot(5.0, 12.0):", math.hypot(5.0, 12.0))\nprint("gcd(48, 18):", math.gcd(48, 18))`
+    code: `import math\nprint("PI:", math.PI > 3.14)\nprint("sqrt(144.0):", math.sqrt(144.0))\nprint("hypot(5.0, 12.0):", math.hypot(5.0, 12.0))\nprint("gcd(48, 18):", math.gcd(48, 18))`
   },
   {
     id: "ex38_std_json",
-    title: "Standard Library `std.json` (Parse and Stringify)",
+    title: "Standard Library `json` (Parse and Stringify)",
     category: "Standard Library",
-    code: `import std.json\nlet raw = """{"title":"Dashboard","stars":142,"active":true}"""\nlet obj = json.parse(raw).unwrap()\nprint("Title:", obj["title"].asString ?? "")\nprint("Stars:", obj["stars"].asInt ?? 0)\nprint("Active:", obj["active"].asBool ?? false)\nlet serialized = json.stringify(obj)\nprint("Serialized length > 0:", serialized.length > 0)`
+    code: `import json\nlet raw = """{"title":"Dashboard","stars":142,"active":true}"""\nlet obj = json.parse(raw).unwrap()\nprint("Title:", obj["title"].asString ?? "")\nprint("Stars:", obj["stars"].asInt ?? 0)\nprint("Active:", obj["active"].asBool ?? false)\nlet serialized = json.stringify(obj)\nprint("Serialized length > 0:", serialized.length > 0)`
   },
   {
     id: "ex39_std_time",
-    title: "Standard Library `std.time`",
+    title: "Standard Library `time`",
     category: "Standard Library",
-    code: `import std.time\nlet now = time.now()\nprint("Current timestamp is positive:", now > 0.0)\nlet dur = time.seconds(150.0)\nprint("Duration in minutes:", dur.toMinutes())`
+    code: `import time\nlet now = time.now()\nprint("Current timestamp is positive:", now > 0.0)\nlet dur = time.seconds(150.0)\nprint("Duration in minutes:", dur.toMinutes())`
   },
   {
     id: "ex40_std_crypto",
-    title: "Standard Library `std.crypto` (SHA-256 and Hex)",
+    title: "Standard Library `crypto` (SHA-256 and Hex)",
     category: "Standard Library",
-    code: `import std.crypto\nlet digest = crypto.sha256("mycel-standard-library")\nprint("SHA-256 length:", digest.length)\nprint("SHA-256 prefix:", digest.substring(0, 10))`
+    code: `import crypto\nlet digest = crypto.sha256("mycel-standard-library")\nprint("SHA-256 length:", digest.length)\nprint("SHA-256 prefix:", digest.substring(0, 10))`
   },
   {
     id: "ex41_std_re",
-    title: "Standard Library `std.re` (Regex Match and Groups)",
+    title: "Standard Library `re` (Regex Match and Groups)",
     category: "Standard Library",
-    code: `import std.re\nlet pattern = re.Regex.compile("([a-zA-Z]+)-(\\\\d+)").unwrap()\nlet m = pattern.find("Order ID: ITEM-89421 in queue")\nif let found = m {\n  print("Full match:", found.text)\n  print("Prefix:", found.groups[0] ?? "")\n  print("Number:", found.groups[1] ?? "")\n}`
+    code: `import re\nlet pattern = re.Regex.compile("([a-zA-Z]+)-(\\\\d+)").unwrap()\nlet m = pattern.find("Order ID: ITEM-89421 in queue")\nif let found = m {\n  print("Full match:", found.text)\n  print("Prefix:", found.groups[0] ?? "")\n  print("Number:", found.groups[1] ?? "")\n}`
   },
   {
     id: "ex42_std_env",
-    title: "Standard Library `std.env` (Platform and Args)",
+    title: "Standard Library `env` (Platform and Args)",
     category: "Standard Library",
-    code: `import std.env\nprint("Platform recognized:", env.platform().length > 0)\nprint("Args available:", env.args().length >= 0)`
+    code: `import env\nprint("Platform recognized:", env.platform().length > 0)\nprint("Args available:", env.args().length >= 0)`
   },
   {
     id: "ex43_std_fs",
-    title: "Standard Library `std.fs` (Sandboxed File I/O)",
+    title: "Standard Library `fs` (Sandboxed File I/O)",
     category: "Standard Library",
-    code: `import std.fs\nfn main() {\n  let file = "/tmp/mycel_demo_fs.txt"\n  fs.writeText(file, "Mycel sandbox filesystem verified").unwrap()\n  let content = fs.readText(file).unwrap()\n  print("Read back:", content)\n  fs.remove(file).unwrap()\n  print("Cleaned up file:", !fs.exists(file).unwrap())\n}`
+    code: `import fs\nfn main() {\n  let file = "/tmp/mycel_demo_fs.txt"\n  fs.writeText(file, "Mycel sandbox filesystem verified").unwrap()\n  let content = fs.readText(file).unwrap()\n  print("Read back:", content)\n  fs.remove(file).unwrap()\n  print("Cleaned up file:", !fs.exists(file).unwrap())\n}`
   },
   {
     id: "ex44_std_test",
-    title: "Standard Library `std.test` (Unit Testing)",
+    title: "Standard Library `test` (Unit Testing)",
     category: "Standard Library",
-    code: `import std.test\ntest "arithmetic checks" {\n  test.assertEq(10 * 10, 100)\n  test.assertTrue("mycel".startsWith("my"))\n}\nprint("All tests registered clean")`
+    code: `import test\ntest "arithmetic checks" {\n  test.assertEq(10 * 10, 100)\n  test.assertTrue("mycel".startsWith("my"))\n}\nprint("All tests registered clean")`
   },
   {
     id: "ex45_binary_search",
@@ -355,7 +355,7 @@ const EXAMPLES = [
     id: "ex47_inventory_calc",
     title: "Algorithm: Data Aggregation Pipeline",
     category: "Algorithms",
-    code: `import std.json\nlet rawData = """[\n  {"sku": "A10", "qty": 4, "price": 12.5},\n  {"sku": "B20", "qty": 0, "price": 50.0},\n  {"sku": "C30", "qty": 2, "price": 100.0}\n]"""\nlet items = json.parse(rawData).unwrap().asArray ?? []\nvar totalValue = 0.0\nfor item in items {\n  let qty = item["qty"].asInt ?? 0\n  if qty > 0 {\n    let price = item["price"].asFloat ?? 0.0\n    totalValue += price * qty.toFloat()\n  }\n}\nprint(f"Total inventory value: \${totalValue:.2f}")`
+    code: `import json\nlet rawData = """[\n  {"sku": "A10", "qty": 4, "price": 12.5},\n  {"sku": "B20", "qty": 0, "price": 50.0},\n  {"sku": "C30", "qty": 2, "price": 100.0}\n]"""\nlet items = json.parse(rawData).unwrap().asArray ?? []\nvar totalValue = 0.0\nfor item in items {\n  let qty = item["qty"].asInt ?? 0\n  if qty > 0 {\n    let price = item["price"].asFloat ?? 0.0\n    totalValue += price * qty.toFloat()\n  }\n}\nprint(f"Total inventory value: \${totalValue:.2f}")`
   }
 ];
 
@@ -472,7 +472,7 @@ const stdFiles = fs.readdirSync(stdDir).filter(f => f.endsWith(".olx")).sort();
 const STDLIB_MODULES = [];
 
 for (const file of stdFiles) {
-  const modName = file === "prelude.olx" ? "prelude (built-ins)" : "std." + file.replace(".olx", "");
+  const modName = file === "prelude.olx" ? "prelude (built-ins)" : file.replace(".olx", "");
   const fullPath = path.join(stdDir, file);
   const content = fs.readFileSync(fullPath, "utf8");
 
@@ -745,14 +745,14 @@ You are an expert programmer in the Mycel programming language (.myc). When writ
    - Generics: 'class Box<T>', invariant type parameters.
 
 8. STANDARD LIBRARY IMPORTS:
-   - 'import std.json' (json.parse, json.stringify)
-   - 'import std.math' (math.PI, math.sqrt, math.hypot, math.gcd)
-   - 'import std.time' (time.now, time.seconds, time.Duration)
-   - 'import std.crypto' (crypto.sha256, crypto.uuid)
-   - 'import std.fs' (fs.readText, fs.writeText, fs.exists)
-   - 'import std.re' (re.Regex.compile, pattern.find)
-   - 'import std.env' (env.args, env.platform)
-   - 'import std.test' (test "name" { test.assertEq(a, b) })
+   - 'import json' (json.parse, json.stringify)
+   - 'import math' (math.PI, math.sqrt, math.hypot, math.gcd)
+   - 'import time' (time.now, time.seconds, time.Duration)
+   - 'import crypto' (crypto.sha256, crypto.uuid)
+   - 'import fs' (fs.readText, fs.writeText, fs.exists)
+   - 'import re' (re.Regex.compile, pattern.find)
+   - 'import env' (env.args, env.platform)
+   - 'import test' (test "name" { test.assertEq(a, b) })
 \`\`\`
 
 ---
@@ -919,7 +919,7 @@ header{padding:var(--s5) 0 var(--s4);border-bottom:1px solid var(--stroke)}
 .tag{display:inline-block;font:11px/1.4 var(--mono);padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em}
 .tag.ok{background:rgba(48,209,88,.15);color:#30d158;border:1px solid rgba(48,209,88,.3)}
 .tag.info{background:rgba(64,133,255,.15);color:#4085ff;border:1px solid rgba(64,133,255,.3)}
-.hero{padding:var(--s7) 0 var(--s6)}
+.hero{padding-top:var(--s7);padding-bottom:var(--s6)}
 .eyebrow{font:var(--fs-xs) var(--mono);color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin-bottom:var(--s2)}
 h1{font-size:clamp(28px,5vw,46px);letter-spacing:-.03em;line-height:1.15;margin-bottom:var(--s3)}
 .lead{font-size:clamp(16px,2vw,19px);color:var(--text-2);line-height:1.5;max-width:760px;margin-bottom:var(--s5)}
@@ -955,8 +955,10 @@ tr:last-child td{border-bottom:none}
 footer{margin-top:auto;padding:var(--s6) 0;border-top:1px solid var(--stroke);font-size:var(--fs-sm);color:var(--text-3);text-align:center}
 footer a{color:var(--text-2)}
 </style>
+<link rel="stylesheet" href="/mycel/site.css?v=2ba6e2e275">
 </head>
 <body>
+<nav class="mycel-nav" aria-label="Mycel"><div class="mycel-nav-inner"><a class="mycel-brand" href="/mycel/"><img src="/mycel/brand/mycel-128.png" alt=""><span>mycel</span></a><div class="mycel-links"><a href="/mycel/learn/">learn</a><a href="/mycel/docs/">docs</a><a href="/mycel/play/">play</a><a href="/mycel/learn/#guides">guides</a><a class="mycel-download" href="/mycel/download/">download</a></div></div></nav>
 
 <header>
  <div class="wrap nav">
@@ -978,29 +980,23 @@ footer a{color:var(--text-2)}
 
 <main>
  <div class="wrap hero">
-  <div class="eyebrow">Materials for Large AI Models <span class="tag info">verified</span></div>
   <h1>Teach Cloud AI Models Mycel</h1>
-  <p class="lead">Everything Claude, ChatGPT, Gemini, and Copilot need to generate 100% syntactically valid Mycel code. Complete self-contained reference, real standard library signatures, habits translations, and copyable system prompts.</p>
+  <p class="lead">Chat models don't know Mycel yet. Paste one of these into Claude, ChatGPT, Gemini or Copilot first: a short system prompt, a cheatsheet, or the full reference with the real standard library signatures.</p>
  </div>
 
  <section><div class="wrap">
-  <div class="eyebrow">Fast Integration</div>
+  
   <h2>How to use with AI models</h2>
-  <p>Choose the format that fits your workflow:</p>
+  <p>Pick by how much room you have in the prompt:</p>
   
   <div class="grid-cards">
    <div class="card">
     <div>
      <div class="card-head">
       <h3>System Prompt Snippet</h3>
-      <span class="tag ok">Fastest</span>
+      
      </div>
-     <p>Paste directly into your custom instructions, project prompt, or chat prefix. Zero setup required.</p>
-     <div class="meta-row">
-      <span>Ready to copy</span>
-      <span>•</span>
-      <span>Fits in any prompt</span>
-     </div>
+     <p>Paste directly into your custom instructions, project prompt, or chat prefix.</p>
     </div>
     <div class="btn-group">
      <button class="btn btn-primary" onclick="copySystemPrompt(this)">Copy Prompt</button>
@@ -1012,14 +1008,8 @@ footer a{color:var(--text-2)}
     <div>
      <div class="card-head">
       <h3>Complete AI Reference</h3>
-      <span class="tag info">Self-Contained</span>
      </div>
      <p>One complete markdown document containing syntax, stdlib signatures, 47 verified executable examples, and compiler error guides.</p>
-     <div class="meta-row">
-      <span>${fullSizeKB} KB</span>
-      <span>•</span>
-      <span>mycel-for-ai.md</span>
-     </div>
     </div>
     <div class="btn-group">
      <a href="/mycel/ai-learn/mycel-for-ai.md" download class="btn btn-primary">Download .md</a>
@@ -1033,12 +1023,7 @@ footer a{color:var(--text-2)}
       <h3>Short Cheatsheet</h3>
       <span class="tag info">llms.txt</span>
      </div>
-     <p>A concise summary of grammar, types, standard library overview, and non-negotiable rules for low-context prompts.</p>
-     <div class="meta-row">
-      <span>${shortSizeKB} KB</span>
-      <span>•</span>
-      <span>mycel-for-ai-short.md</span>
-     </div>
+     <p>A concise summary of grammar, types, standard library overview, and the rules models most often break, for short prompts.</p>
     </div>
     <div class="btn-group">
      <a href="/mycel/ai-learn/mycel-for-ai-short.md" download class="btn btn-primary">Download .md</a>
@@ -1049,7 +1034,7 @@ footer a{color:var(--text-2)}
  </div></section>
 
  <section id="prompt-box"><div class="wrap">
-  <div class="eyebrow">Copy &amp; Paste</div>
+  
   <h2>The System Prompt for AI Coding Assistants</h2>
   <p>Paste this into ChatGPT (Custom Instructions), Claude (Project Knowledge or System Prompt), Gemini (System Instructions), or Cursor / Copilot:</p>
 
@@ -1099,14 +1084,14 @@ footer a{color:var(--text-2)}
    - Generics: 'class Box&lt;T&gt;', invariant type parameters.
 
 8. STANDARD LIBRARY IMPORTS:
-   - 'import std.json' (json.parse, json.stringify)
-   - 'import std.math' (math.PI, math.sqrt, math.hypot, math.gcd)
-   - 'import std.time' (time.now, time.seconds, time.Duration)
-   - 'import std.crypto' (crypto.sha256, crypto.uuid)
-   - 'import std.fs' (fs.readText, fs.writeText, fs.exists)
-   - 'import std.re' (re.Regex.compile, pattern.find)
-   - 'import std.env' (env.args, env.platform)
-   - 'import std.test' (test "name" { test.assertEq(a, b) })</code></pre>
+   - 'import json' (json.parse, json.stringify)
+   - 'import math' (math.PI, math.sqrt, math.hypot, math.gcd)
+   - 'import time' (time.now, time.seconds, time.Duration)
+   - 'import crypto' (crypto.sha256, crypto.uuid)
+   - 'import fs' (fs.readText, fs.writeText, fs.exists)
+   - 'import re' (re.Regex.compile, pattern.find)
+   - 'import env' (env.args, env.platform)
+   - 'import test' (test "name" { test.assertEq(a, b) })</code></pre>
   </div>
  </div></section>
 

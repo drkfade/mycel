@@ -2,7 +2,7 @@
 # Window, button, text, input, list, image, row, column, and event handlers.
 #
 # Example:
-#   import std.ui
+#   import ui
 #   var count = 0
 #   let label = ui.text("Count: 0")
 #   ui.window("Counter", [

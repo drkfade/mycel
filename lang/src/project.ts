@@ -431,6 +431,6 @@ export function initProject(dir: string, name: string) {
   writeManifest(dir, { name, version: "0.1.0", main: "src/main.myc", dependencies: {} });
   fs.writeFileSync(path.join(dir, "src", "main.myc"), `import ${name}.greeting\n\nfn main() {\n  print(greeting.hello("world"))\n}\n`.replace(`import ${name}.greeting`, "import greeting"));
   fs.writeFileSync(path.join(dir, "src", "greeting.myc"), `pub fn hello(name: String) -> String {\n  return f"Hello, {name}!"\n}\n`);
-  fs.writeFileSync(path.join(dir, "tests", "greeting_test.myc"), `import std.test\nimport greeting\n\ntest "hello greets by name" {\n  test.assertEq(greeting.hello("Mycel"), "Hello, Mycel!")\n}\n`);
+  fs.writeFileSync(path.join(dir, "tests", "greeting_test.myc"), `import test\nimport greeting\n\ntest "hello greets by name" {\n  test.assertEq(greeting.hello("Mycel"), "Hello, Mycel!")\n}\n`);
   fs.writeFileSync(path.join(dir, ".gitignore"), "ply_modules\nbuild\n");
 }

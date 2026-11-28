@@ -9,7 +9,7 @@ import { FnInfo } from "../src/types";
 const ALL_STD = ["task", "math", "json", "fs", "env", "process", "time", "re", "log", "test", "crypto", "io", "http", "sqlite", "web", "ui", "db", "files"];
 
 test("every extern declared in the prelude and std has a native implementation (and no native is orphaned)", () => {
-  const src = ALL_STD.map((m) => `import std.${m}`).join("\n") + "\nfn main() {}\n";
+  const src = ALL_STD.map((m) => `import ${m}`).join("\n") + "\nfn main() {}\n";
   const c = compile({ source: src, file: "all.olx" });
   assert.equal(c.program.ok, true, c.program.diagnostics.map((d) => d.message).join("\n"));
   const rt = createRuntime(newCtx({}, () => {}), (r) => ({ ...preludeNatives(r), ...stdNatives(r, {}, []) }));

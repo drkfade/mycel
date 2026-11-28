@@ -13,6 +13,8 @@ Mycel spelling.
 | `f"hi {name}"` | works: the same: f-strings with {x:.2f} and {x=} |
 | `for i, x in items` | works: the same |
 | `{k: v for x in xs}` | works: the same dict (map) comprehension; nested `for`/`if` clauses work too |
+| `# comments` | works: the same |
+| `a // b and a % b` | works: the same: `//` rounds down, `%` has the sign of the right side |
 | `len(x)` | works: the same |
 | `x ** 2` | works: the same |
 | `no main(): statements at the top` | works: the same: a file can just be statements |
@@ -41,7 +43,9 @@ Mycel spelling.
 | `x => x + 1` | works: the same |
 | `x?.y and x ?? y` | works: the same |
 | `JSON object literals` | works: the same, where a `json.Json` is expected |
-| `// comments and ; at line end` | works: the same (semicolons are optional) |
+| `; at line end` | works: the same (semicolons are optional) |
+| `// comments` | comments start with `#` in Mycel (`//` is whole-number division: `7 // 2` is 3) |
+| `/* block comments */` | comments start with `#` in Mycel; there are no block comments (put `#` on each line) |
 | `async / await` | works: the same |
 | `=== and !==` | `===` is JavaScript — Mycel's `==` already compares values: write `==` |
 | `function f() {}` | `function` is JavaScript — Mycel writes `fn f() { ... }` |
@@ -53,7 +57,7 @@ Mycel spelling.
 | `switch (x) { case 1: }` | `switch` — Mycel writes `match x { 1 => ... }` |
 | `x++` | `x++` — Mycel writes `x += 1` |
 | ``template ${x}`` | backticks are JavaScript — Mycel writes f"a {x}" |
-| `import x from 'y'` | `import ... from` is JavaScript — Mycel writes `import std.fs` |
+| `import x from 'y'` | `import ... from` is JavaScript — Mycel writes `import fs` or `from mod import name` |
 
 ## Coming from TypeScript
 
@@ -101,7 +105,7 @@ Mycel spelling.
 |---|---|
 | `if x { } else { }` | works: the same |
 | `nil` | works: the same |
-| `// comments` | works: the same |
+| `// comments` | comments start with `#` in Mycel (`//` is whole-number division) |
 | `struct Foo { }` | works: the same shape |
 | `for i := range / for ... range` | works: `for i in 0..3 { }` (and `for x in items`) |
 | `x := 5` | `:=` is Go — Mycel writes `let x = 5` |

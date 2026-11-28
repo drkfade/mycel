@@ -61,7 +61,7 @@ const KW_DOC = {
   let: "let name = value — an immutable binding", var: "var name = value — a mutable variable", fn: "fn name(params) -> Type { … } — a function",
   class: "class Name { … } — a reference type with fields and methods", struct: "struct Name { … } — a value type", interface: "interface Name { … } — a set of methods a type can promise",
   enum: "enum Name { A, B(Int) } — a closed set of variants", match: "match value { pattern => result } — pick by shape", for: "for x in items { … }", while: "while cond { … }",
-  if: "if cond { … } else { … }", import: "import std.name — bring a module in", test: "test \"name\" { … } — run by `mycel test`", return: "return value", nil: "the absent value of an optional type",
+  if: "if cond { … } else { … }", import: "import name — bring a module in", test: "test \"name\" { … } — run by `mycel test`", return: "return value", nil: "the absent value of an optional type",
 };
 
 const docs = new Map(); // keyOf(uri) -> { uri (as the client spelt it), text, version, analysis }
@@ -280,7 +280,7 @@ function resolve(a, off) {
   if (STD_MODULES.includes(name)) {
     const res = a.resolver && a.resolver("std." + name);
     if (res && res.file) {
-      return { sig: `module std.${name}`, doc: moduleDoc(res.file) || STD_MODULE_DOCS[name], target: { file: res.file, src: new Source(res.file, res.text), start: 0, end: 0 } };
+      return { sig: `module ${name}`, doc: moduleDoc(res.file) || STD_MODULE_DOCS[name], target: { file: res.file, src: new Source(res.file, res.text), start: 0, end: 0 } };
     }
   }
 
@@ -326,8 +326,7 @@ function completion(a, pos) {
     return items;
   }
   if (/\bimport\s+$/.test(before)) {
-    add("std", 9, "standard library");
-    for (const mod of STD_MODULES) add(`std.${mod}`, 9, "std module", STD_MODULE_DOCS[mod]);
+    for (const mod of STD_MODULES) add(mod, 9, "std module", STD_MODULE_DOCS[mod]);
     if (a.program) {
       for (const m of a.program.modules) {
         if (!m.name.startsWith("std.") && m.name !== "prelude" && m.name !== a.mod?.name) {
@@ -352,7 +351,7 @@ function completion(a, pos) {
     // B) If receiver is "std.<mod>" (e.g. `std.web.`) or an imported std module (e.g. `web.`)
     let stdMod = recv && recv.startsWith("std.") ? recv : undefined;
     if (!stdMod && recv) {
-      const impMatch = new RegExp(`\\bimport\\s+std\\.(${recv})\\b`).exec(a.text);
+      const impMatch = new RegExp(`\\bimport\\s+(?:std\\.)?(${recv})\\b`).exec(a.text);
       if (impMatch) stdMod = "std." + recv;
     }
     if (stdMod) {

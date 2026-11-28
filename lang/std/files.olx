@@ -4,7 +4,7 @@ import fs
 # Reading needs --allow-read; writing needs --allow-write.
 #
 # Examples:
-#   import std.files
+#   import files
 #   files.write("hello.txt", "world").unwrap()
 #   let text = files.read("hello.txt").unwrap()
 #   let p = files.path("data").join("items.txt")

@@ -249,7 +249,7 @@ fn main() {
 
 test("async: await, spawn, concurrent ordering", async () => {
   const src = `
-import std.task
+import task
 async fn work(name: String, ms: Int) -> String { await task.sleep(ms)\n return name }
 async fn main() {
   let a = spawn work("slow", 30)
@@ -293,8 +293,8 @@ test("step limit stops infinite loops; output limit stops floods", async () => {
 test("abort signal and wall-clock limit stop a run", async () => {
   const ac = new AbortController();
   setTimeout(() => ac.abort(), 20);
-  const r = await exec(`import std.task\nasync fn main() { await task.sleep(5000) }`, { signal: ac.signal });
+  const r = await exec(`import task\nasync fn main() { await task.sleep(5000) }`, { signal: ac.signal });
   assert.equal(r.error!.kind, "abort");
-  const t = await exec(`import std.task\nasync fn main() { await task.sleep(5000) }`, { limits: { maxMillis: 30 } });
+  const t = await exec(`import task\nasync fn main() { await task.sleep(5000) }`, { limits: { maxMillis: 30 } });
   assert.equal(t.error!.limit, "time");
 });

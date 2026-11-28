@@ -100,12 +100,12 @@ test("translate: imports of Python packages become `import x --python` with the 
   const t = translatePython(pf);
   assert.match(t.code, /^import requests --python$/m);
   assert.match(t.code, /^from bs4 import BeautifulSoup as Soup --python$/m);
-  assert.match(t.code, /^import std\.math$/m);
+  assert.match(t.code, /^import math$/m);
   assert.match(t.code, /run with --allow-pkg=requests,bs4/);
   assert.match(t.code, /print\(\(16\)\.toFloat\(\)\.sqrt\(\)\)|print\(16\.toFloat\(\)\.sqrt\(\)\)/);
 });
 
-test("std.pycompat: Python's printing and arithmetic", async () => {
-  const r = await run({ source: `import std.pycompat as py\nprint(py.str([1, "a", true, nil, 2.0, (1, "b"), {"k": [1.5]}]), py.floordiv(-7, 2), py.mod(-7, 3), py.round(2.5), py.round(3.5), py.slice([1, 2, 3], 5, nil), py.slice("hello", -3, nil))\ntry { py.int("x7") } catch e: py.ValueError { print(e.message) }\nprint(py.maxBy(["i", "s"], k => 4), py.sortedBy([("b", 1), ("a", 1)], p => (p.1, p.0)))\n`, file: "t.myc" });
+test("pycompat: Python's printing and arithmetic", async () => {
+  const r = await run({ source: `import pycompat as py\nprint(py.str([1, "a", true, nil, 2.0, (1, "b"), {"k": [1.5]}]), py.floordiv(-7, 2), py.mod(-7, 3), py.round(2.5), py.round(3.5), py.slice([1, 2, 3], 5, nil), py.slice("hello", -3, nil))\ntry { py.int("x7") } catch e: py.ValueError { print(e.message) }\nprint(py.maxBy(["i", "s"], k => 4), py.sortedBy([("b", 1), ("a", 1)], p => (p.1, p.0)))\n`, file: "t.myc" });
   assert.equal(r.output, `[1, 'a', True, None, 2.0, (1, 'b'), {'k': [1.5]}] -4 2 2 4 [] llo\ninvalid literal for int() with base 10: 'x7'\ni [("a", 1), ("b", 1)]\n`, r.error?.human);
 });

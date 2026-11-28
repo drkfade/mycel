@@ -91,7 +91,7 @@ print(parsePositive("12"), parsePositive("-3"), parsePositive("abc"))`
   },
   "7": {
     title: "concurrency.myc",
-    code: `import std.task
+    code: `import task
 
 async fn worker(name: String, ch: task.Channel<String>, ms: Int) {
   await task.sleep(ms)
@@ -109,14 +109,14 @@ async fn main() {
   },
   "8": {
     title: "modules.myc",
-    code: `import std.math as m
-import std.math.{gcd}
+    code: `import math as m
+from math import gcd
 
 print(m.sqrt(25.0), gcd(18, 24))`
   },
   "9": {
     title: "capabilities.myc",
-    code: `import std.fs
+    code: `import fs
 
 match fs.readText("secret.txt") {
   .Ok(text) => print(text)
@@ -125,8 +125,8 @@ match fs.readText("secret.txt") {
   },
   "10": {
     title: "stdlib.myc",
-    code: `import std.math
-import std.time
+    code: `import math
+import time
 
 print(math.gcd(24, 36), time.minutes(3).toSeconds())`
   }
@@ -143,7 +143,7 @@ print(tags.toArray().sorted())`
   },
   json: {
     title: "json_demo.myc",
-    code: `import std.json
+    code: `import json
 
 let order: json.Json = {"id": 42, "items": ["tea", "cake"], "paid": true}
 print(order["items"][0].asString ?? "none")
@@ -151,14 +151,14 @@ print(order.stringify())`
   },
   math: {
     title: "math_demo.myc",
-    code: `import std.math
+    code: `import math
 
 print(f"{math.PI:.4f}")
 print(math.gcd(36, 48), math.hypot(3.0, 4.0))`
   },
   re: {
     title: "regex_demo.myc",
-    code: `import std.re
+    code: `import re
 
 let rx = re.Regex.compile("[0-9]+").unwrap()
 print(rx.isMatch("order 402"))
@@ -166,14 +166,14 @@ print(rx.replace("room 12", with: "99"))`
   },
   time: {
     title: "time_demo.myc",
-    code: `import std.time
+    code: `import time
 
 let d = time.minutes(2)
 print(d.toSeconds(), time.iso(0))`
   },
   task: {
     title: "task_demo.myc",
-    code: `import std.task
+    code: `import task
 
 async fn work(n: Int) -> Int {
   await task.sleep(2)
@@ -187,15 +187,15 @@ async fn main() {
   },
   http: {
     title: "http_demo.myc",
-    code: `import std.http
+    code: `import http
 
 let res = http.text("ok", status: 200)
 print(res.status, res.ok, res.body)`
   },
   web: {
     title: "web_demo.myc",
-    code: `import std.web
-import std.http
+    code: `import web
+import http
 
 let app = web.App()
 app.get("/hi/:name", req => web.json({"hello": req.params["name"]}))
@@ -205,7 +205,7 @@ print(res.status, res.body)`
   },
   fs: {
     title: "fs_demo.myc",
-    code: `import std.fs
+    code: `import fs
 
 print(fs.join("src", "main.myc"), fs.extension("main.myc"))
 match fs.readText("notes.txt") {
@@ -215,14 +215,14 @@ match fs.readText("notes.txt") {
   },
   files: {
     title: "files_demo.myc",
-    code: `import std.files
+    code: `import files
 
 let p = files.path("src/main.myc")
 print(p.name, p.stem, p.extension)`
   },
   db: {
     title: "db_demo.myc",
-    code: `import std.db
+    code: `import db
 
 match db.openKV() {
   .Ok(kv) => print(kv.count())
@@ -231,27 +231,27 @@ match db.openKV() {
   },
   crypto: {
     title: "crypto_demo.myc",
-    code: `import std.crypto
+    code: `import crypto
 
 let enc = crypto.base64Encode("mycel")
 print(enc, crypto.base64Decode(enc).unwrap())`
   },
   env: {
     title: "env_demo.myc",
-    code: `import std.env
+    code: `import env
 
 print(env.platform(), env.args())`
   },
   log: {
     title: "log_demo.myc",
-    code: `import std.log
+    code: `import log
 
 log.setLevel(.Info)
 log.info("server ready")`
   },
   test: {
     title: "test_demo.myc",
-    code: `import std.test
+    code: `import test
 
 fn double(n: Int) -> Int => n * 2
 
@@ -261,9 +261,9 @@ print("checks passed")`
   },
   ui: {
     title: "ui_demo.myc",
-    code: `import std.ui
+    code: `import ui
 
-let label = ui.text("Hello from std.ui")
+let label = ui.text("Hello from ui")
 print("created element")`
   }
 };
@@ -507,7 +507,7 @@ function renderStdlibSection(makeId) {
     const raw = fs.readFileSync(path.join(docsDir, "stdlib", `${mod}.md`), "utf8");
     const lines = raw.split("\n").filter((l) => !l.startsWith("# "));
     const modId = makeId(`std-${mod}`);
-    const displayName = mod === "prelude" ? "prelude (built-ins)" : `std.${mod}`;
+    const displayName = mod === "prelude" ? "prelude (built-ins)" : mod;
     tocItems.push({ id: modId, title: displayName });
 
     // Split module body by `## ` symbols so each function/type is an independently filterable entry
@@ -586,7 +586,7 @@ ${entryHtml.join("\n")}
     tocItems,
     html: `<section class="doc-part" id="stdlib">
 <h2>Standard library <a class="anchor" href="#stdlib" aria-label="Anchor for Standard library">#</a></h2>
-<p>Mycel ships ${ordered.length} standard modules. <code>prelude</code> is loaded automatically; every other module loads with <code>import std.&lt;name&gt;</code>.</p>
+<p>Mycel ships ${ordered.length} standard modules. <code>prelude</code> is loaded automatically; every other module loads with <code>import &lt;name&gt;</code>.</p>
 ${modulesHtml.join("\n")}
 </section>`
   };

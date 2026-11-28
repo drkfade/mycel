@@ -19,7 +19,7 @@ test "database CRUD operations on notes" {
   nb.close()
 }
 
-test "file export and import round-trip with std.files" {
+test "file export and import round-trip with files" {
   let p = files.path("data")
   if !p.exists() {
     p.mkdir().unwrap()

@@ -495,84 +495,84 @@ export const INSTRUCT_TASKS_2 = [
 
   // 17. Standard Library (316-345)
   {
-    task: "Write a Mycel program using std.math to calculate the square root of 144.0.",
-    code: `import std.math\nprint(math.sqrt(144.0))\n`
+    task: "Write a Mycel program using math to calculate the square root of 144.0.",
+    code: `import math\nprint(math.sqrt(144.0))\n`
   },
   {
-    task: "Write a Mycel program using std.math to calculate sine and cosine of math.PI / 2.0.",
-    code: `import std.math\nlet angle = math.PI / 2.0\nprint(f"sin: {math.sin(angle):.1f}")\n`
+    task: "Write a Mycel program using math to calculate sine and cosine of math.PI / 2.0.",
+    code: `import math\nlet angle = math.PI / 2.0\nprint(f"sin: {math.sin(angle):.1f}")\n`
   },
   {
-    task: "Write a Mycel program using std.math to find the hypotenuse of a right triangle with sides 3.0 and 4.0.",
-    code: `import std.math\nprint(math.hypot(3.0, 4.0))\n`
+    task: "Write a Mycel program using math to find the hypotenuse of a right triangle with sides 3.0 and 4.0.",
+    code: `import math\nprint(math.hypot(3.0, 4.0))\n`
   },
   {
-    task: "Write a Mycel program using std.math to calculate the greatest common divisor of 54 and 24.",
-    code: `import std.math\nprint(math.gcd(54, 24))\n`
+    task: "Write a Mycel program using math to calculate the greatest common divisor of 54 and 24.",
+    code: `import math\nprint(math.gcd(54, 24))\n`
   },
   {
-    task: "Write a Mycel program using std.json to encode an array and map into JSON text.",
-    code: `import std.json\nlet data: {String: Any} = {"name": "Mycel", "version": 1}\nprint(json.encode(data))\n`
+    task: "Write a Mycel program using json to encode an array and map into JSON text.",
+    code: `import json\nlet data: {String: Any} = {"name": "Mycel", "version": 1}\nprint(json.encode(data))\n`
   },
   {
-    task: "Write a Mycel program using std.json to parse JSON text and access fields.",
-    code: `import std.json\nlet text = "{\\"score\\": 98, \\"user\\": \\"ada\\"}"\nlet parsed = json.parse(text).unwrap()\nprint(parsed["user"], parsed["score"])\n`
+    task: "Write a Mycel program using json to parse JSON text and access fields.",
+    code: `import json\nlet text = "{\\"score\\": 98, \\"user\\": \\"ada\\"}"\nlet parsed = json.parse(text).unwrap()\nprint(parsed["user"], parsed["score"])\n`
   },
   {
-    task: "Write a Mycel program using std.crypto to compute the sha256 hash of 'mycel'.",
-    code: `import std.crypto\nlet h = crypto.sha256("mycel")\nprint(h.substring(0, 16))\n`
+    task: "Write a Mycel program using crypto to compute the sha256 hash of 'mycel'.",
+    code: `import crypto\nlet h = crypto.sha256("mycel")\nprint(h.substring(0, 16))\n`
   },
   {
-    task: "Write a Mycel program using std.crypto to generate a UUID string.",
-    code: `import std.crypto\nlet u = crypto.uuid()\nprint(u.length == 36)\n`
+    task: "Write a Mycel program using crypto to generate a UUID string.",
+    code: `import crypto\nlet u = crypto.uuid()\nprint(u.length == 36)\n`
   },
   {
-    task: "Write a Mycel program using std.crypto to base64 encode and decode a string.",
-    code: `import std.crypto\nlet original = "Hello Mycel!"\nlet enc = crypto.base64Encode(original)\nprint(enc)\nlet dec = crypto.base64Decode(enc).unwrap()\nprint(dec)\n`
+    task: "Write a Mycel program using crypto to base64 encode and decode a string.",
+    code: `import crypto\nlet original = "Hello Mycel!"\nlet enc = crypto.base64Encode(original)\nprint(enc)\nlet dec = crypto.base64Decode(enc).unwrap()\nprint(dec)\n`
   },
   {
-    task: "Write a Mycel program using std.re to check if an email matches a basic regex pattern.",
-    code: `import std.re\nlet r = re.Regex.compile("^[a-z]+@[a-z]+\\\\.[a-z]+$").unwrap()\nprint(r.isMatch("test@example.com"))\nprint(r.isMatch("bad-email"))\n`
+    task: "Write a Mycel program using re to check if an email matches a basic regex pattern.",
+    code: `import re\nlet r = re.Regex.compile("^[a-z]+@[a-z]+\\\\.[a-z]+$").unwrap()\nprint(r.isMatch("test@example.com"))\nprint(r.isMatch("bad-email"))\n`
   },
   {
-    task: "Write a Mycel program using std.re to find all numbers in a string.",
-    code: `import std.re\nlet r = re.Regex.compile("\\\\d+").unwrap()\nlet matches = r.findAll("Item 1 costs $25, Item 2 costs $80")\nfor m in matches {\n  write(f"{m.text} ")\n}\nprint("")\n`
+    task: "Write a Mycel program using re to find all numbers in a string.",
+    code: `import re\nlet r = re.Regex.compile("\\\\d+").unwrap()\nlet matches = r.findAll("Item 1 costs $25, Item 2 costs $80")\nfor m in matches {\n  write(f"{m.text} ")\n}\nprint("")\n`
   },
   {
-    task: "Write a Mycel program using std.re to replace all digits with an 'X'.",
-    code: `import std.re\nlet r = re.Regex.compile("\\\\d").unwrap()\nprint(r.replace("Pin: 1234", "X"))\n`
+    task: "Write a Mycel program using re to replace all digits with an 'X'.",
+    code: `import re\nlet r = re.Regex.compile("\\\\d").unwrap()\nprint(r.replace("Pin: 1234", "X"))\n`
   },
   {
-    task: "Write a Mycel program using std.time to get current date as YYYY-MM-DD.",
-    code: `import std.time\nlet d = time.today()\nprint(d.length == 10)\n`
+    task: "Write a Mycel program using time to get current date as YYYY-MM-DD.",
+    code: `import time\nlet d = time.today()\nprint(d.length == 10)\n`
   },
   {
-    task: "Write a Mycel program using std.time.Duration to convert 3 minutes to seconds and milliseconds.",
-    code: `import std.time\nlet dur = time.minutes(3)\nprint(dur.toSeconds(), dur.toMs())\n`
+    task: "Write a Mycel program using time.Duration to convert 3 minutes to seconds and milliseconds.",
+    code: `import time\nlet dur = time.minutes(3)\nprint(dur.toSeconds(), dur.toMs())\n`
   },
   {
-    task: "Write a Mycel program using std.env to check an environment variable or default.",
-    code: `import std.env\nlet p = env.get("NONEXISTENT_VAR").unwrap() ?? "my_default"\nprint(p)\n`
+    task: "Write a Mycel program using env to check an environment variable or default.",
+    code: `import env\nlet p = env.get("NONEXISTENT_VAR").unwrap() ?? "my_default"\nprint(p)\n`
   },
   {
-    task: "Write a Mycel program using std.fs to write and read text from a temporary file.",
-    code: `import std.fs\nfn main() {\n  let tmp = "mycel_instruct_test.txt"\n  fs.writeText(tmp, "Hello from std.fs!").unwrap()\n  let content = fs.readText(tmp).unwrap()\n  print(content)\n  fs.remove(tmp).unwrap()\n}\n`
+    task: "Write a Mycel program using fs to write and read text from a temporary file.",
+    code: `import fs\nfn main() {\n  let tmp = "mycel_instruct_test.txt"\n  fs.writeText(tmp, "Hello from fs!").unwrap()\n  let content = fs.readText(tmp).unwrap()\n  print(content)\n  fs.remove(tmp).unwrap()\n}\n`
   },
   {
-    task: "Write a Mycel program using std.fs to test file existence.",
-    code: `import std.fs\nfn main() {\n  let tmp = "mycel_exists_check.txt"\n  print(fs.exists(tmp).unwrap())\n  fs.writeText(tmp, "exists").unwrap()\n  print(fs.exists(tmp).unwrap())\n  fs.remove(tmp).unwrap()\n}\n`
+    task: "Write a Mycel program using fs to test file existence.",
+    code: `import fs\nfn main() {\n  let tmp = "mycel_exists_check.txt"\n  print(fs.exists(tmp).unwrap())\n  fs.writeText(tmp, "exists").unwrap()\n  print(fs.exists(tmp).unwrap())\n  fs.remove(tmp).unwrap()\n}\n`
   },
   {
-    task: "Write a Mycel program using std.json pretty-printing on a nested Json object.",
-    code: `import std.json\nlet doc = json.parse("{\\"a\\": 1, \\"b\\": [2, 3]}").unwrap()\nprint(json.stringify(doc))\n`
+    task: "Write a Mycel program using json pretty-printing on a nested Json object.",
+    code: `import json\nlet doc = json.parse("{\\"a\\": 1, \\"b\\": [2, 3]}").unwrap()\nprint(json.stringify(doc))\n`
   },
   {
-    task: "Write a Mycel program using std.math to convert degrees to radians and back.",
-    code: `import std.math\nlet rad = math.radians(180.0)\nlet deg = math.degrees(rad)\nprint(f"Rad: {rad:.4f}, Deg: {deg:.1f}")\n`
+    task: "Write a Mycel program using math to convert degrees to radians and back.",
+    code: `import math\nlet rad = math.radians(180.0)\nlet deg = math.degrees(rad)\nprint(f"Rad: {rad:.4f}, Deg: {deg:.1f}")\n`
   },
   {
-    task: "Write a Mycel program using std.crypto to generate a random 8-byte hex string.",
-    code: `import std.crypto\nlet hex = crypto.randomHex(8)\nprint(hex.length == 16)\n`
+    task: "Write a Mycel program using crypto to generate a random 8-byte hex string.",
+    code: `import crypto\nlet hex = crypto.randomHex(8)\nprint(hex.length == 16)\n`
   },
 
   // 18. Tests, Generators & Pipeline (346-360)
@@ -820,7 +820,7 @@ export const INSTRUCT_TASKS_2 = [
   },
   {
     task: "Write a Mycel program testing bitwise AND, OR, XOR, and shifts on integers.",
-    code: `let a = 12 // 0b1100\nlet b = 10 // 0b1010\nprint(a & b, a | b, a ^ b, 1 << 3, 16 >> 2)\n`
+    code: `let a = 12 # 0b1100\nlet b = 10 # 0b1010\nprint(a & b, a | b, a ^ b, 1 << 3, 16 >> 2)\n`
   },
   {
     task: "Write a Mycel program that safely retrieves an array item with index out-of-bounds protection.",

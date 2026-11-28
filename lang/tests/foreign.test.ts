@@ -333,10 +333,10 @@ print(c.add(5))
   assert.equal(okRun.stdout, `2024-01-02 true\n2\nfirst\nsecond\n15 12 10\n25\n`);
 });
 
-test("std.foreign.callModule refuses a package that does not provide the module (no spoofing via std.foreign)", async () => {
+test("foreign.callModule refuses a package that does not provide the module (no spoofing via foreign)", async () => {
   const { exec } = await import("./helpers");
   const foreign: ForeignInfo = { root: tmp, cacheDir: path.join(tmp, "cache"), lock: { python: { greet: { version: "1.0.0", provides: ["greetlib"], direct: true } } } };
-  const r = await exec(`import std.foreign\nfn main() { print(foreign.callModule("python", "greet", "os", "getcwd", [], [], {}, [], false)) }`, { foreign, capabilities: { packages: { python: ["greet"] } } });
+  const r = await exec(`import foreign\nfn main() { print(foreign.callModule("python", "greet", "os", "getcwd", [], [], {}, [], false)) }`, { foreign, capabilities: { packages: { python: ["greet"] } } });
   assert.equal(r.ok, false);
   assert.match(r.error?.human ?? "", /Python package greet does not provide module os/, r.output + (r.error?.human ?? ""));
 });

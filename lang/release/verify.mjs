@@ -75,10 +75,10 @@ try {
   source('salutes.olx', 'pub fn salute(name: String) -> String => f"Olá, {name}"\n');
   source('fresh.myc', 'import salutes\nprint(salutes.salute("世界"))\n');
   run('fresh mixed extension import and Unicode', ['fresh.myc'], { output: 'Olá, 世界\n' });
-  source('fresh_std.myc', 'import std.json\nimport std.crypto\nprint(json.parse("{\\"ok\\":true}").unwrap())\nprint(crypto.sha256("release acceptance"))\n');
+  source('fresh_std.myc', 'import json\nimport crypto\nprint(json.parse("{\\"ok\\":true}").unwrap())\nprint(crypto.sha256("release acceptance"))\n');
   run('fresh JSON and crypto', ['fresh_std.myc'], { output: '{"ok":true}\n' + createHash('sha256').update('release acceptance').digest('hex') + '\n' });
   source('note.txt', 'synthetic note');
-  source('files.myc', 'import std.fs\nprint(fs.readText("note.txt").unwrap())\n');
+  source('files.myc', 'import fs\nprint(fs.readText("note.txt").unwrap())\n');
   run('fresh fs denied', ['files.myc'], { status: 1, error: /CapabilityError/ });
   run('fresh fs granted', ['run', 'files.myc', '--allow-read=.'], { output: 'synthetic note\n' });
   run('isolated hello', ['run', 'hello.myc', '--isolated'], { output: 'hi\n' });
