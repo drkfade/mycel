@@ -56,6 +56,6 @@ test("migrate rewrites old syntax and escapes literal braces; migrated code runs
   assert.equal(mig, 'fn main() {\n  let x = 2\n  print(f"a {x + 1} {{b}} {"q" + f"{x}"} // not a comment")\n}\n');
   assert.equal(await out(mig), "a 3 {b} q2 // not a comment");
   assert.equal(migrateSource(mig), mig); // idempotent
-  assert.equal(migrateSource('let a = "no interp" // "${x}" in a comment\n'), 'let a = "no interp" // "${x}" in a comment\n');
+  assert.equal(migrateSource('let a = "no interp" // "${x}" in a comment\n'), 'let a = "no interp" # "${x}" in a comment\n');
   assert.equal(migrateSource('print("${true ? 1 : 2}")'), 'print(f"{(true ? 1 : 2)}")');
 });

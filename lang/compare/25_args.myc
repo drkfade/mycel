@@ -1,3 +1,3 @@
-import std.env
+import env
 args = env.args()
 print(f"{len(args)} args: {args.join(", ")}")

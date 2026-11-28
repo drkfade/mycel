@@ -11,7 +11,7 @@ const r = await run({
   onOutput: (t) => process.stdout.write(t),
   signal: abortController.signal,
   args: ["--flag"],
-  hostModules: { olix: { source: "pub extern fn read_file(path: String) -> Result<String, Error>", natives: { read_file: (p: string) => /* … */ } } },
+  hostModules: { app: { source: "pub extern fn read_file(path: String) -> Result<String, Error>", natives: { read_file: (p: string) => /* … */ } } },
 });
 // r: { ok, output, error?: { kind: "compile"|"panic"|"uncaught"|"limit"|"abort", message, trace: [{fn,file,line,col}], human, limit? },
 //      diagnostics: [{severity, code, message, file, line, col, why, suggestion}], warnings, steps, millis, taskErrors, tests? }
@@ -33,20 +33,18 @@ const r = await run({
   `{K: V}` = `Map`, `T?` = `null`, `Result` via `ctx.M.prelude.Result$Ok.of(v)` / `Result$Err.of(e)`.
 * Exit conditions are values, never thrown: `RunResult.error.kind` tells a limit from a panic from an uncaught error.
 
-## Proposal for olx (needs the olxcore owner)
+## Host integration pattern
 
-Mycel is meant to be the language models write when they need code (WO72 `run_code`, saved `scripts`):
+Mycel is designed to be embedded as the language models write when they need to run code (for example, in a `run_code` tool or saved scripts):
 
-1. **`run_code` language `ply`**: call `check()` first; on errors return `diagnostics` (already actionable: `suggestion`
+1. **`run_code` integration**: call `check()` first; on errors return `diagnostics` (already actionable: `suggestion`
    is a concrete fix) instead of running; on success `runIsolated({ capabilities, limits, maxMemoryMb: 256 })`.
-   Capabilities derive from the existing approval state (default none; a granted folder becomes `fs.read/write`).
-2. **olix tools as a module**: generate a `hostModules.olix` from the tool registry — one `pub extern fn <tool>(args) ->
-   Result<String, Error>` per read-only tool; mutating tools stay behind the existing exact single-use approval
-   (the native calls the approval gate, so a script cannot bypass it). Mission-style automations then read like
-   `let notes = olix.search_notes("budget")?`.
-3. **Saved scripts**: store `.olx` source in the `scripts` store with a hash; re-`check` on load (the std library may
-   change); owner approval attaches to the hash plus the capability set, so changing either re-asks.
+   Capabilities derive from the host's existing approval state (default none; a granted folder becomes `fs.read/write`).
+2. **Host tools as a module**: generate a `hostModules.app` module from the tool registry — one `pub extern fn <tool>(args) ->
+   Result<String, Error>` per read-only tool; mutating tools stay behind the host's existing exact single-use approval
+   (the native calls the approval gate, so a script cannot bypass it). Automations then read like
+   `let notes = app.search_notes("budget")?`.
+3. **Saved scripts**: store `.myc` source in the script store with a hash; re-`check` on load (the standard library may
+   change); user approval attaches to the hash plus the capability set, so changing either re-prompts.
 4. **Prompt**: `lang/docs/SPEC.md` §1–§6 plus `examples/tour/*.olx` fit in ~6k tokens; the JSON diagnostics make a
    fix-and-retry loop converge without the model seeing JavaScript at all.
-
-Nothing in `olxcore/`, the app or the CLI was changed by WO81; this is a request for those owners.

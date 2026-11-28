@@ -1,5 +1,5 @@
-// File I/O needs a grant:  ply run 07_files.olx --allow-read=. --allow-write=.
-import std.fs
+# File I/O needs a grant:  ply run 07_files.olx --allow-read=. --allow-write=.
+import fs
 
 fn main() {
   let path = "tour_scratch.txt"

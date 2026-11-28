@@ -1,0 +1,4 @@
+## Desktop notifications.
+## Requires `control` capability (`--allow-control` or `"capabilities": { "control": true }`).
+
+pub extern fn show(title: String, message: String) -> Result<Void, Error>

@@ -8,6 +8,9 @@ import { CompileError, closest, formatDiagnostic } from "./diag";
 import { isSrc, stripExt } from "./exts";
 import { parsePkgArgs, INSTALL_HELP, FOREIGN_HINT, runtimeLabel, PkgRequest } from "./pkgflags";
 import { HABITS_HELP } from "./habitsdoc";
+import { readForeign } from "./foreign";
+import { translatePython } from "./translate";
+import { foreignWhy, javaInstall, javaRemove, javaRestore, npmInstall, npmRemove, npmRestore, pythonInstall, pythonRemove, pythonRestore } from "./foreignpkg";
 import { explain, explainList, explainUnknown, explainHint } from "./explain";
 import { format } from "./fmt";
 import { migrateSource } from "./migrate";
@@ -16,7 +19,7 @@ import { PlyError, Project, addDependency, findProject, initProject, install, li
 import { startRepl } from "./repl";
 import { documentModule } from "./doc";
 
-export const VERSION = "0.1.0";
+export const VERSION = "0.2.0";
 
 const WELCOME = `Welcome to Mycel ${VERSION} — a friendly language for your first program and your hundredth.
 
@@ -34,6 +37,7 @@ const HELP = `mycel ${VERSION} — a friendly, typed language (files: .myc, and 
 usage: mycel <command> [options]      (packages: ply install --py requests — see \`ply help install\`)
 
   run [file] [-- args]   compile and run a file (default: the project's main)
+  web [file|project]     serve a browser UI on 127.0.0.1 (no browser is opened)
   check [file]           type-check without running (--json for machine-readable output)
   test [filter]          run every  test "name" { ... }  block (project: src/ and tests/)
   build [file]           type-check and write build/<name>.js (runs with: node build/<name>.js)
@@ -43,8 +47,9 @@ usage: mycel <command> [options]      (packages: ply install --py requests — s
   new <name>             create a project   (init does the same)
   lsp                    language server for editors (stdio)
   explain [code]         a longer explanation of an error code, with an example (no code: list them all)
-  doc [files]            Markdown reference of the pub declarations (/// comments); --out=<dir> writes files
+  doc [files]            Markdown reference of the pub declarations (## comments); --out=<dir> writes files
   emit <file>            print the generated JavaScript
+  translate <file.py>    Python → Mycel (-o file.myc writes it; lines it cannot translate become TODO comments)
   help habits            habits from Python, JS/TS, Java, Go, Rust, Swift and the Mycel spelling
 
 packages (ply = the package manager; same CLI):
@@ -55,10 +60,12 @@ packages (ply = the package manager; same CLI):
 
 permissions (a program can only touch what is granted; default: nothing):
   --allow-read=<paths>  --allow-write=<paths>  --allow-net[=<hosts>]  --allow-listen
-  --allow-run[=<cmds>]  --allow-env[=<names>]  --allow-all (-A)
+  --allow-run[=<cmds>]  --allow-env[=<names>]  --allow-pkg[=<packages>]
+  --allow-java          --allow-control        --allow-screen
+  --allow-clipboard     --allow-all (-A)
   (a project's ply.json "capabilities" are used when no flags are given)
 
-limits:  --max-steps=<n>  --max-seconds=<n>  --max-output=<bytes>
+limits:  --max-steps=<n>  --max-seconds=<n>  --max-output=<bytes>  --max-string=<chars>
          --isolated --max-memory-mb=<n>   run in a worker thread with a hard heap cap
          --json              errors as JSON (code, span, message, suggestion)
 `;
@@ -82,13 +89,19 @@ function parseArgs(argv: string[]): Parsed {
 function capsFromFlags(f: Map<string, string | true>, project?: Project): Capabilities {
   const list = (v: string | true | undefined) => (typeof v === "string" ? v.split(",").filter(Boolean) : undefined);
   const caps: Capabilities = {};
-  if (f.has("allow-all")) return { fs: { read: true, write: true }, net: { hosts: true, listen: true }, process: { run: true }, env: { read: true } };
+  if (f.has("allow-all")) return { fs: { read: true, write: true }, net: { hosts: true, listen: true }, process: { run: true }, env: { read: true }, packages: { python: true, npm: true, java: true }, java: true, control: true, screen: true, clipboard: true };
   if (f.has("allow-read")) caps.fs = { ...(caps.fs ?? {}), read: list(f.get("allow-read")) ?? [process.cwd()] };
   if (f.has("allow-write")) caps.fs = { ...(caps.fs ?? {}), write: list(f.get("allow-write")) ?? [process.cwd()] };
   if (f.has("allow-net")) caps.net = { ...(caps.net ?? {}), hosts: list(f.get("allow-net")) ?? true };
   if (f.has("allow-listen")) caps.net = { ...(caps.net ?? {}), listen: true };
   if (f.has("allow-run")) caps.process = { run: list(f.get("allow-run")) ?? true };
   if (f.has("allow-env")) caps.env = { read: list(f.get("allow-env")) ?? true };
+  // Python/npm/Java packages by install name (a granted package runs with your account's full power: foreign.ts)
+  if (f.has("allow-pkg")) { const l = list(f.get("allow-pkg")); caps.packages = { python: l ?? true, npm: l ?? true, java: l ?? true }; }
+  if (f.has("allow-java")) caps.java = true;
+  if (f.has("allow-control")) caps.control = true;
+  if (f.has("allow-screen")) caps.screen = true;
+  if (f.has("allow-clipboard")) caps.clipboard = true;
   if (Object.keys(caps).length === 0 && project?.manifest.capabilities) return resolveManifestCaps(project);
   return caps;
 }
@@ -103,10 +116,10 @@ function resolveManifestCaps(p: Project): Capabilities {
 function limitsFromFlags(f: Map<string, string | true>) {
   const num = (k: string) => { const v = f.get(k); if (typeof v !== "string") return undefined; const n = Number(v); if (!(n > 0)) throw new PlyError(`--${k} needs a positive number (got ${v})`); return n; };
   const secs = num("max-seconds");
-  return { maxSteps: num("max-steps") ?? Infinity, maxMillis: secs ? secs * 1000 : Infinity, maxOutputBytes: num("max-output") ?? Infinity };
+  return { maxSteps: num("max-steps") ?? Infinity, maxMillis: secs ? secs * 1000 : Infinity, maxOutputBytes: num("max-output") ?? Infinity, ...(num("max-string") ? { maxStringLength: num("max-string") } : {}) };
 }
 
-interface Target { file: string; text: string; opts: Pick<RunOptions, "file" | "roots" | "packages" | "entryName">; project?: Project }
+interface Target { file: string; text: string; opts: Pick<RunOptions, "file" | "roots" | "packages" | "entryName" | "foreign">; project?: Project }
 function target(file: string | undefined): Target {
   const project = findProject(file ? path.dirname(path.resolve(file)) : process.cwd());
   const f = file ? path.resolve(file) : project?.main;
@@ -120,7 +133,7 @@ function target(file: string | undefined): Target {
     if (withinPath(project.srcDir, f) && isSrc(r)) entryName = stripExt(r).split(path.sep).join(".");
     else entryName = "main_entry";
   }
-  return { file: f, text: fs.readFileSync(f, "utf8"), project, opts: { file: rel.startsWith("..") ? f : rel, roots, packages: project?.packages, entryName } };
+  return { file: f, text: fs.readFileSync(f, "utf8"), project, opts: { file: rel.startsWith("..") ? f : rel, roots, packages: project?.packages, entryName, foreign: readForeign(project?.root ?? path.dirname(f), !project) } };
 }
 
 /** After compiler errors: one line naming `mycel explain <code>` (Rust's "try rustc --explain"). */
@@ -182,6 +195,13 @@ export async function main(argv: string[], options: { buildRuntime?: string | nu
         if (a.pos[0] === "habits") { console.log(HABITS_HELP); return 0; }
         console.log(options.buildRuntime === null ? HELP.replace(/^  build .*\n/m, "") : HELP); return 0;
       case "--version": case "-v": case "version": console.log(`mycel ${VERSION}`); return 0;
+      case "web": {
+        const { serveUi } = await import("./ui/server");
+        const server = await serveUi(a.pos[0] ?? ".");
+        const address = server.address();
+        if (address && typeof address !== "string") console.log(`Mycel web: http://127.0.0.1:${address.port}/`);
+        return 0;
+      }
       case "run": {
         const t = target(a.pos[0]);
         if (a.flags.has("isolated") || a.flags.has("max-memory-mb")) {
@@ -197,7 +217,7 @@ export async function main(argv: string[], options: { buildRuntime?: string | nu
         process.once("beforeExit", () => { if (!finished) { console.error("error: deadlock — the program is waiting for something that can never happen (e.g. receiving from a channel nobody sends to)"); process.exit(1); } });
         // std.ui has no desktop renderer in the CLI (no AppKit/Win32 backend yet): say so once instead of exiting 0 with nothing on screen
         let uiNoted = false;
-        const onUi = (msg: any) => { if (uiNoted || msg?.type !== "ui:render") return; uiNoted = true; console.error(`note: this program opened a std.ui window (${JSON.stringify(String(msg.root?.title ?? ""))}); the mycel CLI has no desktop window renderer yet on ${process.platform}, so nothing is shown. Run it in the playground: https://ol1x.xyz/mycel/play/`); };
+        const onUi = (msg: any) => { if (uiNoted || msg?.type !== "ui:render") return; uiNoted = true; console.error(`note: this program opened a std.ui window (${JSON.stringify(String(msg.root?.title ?? ""))}); the mycel CLI has no desktop window renderer yet on ${process.platform}, so nothing is shown. Use mycel web <file> for a browser UI, or the playground: https://ol1x.xyz/mycel/play/`); };
         const r = await run({ source: t.text, ...t.opts, capabilities: capsFromFlags(a.flags, t.project), limits: limitsFromFlags(a.flags), onOutput: (s) => process.stdout.write(s), args: a.rest, stdin, inputSync, onUi });
         finished = true;
         stdin.close();
@@ -226,6 +246,14 @@ export async function main(argv: string[], options: { buildRuntime?: string | nu
         return 0;
       }
       case "build": {
+        if (a.flags.has("native")) {
+          const t = target(a.pos[0]);
+          const oi = argv.indexOf("-o");
+          const out = oi >= 0 ? argv[oi + 1] : a.flags.get("out");
+          if (typeof out !== "string" || out.startsWith("-")) throw new PlyError("native build needs -o <output>");
+          require(path.resolve(__dirname, "..", "..", "native", "compiler.cjs")).build(t.file, out);
+          console.log(`built ${out}`); return 0;
+        }
         if (options.buildRuntime === null) throw new PlyError("JavaScript export requires the source SDK and Node; this standalone alpha supports `mycel run <file.myc>`.");
         const t = target(a.pos[0]);
         const c = compile({ source: t.text, ...t.opts });
@@ -294,7 +322,21 @@ export async function main(argv: string[], options: { buildRuntime?: string | nu
         console.log(`created ${a.pos[0]}/ — try:\n  cd ${a.pos[0]} && mycel run && mycel test`);
         return 0;
       }
-      case "add": case "install": case "remove": case "update": case "why": return pkgCommand(a.cmd, argv.slice(1));
+      case "add": case "install": case "remove": case "update": case "why": return await pkgCommand(a.cmd, argv.slice(1));
+      case "translate": {
+        // Python → Mycel (task 55): Python's own parser reads the file; untranslatable lines become TODO comments
+        const src = a.pos.find((x) => /\.py$/.test(x));
+        if (!src) throw new PlyError("usage: mycel translate file.py [-o file.myc]   (Python → Mycel)");
+        const outFlag = a.flags.get("o") ?? a.flags.get("out") ?? (argv.includes("-o") ? argv[argv.indexOf("-o") + 1] : undefined);
+        let r;
+        try { r = translatePython(path.resolve(src)); } catch (e) { throw new PlyError((e as Error).message); }
+        if (typeof outFlag === "string") {
+          fs.writeFileSync(outFlag, r.code);
+          console.error(`wrote ${outFlag}${r.todos.length ? ` — ${r.todos.length} line(s) need you: search for TODO(translate)` : ""}; run it with: mycel run ${outFlag}${r.packages.length ? ` --allow-pkg=${r.packages.map((m) => m.split(".")[0]).join(",")}` : ""}`);
+        } else process.stdout.write(r.code);
+        for (const t of r.todos) console.error(`${src}:${t.line}: not translated — ${t.why}`);
+        return r.todos.length ? 3 : 0;
+      }
       case "publish": {
         const root = findProject(process.cwd())?.root;
         if (!root) throw new PlyError("no ply.json found: run this inside a project");
@@ -305,7 +347,7 @@ export async function main(argv: string[], options: { buildRuntime?: string | nu
         return 0;
       }
       default:
-        { const near = closest(a.cmd, ["run", "check", "test", "build", "migrate", "fmt", "repl", "new", "init", "doc", "emit", "explain", "help", "install", "remove", "update", "why", "publish"]); console.error(`mycel: unknown command "${a.cmd}"${near ? ` — did you mean \`${near}\`?` : ""} (see \`mycel help\`)`); }
+        { const near = closest(a.cmd, ["run", "check", "test", "build", "migrate", "fmt", "repl", "new", "init", "doc", "emit", "explain", "help", "install", "remove", "update", "why", "publish", "translate"]); console.error(`mycel: unknown command "${a.cmd}"${near ? ` — did you mean \`${near}\`?` : ""} (see \`mycel help\`)`); }
         return 2;
     }
   } catch (e) {
@@ -316,37 +358,42 @@ export async function main(argv: string[], options: { buildRuntime?: string | nu
 }
 
 /** Type-check every module under src/ (libraries have no main file). */
-/** `ply install|add|remove|update|why [--<lang>] [packages]` (WO111 item 9; table in pkgflags.ts). */
-function pkgCommand(cmd: string, args: string[]): number {
+/** `ply install|remove|update|why [--<lang>] [packages]` (WO111 item 9; table in pkgflags.ts). */
+async function pkgCommand(cmd: string, args: string[]): Promise<number> {
   const req: PkgRequest = parsePkgArgs(cmd === "add" ? "install" : cmd, args);
   if (cmd === "add" && !req.packages.length) throw new PlyError("usage: ply install <package>  (or ply install --<lang> <package>, see `ply help install`)");
   const root = findProject(process.cwd())?.root;
   if (!root) throw new PlyError("no ply.json found: run this inside a project (`mycel new <name>` makes one)");
-  if (req.runtime) {
-    // The flag table, versions and errors are final; fetching foreign packages is WO111 phase B (py/npm first).
-    console.error(`ply: understood: ${cmd} ${runtimeLabel(req.runtime)} package${req.packages.length > 1 ? "s" : ""} ${req.packages.map((p) => p.name + (p.version ? ` ${p.version}` : "")).join(", ")}.\n  ${cmd === "install" || cmd === "add" ? "Installing" : "Managing"} ${runtimeLabel(req.runtime)} packages is not available yet (Mycel phase B) — nothing was changed.`);
-    return 2;
-  }
-  const withHint = (f: () => void) => { try { f(); } catch (e) { if (e instanceof PlyError && /not found in the registry/.test(e.message)) throw new PlyError(`${e.message}\n  ${FOREIGN_HINT}`); throw e; } };
+  if (req.runtime) return await foreignCommand(cmd, req, root);
+  const offline = args.includes("--offline");
+  const withHint = async (f: () => Promise<void>) => { try { await f(); } catch (e) { if (e instanceof PlyError && /not found in the registry/.test(e.message)) throw new PlyError(`${e.message}\n  ${FOREIGN_HINT}`); throw e; } };
   switch (cmd) {
     case "add": case "install": {
       if (!req.packages.length) {
-        const lock = install(root);
+        const lock = await install(root, { offline });
         const problems = verifyLock(root);
         if (problems.length) throw new PlyError(problems.join("\n"));
-        console.log(`installed ${Object.keys(lock.packages).length} package(s)`);
+        // and the Python / npm / Java packages, exactly as ply.lock pins them (hash- / integrity-checked)
+        const npy = pythonRestore(root), nnpm = npmRestore(root), njava = javaRestore(root);
+        console.log(`installed ${Object.keys(lock.packages).length} package(s)${npy || nnpm || njava ? ` + ${npy} Python, ${nnpm} npm${njava ? `, ${njava} Java` : ""} from ply.lock` : ""}`);
         return 0;
       }
-      for (const p of req.packages) withHint(() => { const r = addDependency(root, p.version ? `${p.name}@${p.version}` : p.name); console.log(`added ${r.name} ${r.range}`); });
+      for (const p of req.packages) await withHint(async () => {
+        const r = await addDependency(root, p.version ? `${p.name}@${p.version}` : p.name, { offline });
+        console.log(`added ${r.name} ${r.range}`);
+        if (r.capabilities && Object.keys(r.capabilities).length) {
+          console.log(`  permissions this package can use (grant in ply.json "capabilities" or CLI flags like --allow-control): ${JSON.stringify(r.capabilities)}`);
+        }
+      });
       return 0;
     }
     case "remove": {
       if (!req.packages.length) throw new PlyError("usage: ply remove <package>");
-      for (const p of req.packages) { removeDependency(root, p.name); console.log(`removed ${p.name}`); }
+      for (const p of req.packages) { await removeDependency(root, p.name); console.log(`removed ${p.name}`); }
       return 0;
     }
     case "update": {
-      const lock = install(root);
+      const lock = await install(root, { offline });
       console.log(`updated: ${Object.entries(lock.packages).map(([n, e]) => `${n} ${e.version}`).join(", ") || "no packages"}`);
       return 0;
     }
@@ -367,6 +414,34 @@ function pkgCommand(cmd: string, args: string[]): number {
   }
 }
 
+/** `ply install|remove|update|why --python|--npm|--java ...` (foreignpkg.ts). Rust/Go/Swift/TS: not yet. */
+async function foreignCommand(cmd: string, req: PkgRequest, root: string): Promise<number> {
+  const rt = req.runtime === "python" ? "python" : req.runtime === "javascript" ? "npm" : req.runtime === "java" ? "java" : undefined;
+  if (!rt) {
+    console.error(`ply: understood: ${cmd} ${runtimeLabel(req.runtime!)} package${req.packages.length > 1 ? "s" : ""} ${req.packages.map((p) => p.name + (p.version ? ` ${p.version}` : "")).join(", ")}.\n  ${runtimeLabel(req.runtime!)} packages are recognised but not supported yet — nothing was changed. Python (--python), npm (--npm) and Java (--java) packages work today.`);
+    return 2;
+  }
+  const py = rt === "python";
+  const java = rt === "java";
+  switch (cmd) {
+    case "add": case "install":
+      for (const l of java ? await javaInstall(root, req.packages) : (py ? pythonInstall : npmInstall)(root, req.packages)) console.log(l);
+      return 0;
+    case "remove":
+      for (const l of (java ? javaRemove : py ? pythonRemove : npmRemove)(root, req.packages.map((p) => p.name))) console.log(l);
+      return 0;
+    case "update": {
+      const m = readManifest(root) as any;
+      const names = req.packages.length ? req.packages : Object.keys(m[rt] ?? {}).map((n) => ({ spec: n, name: n }));
+      if (!names.length) { console.log(`no ${java ? "Java" : py ? "Python" : "npm"} packages to update`); return 0; }
+      const lines = java ? await javaInstall(root, names.map((p) => ({ spec: p.name, name: p.name })), true) : (py ? pythonInstall : npmInstall)(root, names.map((p) => ({ spec: p.name, name: p.name })), true);
+      for (const l of lines) console.log(l.replace(/^added/, "updated"));
+      return 0;
+    }
+    default: for (const p of req.packages) console.log(foreignWhy(root, rt, p.name)); return 0;
+  }
+}
+
 function checkProject(project: Project, json: boolean, quiet = false): number {
   let errors = 0;
   const all: unknown[] = [];
@@ -374,7 +449,7 @@ function checkProject(project: Project, json: boolean, quiet = false): number {
     if (!isSrc(f)) continue;
     const file = path.join(project.srcDir, f);
     const name = stripExt(f).split(path.sep).join(".");
-    const c = check({ source: fs.readFileSync(file, "utf8"), file: path.relative(process.cwd(), file), roots: [project.srcDir], packages: project.packages, entryName: name });
+    const c = check({ source: fs.readFileSync(file, "utf8"), file: path.relative(process.cwd(), file), roots: [project.srcDir], packages: project.packages, entryName: name, foreign: readForeign(project.root) });
     errors += c.errors;
     all.push(...c.diagnostics);
     if (!json && c.text) console.error(c.text);

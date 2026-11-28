@@ -1,6 +1,6 @@
-import std.test
-import std.http
-import std.json
+import test
+import http
+import json
 import notes
 
 async fn start() -> http.Server {

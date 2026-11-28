@@ -2,7 +2,7 @@ import { test } from "node:test";
 import * as assert from "node:assert/strict";
 import { parsePkgArgs, RUNTIMES, splitVersion } from "../src/pkgflags";
 
-// Every alias in the WO111 item 9 table maps to exactly its runtime (flag before the package).
+// Every alias in the runtime-flag table maps to exactly its runtime (flag before the package).
 const TABLE: Record<string, string> = {
   python: "python", py: "python", pip: "python", javascript: "javascript", js: "javascript", npm: "javascript",
   typescript: "typescript", ts: "typescript", java: "java", maven: "java", mvn: "java", rust: "rust", rs: "rust",
@@ -29,8 +29,29 @@ test("versions: @ for every runtime, == for pip, :ver for Maven", () => {
 });
 const fails = (args: string[], re: RegExp, cmd = "install") => assert.throws(() => parsePkgArgs(cmd, args), (e: Error) => { assert.match(e.message, re); return true; });
 test("unknown flag lists the accepted flags and suggests the closest", () => fails(["--pyhton", "requests"], /unknown flag `--pyhton` — did you mean `--python`\?[\s\S]*accepted: --python --py --pip/));
-test("flag after the package says to move it", () => fails(["requests", "--py"], /put the flag before the package: `ply install --py requests`/));
-test("two runtimes in one command is an error", () => fails(["--py", "--js", "x"], /one runtime per command/));
+// Runtime flags can appear in either order: `ply install requests --python` or `ply install --python requests`.
+for (const args of [["requests", "--python"], ["--python", "requests"], ["--python", "requests", "flask"], ["requests", "flask", "--py"], ["requests", "--pip", "flask"]]) {
+  test(`flag anywhere: ply install ${args.join(" ")}`, () => {
+    const r = parsePkgArgs("install", args);
+    assert.equal(r.runtime, "python");
+    assert.deepEqual(r.packages.map((p) => p.name), args.filter((a) => !a.startsWith("--")));
+  });
+}
+test("flag after the package keeps the version split for that runtime", () => {
+  assert.deepEqual(parsePkgArgs("install", ["requests==2.32.3", "--pip"]).packages[0], { spec: "requests==2.32.3", name: "requests", version: "2.32.3" });
+});
+test("two runtimes in one command: error with both fixed commands (flag first)", () =>
+  fails(["--py", "requests", "--npm", "lodash"], /one runtime per command[\s\S]*ply install --py requests +\(Python\)\n +ply install --npm lodash +\(JavaScript\)/));
+test("two runtimes in one command: error with both fixed commands (flag after)", () =>
+  fails(["requests", "--python", "lodash", "--npm"], /ply install --python requests +\(Python\)\n +ply install --npm lodash +\(JavaScript\)/));
+test("two runtimes, no package split: both commands carry the packages", () => fails(["--py", "--js", "x"], /ply install --py x[\s\S]*ply install --js x/));
+test("same for remove/update/why: flag anywhere and mixing refused", () => {
+  for (const cmd of ["remove", "update", "why"]) {
+    assert.equal(parsePkgArgs(cmd, ["requests", "--pip"]).runtime, "python");
+    fails(["requests", "--pip", "lodash", "--npm"], new RegExp(`ply ${cmd} --pip requests`), cmd);
+  }
+});
+test("unknown flag after the package: did-you-mean too", () => fails(["requests", "--pyton"], /did you mean `--python`\?/));
 test("--ply / --mycel / --olx: Mycel packages take no flag", () => { for (const f of ["--ply", "--mycel", "--olx"]) fails([f, "x"], /Mycel packages take no flag/); });
 test("a runtime flag with no package names an example", () => fails(["--py"], /needs a package name: e.g. `ply install --py requests`/));
 test("remove/update/why take the same flags", () => {

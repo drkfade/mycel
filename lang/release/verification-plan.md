@@ -1,10 +1,9 @@
-# Mycel 0.1 alpha checks (fixed before first binary execution)
+# Mycel 0.2 alpha checks (fixed before first binary execution)
 
 This is release acceptance, not a performance benchmark. No sealed splits or
-owner data are used. The owner forbids index writes, so this plan remains
-uncommitted with the release sources. Do not change cases to hide failures.
+private data are used; do not change cases to hide failures.
 
-- Scan bundle and Mach-O bytes for `/Users/`, `olxcore`, `codecli`, `~/.olx`.
+- Scan bundle and Mach-O bytes for build-host paths and private host tokens (see `check-artifact.mjs`).
   Negative probes append each forbidden token to a temporary copy and must fail.
 - With a fresh HOME, working directory containing spaces/Unicode, and PATH exactly
   `/usr/bin:/bin`, execute the copied binary and sibling ply shim: version, welcome,
@@ -20,5 +19,5 @@ uncommitted with the release sources. Do not change cases to hide failures.
 - Check the pkg payload list, unsigned signature status, architecture constraint,
   license/welcome/conclusion resources, permissions, hashes, uninstall dry-run,
   extracted payload byte scans and absence of compiler source as loose files.
-- Run compiler regression tests except the known owner-edited tour fixture test;
+- Run compiler regression tests except any excluded tour fixture test;
   record any failures without altering existing tests or examples.

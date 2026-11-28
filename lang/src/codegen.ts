@@ -41,6 +41,7 @@ class ModuleGen {
   isInt(t: Ty) { t = prune(t); return t.k === "prim" && t.name === "Int"; }
   isFloat(t: Ty) { t = prune(t); return t.k === "prim" && t.name === "Float"; }
   isStr(t: Ty) { t = prune(t); return t.k === "prim" && (t.name === "String"); }
+  isForeignVal(t: Ty) { t = prune(t); return t.k === "app" && t.decl.name === "Value" && t.decl.module.name === "std.foreign"; }
   isPrimScalar(t: Ty) { t = prune(t); return t.k === "prim" && ["Int", "Float", "Bool", "String", "Char"].includes(t.name); }
   tyOf(e: A.Expr): Ty { return (e as any).ty as Ty; }
 
@@ -522,8 +523,13 @@ class ModuleGen {
   ex(e: A.Expr): string {
     const o = this.over.get(e);
     if (o !== undefined) return o;
-    if ((e as any).chain && !this.chainDone.has(e)) return this.chainExpr(e);
-    return this.ex0(e);
+    const fc = (e as any).fcoerce as string | undefined;
+    if ((e as any).chain && !this.chainDone.has(e)) {
+      const res = this.chainExpr(e);
+      return fc ? `${this.nat("std.foreign.$coerce")}(${res}, ${q(fc)})` : res;
+    }
+    const res = this.ex0(e);
+    return !(e as any).chain && fc ? `${this.nat("std.foreign.$coerce")}(${res}, ${q(fc)})` : res;
   }
 
   private spineNext(x: A.Expr): A.Expr | undefined {
@@ -646,7 +652,7 @@ class ModuleGen {
     if (e.op === "~") return `(~${x})`;
     const t = prune(this.tyOf(e.operand));
     if (this.isInt(t)) return `$w(-${x})`;
-    if (t.k === "param") return `$neg(${x})`;
+    if (t.k === "param" || this.isForeignVal(t)) return `$neg(${x})`;
     return `(-${x})`;
   }
 
@@ -689,13 +695,14 @@ class ModuleGen {
     }
     const cmp = ["<", "<=", ">", ">="].includes(op);
     if (cmp) {
-      if (lt.k === "param") return `$cmp(${q(op)}, ${a}, ${b})`;
+      if (lt.k === "param" || this.isForeignVal(lt) || this.isForeignVal(rt)) return `$cmp(${q(op)}, ${a}, ${b})`;
       return `(${a} ${op} ${b})`;
     }
     if (this.isInt(lt) && this.isInt(rt)) {
       switch (op) {
         case "+": case "-": case "*": return `$w(${a} ${op} ${b})`;
         case "/": return `$div(${a}, ${b})`;
+        case "//": return `$idiv(${a}, ${b})`;
         case "%": return `$imod(${a}, ${b})`;
         case "**": return `$ipow(${a}, ${b})`;
         case "<<": return `$shl(${a}, ${b})`;
@@ -705,19 +712,25 @@ class ModuleGen {
     }
     if (this.isInt(lt) && this.isFloat(rt)) {
       if (op === "/") return `$div(${a}, ${b})`;
+      if (op === "//") return `$fidiv(${a}, ${b})`;
+      if (op === "%") return `$fmod(${a}, ${b})`;
       return `(Number(${a}) ${op} ${b})`;
     }
     if (this.isFloat(lt) && this.isInt(rt)) {
       if (op === "/") return `$div(${a}, ${b})`;
+      if (op === "//") return `$fidiv(${a}, ${b})`;
+      if (op === "%") return `$fmod(${a}, ${b})`;
       return `(${a} ${op} Number(${b}))`;
     }
     if (this.isFloat(lt) && this.isFloat(rt)) {
       if (op === "**") return `(${a} ** ${b})`;
+      if (op === "//") return `$fidiv(${a}, ${b})`;
+      if (op === "%") return `$fmod(${a}, ${b})`;
       return `(${a} ${op} ${b})`;
     }
     if (this.isStr(lt) && op === "+") return `$sc(${a}, ${b})`;
     if (lt.k === "app" && op === "+") return `${a}.concat(${b})`;
-    if (lt.k === "param") return `$arith(${q(op)}, ${a}, ${b})`;
+    if (lt.k === "param" || this.isForeignVal(lt) || this.isForeignVal(rt)) return `$arith(${q(op)}, ${a}, ${b})`;
     return `(${a} ${op} ${b})`;
   }
 
@@ -742,9 +755,19 @@ class ModuleGen {
         if (!this.isPure(tgt.obj)) { const t = this.temp(); pre.push(`${t} = ${o}`); o = t; }
         if (!(tgt.index.k === "id" || tgt.index.k === "int")) { const t = this.temp(); pre.push(`${t} = ${i}`); i = t; }
       }
-      const cur = idx === "map" ? `$mg(${o}, ${i})` : `$ai(${o}, ${i})`;
+      const cur = idx === "foreign" ? `${this.nat("std.foreign.$idx")}(${o}, ${i})` : idx === "map" ? `$mg(${o}, ${i})` : `$ai(${o}, ${i})`;
       const val = compound ? this.compoundValue(compound, cur, e) : this.ex(e.value);
-      const set = idx === "map" ? `${o}.set(${i}, ${val})` : `$as(${o}, ${i}, ${val})`;
+      const set = idx === "foreign" ? `${this.nat("std.foreign.$setIdx")}(${o}, ${i}, ${val})` : idx === "map" ? `${o}.set(${i}, ${val})` : `$as(${o}, ${i}, ${val})`;
+      return pre.length ? `(${pre.join(", ")}, ${set}, undefined)` : `(${set}, undefined)`;
+    }
+    if (tgt.k === "member" && (tgt as any).mres?.kind === "foreign-set-attr") {
+      let o = this.ex(tgt.obj);
+      const name = (tgt as any).mres.name as string;
+      const pre: string[] = [];
+      if (compound && !this.isPure(tgt.obj)) { const t = this.temp(); pre.push(`${t} = ${o}`); o = t; }
+      const cur = `${this.nat("std.foreign.$attr")}(${o}, ${q(name)})`;
+      const val = compound === "??" ? `(((${cur}) != null) ? ${cur} : ${this.ex(e.value)})` : compound ? this.compoundValue(compound, cur, e) : this.ex(e.value);
+      const set = `${this.nat("std.foreign.$setAttr")}(${o}, ${q(name)}, ${val})`;
       return pre.length ? `(${pre.join(", ")}, ${set}, undefined)` : `(${set}, undefined)`;
     }
     let target = this.targetRef(tgt);
@@ -758,7 +781,11 @@ class ModuleGen {
     return `(${pre.length ? pre.join(", ") + ", " : ""}${target} = ${val}, undefined)`;
   }
   assignTo(x: A.Expr, val: string): string {
-    if (x.k === "index") { const idx = (x as any).idx; return idx === "map" ? `${this.ex(x.obj)}.set(${this.ex(x.index)}, ${val})` : `$as(${this.ex(x.obj)}, ${this.ex(x.index)}, ${val})`; }
+    if (x.k === "index") {
+      const idx = (x as any).idx;
+      if (idx === "foreign") return `${this.nat("std.foreign.$setIdx")}(${this.ex(x.obj)}, ${this.ex(x.index)}, ${val})`;
+      return idx === "map" ? `${this.ex(x.obj)}.set(${this.ex(x.index)}, ${val})` : `$as(${this.ex(x.obj)}, ${this.ex(x.index)}, ${val})`;
+    }
     return `${this.targetRef(x)} = ${val}`;
   }
   targetRef(x: A.Expr): string {
@@ -785,7 +812,7 @@ class ModuleGen {
     if (this.isInt(lt)) {
       switch (op) {
         case "+": case "-": case "*": return `$w(${cur} ${op} ${b})`;
-        case "/": return `$idiv(${cur}, ${b})`;
+        case "//": return `$idiv(${cur}, ${b})`;
         case "%": return `$imod(${cur}, ${b})`;
         case "**": return `$ipow(${cur}, ${b})`;
         case "<<": return `$shl(${cur}, ${b})`;
@@ -793,6 +820,7 @@ class ModuleGen {
         default: return `(${cur} ${op} ${b})`;
       }
     }
+    if (this.isFloat(lt) && (op === "//" || op === "%")) return `${op === "//" ? "$fidiv" : "$fmod"}(${cur}, ${this.isInt(rt) ? `Number(${b})` : b})`;
     if (this.isFloat(lt)) {
       return op === "**"
         ? (this.isInt(rt) ? `(${cur} ** Number(${b}))` : `(${cur} ** ${b})`)
@@ -811,6 +839,7 @@ class ModuleGen {
       case "map": return `$mg(${o}, ${i})`;
       case "string": return `$si(${o}, ${i})`;
       case "slice": return `$slice(${o}, ${i})`;
+      case "foreign": return `${this.nat("std.foreign.$idx")}(${o}, ${i})`;
       case "op": return this.callOp((e as any).opFn, o, [i]);
     }
     return `${o}[${i}]`;
@@ -852,6 +881,7 @@ class ModuleGen {
         const f: FnInfo = m.cands[0].fn;
         return f.native ? this.nat(f.native) : `${this.typeRef(m.decl)}.${f.js}.bind(${this.typeRef(m.decl)})`;
       }
+      case "foreign-attr": return `${this.nat("std.foreign.$attr")}(${this.ex(e.obj)}, ${q(m.name)})`;
     }
     return `${this.ex(e.obj)}.${this.ck.memberJs(e.name)}`;
   }
@@ -875,6 +905,16 @@ class ModuleGen {
   argList(info: any, args: A.Arg[]): string {
     if (!info || !info.ordered) return args.map((a) => this.ex(a.value)).join(", ");
     const out: string[] = (info.ordered as (A.Arg | undefined)[]).map((a) => (a ? this.ex(a.value) : "undefined"));
+    const extraKw = (info.extraKw as A.Arg[] | undefined) ?? [];
+    if (extraKw.length && info.fn) {
+      const ni = (info.fn as FnInfo).params.findIndex((p) => p.name === "named");
+      if (ni >= 0) {
+        while (out.length <= ni) out.push("undefined");
+        const entries = extraKw.map((a) => `[${q(a.name!)}, ${this.ex(a.value)}]`).join(", ");
+        const prev = out[ni] !== "undefined" ? `...${out[ni]}, ` : "";
+        out[ni] = `new Map([${prev}${entries}])`;
+      }
+    }
     while (out.length && out[out.length - 1] === "undefined") out.pop();
     // a variadic parameter slot is empty in `ordered`; rest arguments follow positionally
     const rest = ((info.rest as A.Arg[]) ?? []).map((a) => this.ex(a.value));
@@ -886,10 +926,27 @@ class ModuleGen {
     return out.join(", ");
   }
 
+  private foreignArgPair(args: A.Arg[]): { pos: string; named: string } {
+    const pos = args.filter((a) => a.name === undefined).map((a) => this.ex(a.value));
+    const kw = args.filter((a) => a.name !== undefined).map((a) => `[${q(a.name!)}, ${this.ex(a.value)}]`);
+    return { pos: `[${pos.join(", ")}]`, named: kw.length ? `new Map([${kw.join(", ")}])` : "new Map()" };
+  }
+
   call(e: Extract<A.Expr, { k: "call" }>): string {
+    const ex = (e as any).extract as { kinds: string[]; filter?: A.Expr } | undefined;
+    if (ex) return `${this.nat("String.extract")}(${this.ex((e.callee as Extract<A.Expr, { k: "member" }>).obj)}, ${JSON.stringify(ex.kinds)}${ex.filter ? ", " + this.ex(ex.filter) : ""})`;
     const info = (e as any).call;
     const c = e.callee;
     if (!info) return `${this.ex(c)}(${e.args.map((a) => this.ex(a.value)).join(", ")})`;
+    if (info.kind === "foreign-method") {
+      const mem = c as Extract<A.Expr, { k: "member" }>;
+      const { pos, named } = this.foreignArgPair(e.args);
+      return `${this.nat("std.foreign.$call")}(${this.ex(mem.obj)}, ${q(info.name)}, ${pos}, ${named})`;
+    }
+    if (info.kind === "foreign-invoke") {
+      const { pos, named } = this.foreignArgPair(e.args);
+      return `${this.nat("std.foreign.$invoke")}(${this.callee(c)}, ${pos}, ${named})`;
+    }
     const args = this.argList(info, e.args);
     const fn: FnInfo | undefined = info.fn;
     switch (info.kind) {

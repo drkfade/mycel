@@ -1,0 +1,27 @@
+let vocab = ["free", "money", "lunch", "meeting", "prize"]
+
+fn to_vector(text: String) -> [Float] {
+    let words = text.lower().split(" ")
+    return vocab.map((v) => words.filter((w) => w == v).length.toFloat())
+}
+
+fn dot(a: [Float], b: [Float]) -> Float {
+    var total = 0.0
+    for i in 0..a.length {
+        total += a[i] * b[i]
+    }
+    return total
+}
+
+fn similarity(a: [Float], b: [Float]) -> Float {
+    return dot(a, b) / (dot(a, a).sqrt() * dot(b, b).sqrt())
+}
+
+let one = to_vector("free money now")
+let two = to_vector("free prize")
+let three = to_vector("lunch at noon")
+let four = to_vector("free money prize")
+print(one)
+print(f"free money vs free prize: {similarity(one, two):.2f}")
+print(f"free money vs lunch: {similarity(one, three):.2f}")
+print(f"free money vs free money prize: {similarity(one, four):.2f}")

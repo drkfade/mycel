@@ -1,4 +1,4 @@
-Mycel 0.1 alpha — Windows x64
+Mycel 0.2 alpha — Windows x64
 Copyright (c) 2026 drky. Open source: Apache-2.0 OR MIT, at your option; see LICENSE.txt.
 
 STATUS: Windows executable and installers are untested on real Windows until
@@ -7,7 +7,7 @@ its upstream signature. This is a private review build, not a verified release.
 No separate Node install is needed. Requires Windows x64 supported by Node 24
 (Windows 10 / Server 2016 or later). No administrator rights are needed.
 
-After owner review and publication, install from PowerShell:
+Once published, install from PowerShell:
   irm https://ol1x.xyz/mycel/install.ps1 | iex
 The installer pins the ZIP's SHA-256, installs to %LOCALAPPDATA%\Mycel\bin,
 and adds that directory to your user PATH and the current PowerShell PATH.

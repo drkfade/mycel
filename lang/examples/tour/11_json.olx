@@ -1,5 +1,5 @@
-// JSON literals (from JavaScript): where a json.Json is expected, write the JSON itself.
-import std.json
+# JSON literals (from JavaScript): where a json.Json is expected, write the JSON itself.
+import json
 
 let order: json.Json = {
   "id": 1042,
@@ -9,10 +9,10 @@ let order: json.Json = {
 }
 print(order.stringify())
 
-// reading it back reads like JavaScript too: missing keys are Null, not crashes
+# reading it back reads like JavaScript too: missing keys are Null, not crashes
 print(order["items"][0]["name"].asString ?? "?")
 print(order["coupon"].isNull)
 
-// parse text from a file or the network into the same value
+# parse text from a file or the network into the same value
 let parsed = json.parse("{\"ok\": true}")
 if let v = parsed.ok() { print(v["ok"].asBool ?? false) }

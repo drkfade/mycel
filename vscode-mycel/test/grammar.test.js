@@ -38,9 +38,10 @@ test("numbers", async () => {
   need(t, "1_000", "constant.numeric.integer"); need(t, "2e10", "constant.numeric.float");
 });
 test("comments", async () => {
-  const t = await tok("// line\n/* block\nstill */ let x = 1");
-  need(t, "// line", "comment.line"); need(t, "still", "comment.block"); need(t, "*/", "comment.block");
-  assert.ok(!has(t, "let", "comment"), "code after a block comment must not stay commented");
+  const t = await tok("# line\nlet x = 7 // 2 # why");
+  need(t, "# line", "comment.line"); need(t, "# why", "comment.line");
+  need(t, "//", "keyword.operator");
+  assert.ok(!has(t, "let", "comment"), "code after a comment line must not stay commented");
 });
 test("plain strings: escapes, no interpolation, char literal", async () => {
   const t = await tok(`let s = "a\\n{x}"\nlet c = 'z'`);
@@ -89,9 +90,9 @@ test("new syntax: list comprehensions and conditional expressions", async () => 
   need(t, "else", "keyword.control");
 });
 
-test("new syntax: anonymous fn, Set, std.web, /// doc comments", async () => {
-  const t = await tok("/// doc comment\nimport std.web\nlet f = fn(x) => x * 2\nlet s = Set([1, 2])");
-  need(t, "/// doc comment", "comment.line.documentation");
+test("new syntax: anonymous fn, Set, std.web, ## doc comments", async () => {
+  const t = await tok("## doc comment\nimport std.web\nlet f = fn(x) => x * 2\nlet s = Set([1, 2])");
+  need(t, "## doc comment", "comment.line.documentation");
   need(t, "std", "support.module");
   need(t, "web", "support.module.submodule");
   need(t, "fn", "storage.type");

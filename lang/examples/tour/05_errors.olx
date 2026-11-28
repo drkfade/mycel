@@ -1,4 +1,4 @@
-// Result, ?, typed errors, try/catch/finally. Panics are not catchable.
+# Result, ?, typed errors, try/catch/finally. Panics are not catchable.
 class NotFound: Error {}
 class Invalid: Error {}
 
@@ -10,7 +10,7 @@ fn parseAge(text: String) -> Result<Int, Error> {
 }
 
 fn totalAge(a: String, b: String) -> Result<Int, Error> {
-  let x = parseAge(a)? // ? returns the error early
+  let x = parseAge(a)? # ? returns the error early
   let y = parseAge(b)?
   return Ok(x + y)
 }

@@ -1,9 +1,9 @@
-import std.http
-import std.json
+import http
+import json
 
 pub struct Note { let id: Int, title: String }
 
-/// In-memory notes with a REST interface:  GET /notes  POST /notes  GET|DELETE /notes/<id>
+## In-memory notes with a REST interface:  GET /notes  POST /notes  GET|DELETE /notes/<id>
 pub class NotesApi {
   var notes: [Note] = []
   var nextId = 1

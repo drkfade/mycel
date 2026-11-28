@@ -1,5 +1,5 @@
-// async/await, spawn, gather with std.task, channels.
-import std.task
+# async/await, spawn, gather with std.task, channels.
+import task
 
 async fn fetch(name: String, ms: Int) -> String {
   await task.sleep(ms)

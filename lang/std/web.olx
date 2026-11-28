@@ -1,11 +1,11 @@
-import std.http
-import std.json as js
-import std.fs
-// Web apps in a few lines, the way Express, Flask and Sinatra do it: routes with :params, JSON, forms, static files.
-//   app = web.App()
-//   app.get("/", req => web.html("<h1>Hello</h1>"))
-//   app.get("/hello/:name", req => web.text(f"Hi {req.params["name"]}"))
-//   app.run(8000)          // serves until you stop it (needs --allow-listen)
+import http
+import json as js
+import fs
+# Web apps in a few lines, the way Express, Flask and Sinatra do it: routes with :params, JSON, forms, static files.
+#   app = web.App()
+#   app.get("/", req => web.html("<h1>Hello</h1>"))
+#   app.get("/hello/:name", req => web.text(f"Hi {req.params["name"]}"))
+#   app.run(8000)          # serves until you stop it (needs --allow-listen)
 
 pub struct Request {
   let method: String, path: String, params: {String: String}, query: {String: String}, form: {String: String}, headers: {String: String}, body: String
@@ -16,7 +16,7 @@ pub fn text(body: String, status: Int = 200) -> http.Response { return http.text
 pub fn html(body: String, status: Int = 200) -> http.Response { return http.Response(status: status, body: body, headers: {"content-type": "text/html; charset=utf-8"}) }
 pub fn json(value: Any, status: Int = 200) -> http.Response { return http.Response(status: status, body: js.encode(value), headers: {"content-type": "application/json"}) }
 pub fn redirect(to: String) -> http.Response { return http.Response(status: 303, body: "", headers: {"location": to}) }
-/// Make text safe to put inside HTML (like Python's html.escape): & < > " ' become entities.
+## Make text safe to put inside HTML (like Python's html.escape): & < > " ' become entities.
 pub fn escape(text: String) -> String { return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;") }
 pub fn notFound(message: String = "not found") -> http.Response { return http.text(message, status: 404) }
 
@@ -40,7 +40,7 @@ pub class App {
   fn post(path: String, handler: (Request) -> http.Response) { self.routes.push(Route(method: "POST", parts: segments(path), handler: handler)) }
   fn put(path: String, handler: (Request) -> http.Response) { self.routes.push(Route(method: "PUT", parts: segments(path), handler: handler)) }
   fn delete(path: String, handler: (Request) -> http.Response) { self.routes.push(Route(method: "DELETE", parts: segments(path), handler: handler)) }
-  /// Serve the files in `folder` under the URL `prefix` (e.g. files("/static", "public")); needs --allow-read.
+  ## Serve the files in `folder` under the URL `prefix` (e.g. files("/static", "public")); needs --allow-read.
   fn files(prefix: String, folder: String) { self.folders.push((prefix, folder)) }
 
   fn handle(req: http.Request) -> http.Response {
@@ -76,8 +76,8 @@ pub class App {
     return notFound(f"no page at {req.path}")
   }
 
-  /// Start serving and return the server (port 0 picks a free port) — for tests and programs that keep going.
+  ## Start serving and return the server (port 0 picks a free port) — for tests and programs that keep going.
   async fn start(port: Int = 0) -> Result<http.Server, Error> { return await http.serve(port, r => self.handle(r)) }
-  /// Serve on 127.0.0.1:port until the program is stopped (Ctrl-C), like Flask's app.run().
+  ## Serve on 127.0.0.1:port until the program is stopped (Ctrl-C), like Flask's app.run().
   fn run(port: Int = 8000) { runForever(port, r => self.handle(r)) }
 }

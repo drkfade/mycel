@@ -23,12 +23,55 @@ export const KEYWORDS = new Set([
 
 // Longest first so `..=` wins over `..`.
 const OPS = [
-  "..=", "...", "<<=", ">>=", "**=", "??=",
-  "==", "!=", "<=", ">=", "&&", "||", "??", "?.", "..", "->", "=>", "+=", "-=", "*=", "/=", "%=", "**", "<<", ">>", "|>",
+  "..=", "...", "<<=", ">>=", "**=", "??=", "//=",
+  "==", "//", "!=", "<=", ">=", "&&", "||", "??", "?.", "..", "->", "=>", "+=", "-=", "*=", "/=", "%=", "**", "<<", ">>", "|>",
   "+", "-", "*", "/", "%", "<", ">", "=", "!", "?", ":", ".", ",", ";", "(", ")", "[", "]", "{", "}", "@", "&", "|", "^", "~", "#",
 ];
 
 const ESC: Record<string, string> = { n: "\n", t: "\t", r: "\r", "0": "\0", "\\": "\\", '"': '"', "'": "'", $: "$", b: "\b" };
+
+const OPERAND_END_OPS = new Set([")", "]", "}"]);
+const OPERAND_KW = new Set(["true", "false", "nil", "self"]);
+const operandEnd = (k: Token) => k.k === "id" || k.k === "int" || k.k === "float" || k.k === "str" || k.k === "char" || (k.k === "op" && OPERAND_END_OPS.has(k.v)) || (k.k === "kw" && OPERAND_KW.has(k.v));
+const operandStart = (k: Token) => k.k === "id" || k.k === "int" || k.k === "float" || k.k === "str" || k.k === "char" || (k.k === "kw" && OPERAND_KW.has(k.v));
+
+  /** Is the `//` at `j` an old-style comment (not floor division)? Division needs an operand before it on the same line and an expression after it. */
+export function slashSlashIsComment(src: Source, to: number, j: number, toks: Token[], depthLen: number): boolean {
+  const t = src.text;
+    const ls = t.lastIndexOf("\n", j - 1) + 1;
+    if (t.slice(ls, j).trim() === "") return true;
+    const prev = toks[toks.length - 1];
+    if (!prev || prev.k === "nl" || prev.start < ls || !operandEnd(prev)) return true;
+    const nl = t.indexOf("\n", j), le = nl < 0 || nl > to ? to : nl;
+    const len = t.startsWith("//=", j) ? 3 : 2; // `x //= 5` compounds; `//====` is a rule line
+    if (t.slice(j + len, le).trim() === "") return true;
+    let rest: Token[];
+    try { rest = lex(src, j + len, le).filter((x) => x.k !== "nl" && x.k !== "eof"); } catch { return true; }
+    if (!rest.length) return true;
+    const first = rest[0];
+    if (!(operandStart(first) || (first.k === "op" && ["(", "[", "-", "+", "!", "~"].includes(first.v)))) return true;
+    let d = 0;
+    for (let n = 0; n < rest.length; n++) {
+      const x = rest[n], y = rest[n + 1];
+      if (x.k === "op" && "([{".includes(x.v)) d++;
+      else if (x.k === "op" && ")]}".includes(x.v)) { d--; if (d < 0) return false; } // closes the surrounding call or index
+      else if (d === 0 && x.k === "op" && x.v === ";") return false; // `x = 10 // 3; print(x)`
+      else if (d === 0 && x.k === "op" && (x.v === "," || x.v === ":")) return depthLen === 0; // prose has commas; inside a call they separate arguments
+      if (y && operandEnd(x) && operandStart(y)) return true; // two operands side by side: that is prose
+      if (y && x.k === "kw" && !OPERAND_KW.has(x.v) && !["is", "as", "in", "if", "else"].includes(x.v)) return true;
+    }
+    return d !== 0;
+  }
+
+/** For `mycel fmt --fix`: is the `//` at `j` in `src` an old comment (true) or floor division (false)? */
+export function isOldSlashComment(src: Source, j: number): boolean {
+  const t = src.text, ls = t.lastIndexOf("\n", j - 1) + 1;
+  let toks: Token[];
+  try { toks = lex(src, ls, j).filter((x) => x.k !== "nl" && x.k !== "eof"); } catch { return true; }
+  let depth = 0;
+  for (const k of toks) if (k.k === "op") { if ("([{".includes(k.v)) depth++; else if (")]}".includes(k.v)) depth--; }
+  return slashSlashIsComment(src, src.text.length, j, toks, Math.max(0, depth));
+}
 
 export function lex(src: Source, from = 0, to = src.text.length): Token[] {
   const t = src.text;
@@ -149,6 +192,15 @@ export function lex(src: Source, from = 0, to = src.text.length): Token[] {
     return { code: { start: a, end: e } };
   }
 
+  /** `#[` that is code, not a comment: a set-literal habit (`x = #[1, 2]`). Everything else after `#` is a comment. */
+  const setHabitAt = (j: number): boolean => {
+    if (t[j + 1] !== "[") return false;
+    const prev = toks[toks.length - 1];
+    if (!prev || prev.k === "nl" || prev.start < t.lastIndexOf("\n", j - 1) + 1) return false;
+    if (!(prev.k === "op" && ["=", "(", ",", "[", "{", ":", "=>", "??", "|>"].includes(prev.v)) && !(prev.k === "kw" && prev.v === "return")) return false;
+    const nl = t.indexOf("\n", j), le = nl < 0 || nl > to ? to : nl;
+    return /\]\s*[)\],]*\s*$/.test(t.slice(j, le));
+  };
   while (i < to) {
     const c = t[i];
     if (c === " " || c === "\t" || c === "\r") { i++; sp = true; continue; }
@@ -160,7 +212,7 @@ export function lex(src: Source, from = 0, to = src.text.length): Token[] {
       let j = i + 1;
       for (;;) {
         while (j < to && /[ \t\r\n]/.test(t[j])) j++;
-        if (t.startsWith("//", j)) { while (j < to && t[j] !== "\n") j++; continue; }
+        if (t[j] === "#" && !setHabitAt(j)) { while (j < to && t[j] !== "\n") j++; continue; }
         break;
       }
       const rest = t.slice(j, j + 3);
@@ -169,11 +221,19 @@ export function lex(src: Source, from = 0, to = src.text.length): Token[] {
       i++;
       continue;
     }
-    if (c === "/" && t[i + 1] === "/") { while (i < to && t[i] !== "\n") i++; continue; }
+    if (c === "#" && !setHabitAt(i)) { while (i < to && t[i] !== "\n") i++; continue; }
     if (c === "/" && t[i + 1] === "*") {
+      const ls = t.lastIndexOf("\n", i - 1) + 1, nl = t.indexOf("\n", i), le = nl < 0 || nl > to ? to : nl;
       const e = t.indexOf("*/", i + 2);
-      if (e < 0 || e >= to) err(i, i + 2, "unterminated block comment", "`/*` has no matching `*/`", "add `*/` to close the comment");
-      i = e + 2; sp = true; continue;
+      const one = e >= 0 && e < le;
+      const body = one ? t.slice(i + 2, e).trim() : t.slice(i + 2, le).trim();
+      const fixed = one ? t.slice(ls, i) + "# " + body + t.slice(e + 2, le) : t.slice(ls, i) + "# " + body;
+      err(i, one ? e + 2 : le, "comments start with # in Mycel — there are no /* */ block comments", "Mycel has one kind of comment: `#` to the end of the line. For several lines, put `#` at the start of each line", `write \`${fixed.trimEnd()}\` (or run \`mycel fmt --fix\` to rewrite old files)`);
+    }
+    if (c === "/" && t[i + 1] === "/" && slashSlashIsComment(src, to, i, toks, depth.length)) {
+      const ls = t.lastIndexOf("\n", i - 1) + 1, nl = t.indexOf("\n", i), le = nl < 0 || nl > to ? to : nl;
+      const fixed = t.slice(ls, i) + "#" + t.slice(i + 2, le);
+      err(i, le, "comments start with # in Mycel", "`//` is whole-number division in Mycel (`7 // 2` is 3), so it cannot start a comment", `write \`${fixed.trimEnd()}\` (or run \`mycel fmt --fix\` to rewrite old files)`);
     }
     if (/[A-Za-z_]/.test(c) || c > "\x7f" && /\p{L}/u.test(c)) {
       const s = i;

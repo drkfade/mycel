@@ -87,3 +87,10 @@ try {
 
 console.log(`\nAll ${passedCount} lesson examples verified against lang/bin/mycel output!`);
 console.log('learn-mycel.html self-contained structure and tests PASSED.');
+
+// The AI development track on /mycel/learn/ai/: every example and exercise solution runs with the real CLI.
+// (Runs before the tour check, which exits the process on its own failures.)
+await import('./check-ai.mjs');
+
+// The interactive tour on /mycel/learn/ and the site pages, through the playground bundle visitors run.
+await import('./check-tour.mjs');

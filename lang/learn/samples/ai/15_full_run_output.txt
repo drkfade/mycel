@@ -1,0 +1,18 @@
+1000 names, 25 characters, 7103 training characters, 812 held out
+model: 2 blocks, 4 heads, width 32, 27609 numbers to learn
+step    0  train loss 3.228  held-out loss 3.229
+step  100  train loss 2.207  held-out loss 2.258
+step  200  train loss 2.000  held-out loss 2.159
+step  300  train loss 1.848  held-out loss 1.937
+step  400  train loss 1.854  held-out loss 2.013
+step  500  train loss 1.842  held-out loss 2.009
+step  600  train loss 1.813  held-out loss 2.010
+trained 600 steps in 27.3 seconds
+alzin
+driova
+giorglan
+jumbus
+mixror
+piantobrel
+thafiacen
+waimbor

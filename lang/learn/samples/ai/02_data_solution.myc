@@ -1,0 +1,18 @@
+let emails = [
+    ("Win a free prize now", true),
+    ("Lunch at noon?", false),
+    ("Free money, click here", true),
+    ("Notes from today's meeting", false)
+]
+
+var spam_count = 0
+var not_spam_count = 0
+for (text, is_spam) in emails {
+    if is_spam {
+        spam_count += 1
+    } else {
+        not_spam_count += 1
+    }
+}
+
+print(f"{not_spam_count} are not spam")

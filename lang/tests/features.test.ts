@@ -16,8 +16,9 @@ fn main() {
   print(fs.map((f) => f()))
 }`;
   assert.equal(await out(src), "11\n3\n[0, 10, 20]");
-  // `{ ... }` where a value is expected is a map literal, so a block there is rejected rather than silently misparsed
-  assert.ok(errors(`fn main() { let v = { let x = 5\n x } }`).length > 0);
+  // `{ ... }` where a value is expected is a map literal only when it is `{}` or has `key: value`; with statements it is a closure
+  assert.equal(await out(`fn main() { let v = { let x = 5\n x }\n print(v()) }`), "5");
+  assert.ok(errors(`fn main() { let v = { let x = 5\n x }\n print(v + 1) }`).length > 0);
 });
 
 test("operators on user types: == < sorting, derived comparisons", async () => {

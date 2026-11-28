@@ -1,4 +1,4 @@
-/// A JSON value. Where a Json is expected, literals are JSON by themselves: `let v: json.Json = {"a": [1, true, nil]}`.
+## A JSON value. Where a Json is expected, literals are JSON by themselves: `let v: json.Json = {"a": [1, true, nil]}`.
 pub enum Json {
   Null
   Bool(Bool)
@@ -7,7 +7,7 @@ pub enum Json {
   Arr([Json])
   Obj({String: Json})
 
-  /// Items in an array/object, characters in a string, else 0 — so len(data["items"]) works.
+  ## Items in an array/object, characters in a string, else 0 — so len(data["items"]) works.
   get length: Int => match self { .Arr(a) => a.length, .Obj(o) => o.length, .Str(s) => s.length, _ => 0 }
   get isEmpty: Bool => self.length == 0
   get isNull: Bool => match self { .Null => true, _ => false }
@@ -21,9 +21,9 @@ pub enum Json {
   get values: [Json] => match self { .Obj(o) => o.values, _ => [] }
   fn contains(key: String) -> Bool => match self { .Obj(o) => o.has(key), _ => false }
   fn contains(val: Json) -> Bool => match self { .Arr(a) => a.contains(val), _ => false }
-  /// Member of an object, or nil when this is not an object or the key is missing.
+  ## Member of an object, or nil when this is not an object or the key is missing.
   fn get(key: String) -> Json? => match self { .Obj(o) => o[key], _ => nil }
-  /// Element of an array, or nil when out of range or not an array.
+  ## Element of an array, or nil when out of range or not an array.
   fn at(index: Int) -> Json? {
     match self {
       .Arr(a) => {
@@ -35,9 +35,9 @@ pub enum Json {
     }
   }
   fn stringify() -> String => stringify(self)
-  /// `data["name"]` like a Python dict / JS object: the member, or Null when missing or not an object.
+  ## `data["name"]` like a Python dict / JS object: the member, or Null when missing or not an object.
   operator [](key: String) -> Json => match self { .Obj(o) => o[key] ?? .Null, _ => .Null }
-  /// `items[0]`: the element, or Null when out of range or not an array.
+  ## `items[0]`: the element, or Null when out of range or not an array.
   operator [](index: Int) -> Json {
     match self {
       .Arr(a) => {
@@ -48,15 +48,15 @@ pub enum Json {
       _ => return Json.Null
     }
   }
-  /// Text as it is, everything else as JSON (so print(data["name"]) shows Ada, not Str("Ada")).
+  ## Text as it is, everything else as JSON (so print(data["name"]) shows Ada, not Str("Ada")).
   fn toString() -> String => match self { .Str(s) => s, _ => stringify(self) }
 }
 
-/// Parse JSON text. Numbers are Floats; integers up to 2^53 round-trip exactly.
+## Parse JSON text. Numbers are Floats; integers up to 2^53 round-trip exactly.
 pub extern fn parse(text: String) -> Result<Json, Error>
-/// Compact JSON text for a Json value.
+## Compact JSON text for a Json value.
 pub extern fn stringify(value: Json) -> String
-/// Indented JSON text for a Json value.
+## Indented JSON text for a Json value.
 pub extern fn pretty(value: Json) -> String
-/// JSON text for any plain value: numbers, strings, arrays, maps with String keys, structs and classes (their fields), enums.
+## JSON text for any plain value: numbers, strings, arrays, maps with String keys, structs and classes (their fields), enums.
 pub extern fn encode(value: Any) -> String

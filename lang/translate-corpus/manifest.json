@@ -1,0 +1,782 @@
+[
+  {
+    "file": "01_strings_lists_dicts/01_strings_slicing.py",
+    "category": "01_strings_lists_dicts",
+    "source": "https://docs.python.org/3/tutorial/introduction.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "01_strings_lists_dicts/02_list_methods.py",
+    "category": "01_strings_lists_dicts",
+    "source": "https://docs.python.org/3/tutorial/datastructures.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "01_strings_lists_dicts/03_list_stack.py",
+    "category": "01_strings_lists_dicts",
+    "source": "https://docs.python.org/3/tutorial/datastructures.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "01_strings_lists_dicts/04_dict_operations.py",
+    "category": "01_strings_lists_dicts",
+    "source": "https://docs.python.org/3/tutorial/datastructures.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "01_strings_lists_dicts/05_dict_looping.py",
+    "category": "01_strings_lists_dicts",
+    "source": "https://docs.python.org/3/tutorial/controlflow.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "01_strings_lists_dicts/06_string_padding.py",
+    "category": "01_strings_lists_dicts",
+    "source": "https://docs.python.org/3/tutorial/inputoutput.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "01_strings_lists_dicts/07_sets_operations.py",
+    "category": "01_strings_lists_dicts",
+    "source": "https://docs.python.org/3/tutorial/datastructures.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "01_strings_lists_dicts/08_anagrams.py",
+    "category": "01_strings_lists_dicts",
+    "source": "https://raw.githubusercontent.com/TheAlgorithms/Python/master/strings/anagrams.py",
+    "license": "MIT (TheAlgorithms/Python)"
+  },
+  {
+    "file": "02_classes/01_complex_class.py",
+    "category": "02_classes",
+    "source": "https://docs.python.org/3/tutorial/classes.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "02_classes/02_dog_tricks.py",
+    "category": "02_classes",
+    "source": "https://docs.python.org/3/tutorial/classes.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "02_classes/03_bag_methods.py",
+    "category": "02_classes",
+    "source": "https://docs.python.org/3/tutorial/classes.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "02_classes/04_mapping_subclass.py",
+    "category": "02_classes",
+    "source": "https://docs.python.org/3/tutorial/classes.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "02_classes/05_stack_class.py",
+    "category": "02_classes",
+    "source": "https://raw.githubusercontent.com/TheAlgorithms/Python/master/data_structures/stacks/stack.py",
+    "license": "MIT (TheAlgorithms/Python)"
+  },
+  {
+    "file": "02_classes/06_student_repr.py",
+    "category": "02_classes",
+    "source": "https://docs.python.org/3/howto/sorting.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "03_exceptions/01_value_error_loop.py",
+    "category": "03_exceptions",
+    "source": "https://docs.python.org/3/tutorial/errors.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "03_exceptions/02_exception_hierarchy.py",
+    "category": "03_exceptions",
+    "source": "https://docs.python.org/3/tutorial/errors.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "03_exceptions/03_divide_else_finally.py",
+    "category": "03_exceptions",
+    "source": "https://docs.python.org/3/tutorial/errors.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "03_exceptions/04_bool_return_finally.py",
+    "category": "03_exceptions",
+    "source": "https://docs.python.org/3/tutorial/errors.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "03_exceptions/05_raise_reraise.py",
+    "category": "03_exceptions",
+    "source": "https://docs.python.org/3/tutorial/errors.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "03_exceptions/06_multiple_except.py",
+    "category": "03_exceptions",
+    "source": "https://docs.python.org/3/tutorial/errors.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "04_file_io/01_write_read_text.py",
+    "category": "04_file_io",
+    "source": "https://docs.python.org/3/tutorial/inputoutput.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "04_file_io/02_read_lines_loop.py",
+    "category": "04_file_io",
+    "source": "https://docs.python.org/3/tutorial/inputoutput.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "files": {
+      "sample.txt": "alpha\nbeta\ngamma\n"
+    }
+  },
+  {
+    "file": "04_file_io/03_readlines_count.py",
+    "category": "04_file_io",
+    "source": "https://docs.python.org/3/tutorial/errors.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "files": {
+      "notes.txt": "one\ntwo\nthree\n"
+    }
+  },
+  {
+    "file": "04_file_io/04_append_file.py",
+    "category": "04_file_io",
+    "source": "https://docs.python.org/3/tutorial/inputoutput.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "04_file_io/05_blank_line_finder.py",
+    "category": "04_file_io",
+    "source": "https://docs.python.org/3/howto/functional.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "files": {
+      "data.txt": "first\n\nthird\n   \nfifth\n"
+    }
+  },
+  {
+    "file": "04_file_io/06_missing_file_except.py",
+    "category": "04_file_io",
+    "source": "https://docs.python.org/3/tutorial/errors.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "05_fstrings/01_basic_fstring.py",
+    "category": "05_fstrings",
+    "source": "https://docs.python.org/3/tutorial/inputoutput.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "05_fstrings/02_float_precision.py",
+    "category": "05_fstrings",
+    "source": "https://docs.python.org/3/tutorial/inputoutput.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "05_fstrings/03_table_alignment.py",
+    "category": "05_fstrings",
+    "source": "https://docs.python.org/3/tutorial/inputoutput.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "05_fstrings/04_conversions_repr.py",
+    "category": "05_fstrings",
+    "source": "https://docs.python.org/3/tutorial/inputoutput.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "05_fstrings/05_debug_equals.py",
+    "category": "05_fstrings",
+    "source": "https://docs.python.org/3/tutorial/inputoutput.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "05_fstrings/06_percent_and_padding.py",
+    "category": "05_fstrings",
+    "source": "https://docs.python.org/3/tutorial/inputoutput.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "06_comprehensions/01_squares_and_filter.py",
+    "category": "06_comprehensions",
+    "source": "https://docs.python.org/3/tutorial/datastructures.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "06_comprehensions/02_nested_pairs.py",
+    "category": "06_comprehensions",
+    "source": "https://docs.python.org/3/tutorial/datastructures.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "06_comprehensions/03_matrix_transpose.py",
+    "category": "06_comprehensions",
+    "source": "https://docs.python.org/3/tutorial/datastructures.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "06_comprehensions/04_dict_comprehension.py",
+    "category": "06_comprehensions",
+    "source": "https://docs.python.org/3/tutorial/datastructures.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "06_comprehensions/05_set_comprehension.py",
+    "category": "06_comprehensions",
+    "source": "https://docs.python.org/3/tutorial/datastructures.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "06_comprehensions/06_nested_string_tuple.py",
+    "category": "06_comprehensions",
+    "source": "https://docs.python.org/3/howto/functional.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "07_generators/01_reverse_generator.py",
+    "category": "07_generators",
+    "source": "https://docs.python.org/3/tutorial/classes.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "07_generators/02_generate_ints.py",
+    "category": "07_generators",
+    "source": "https://docs.python.org/3/howto/functional.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "07_generators/03_genexpr_sum.py",
+    "category": "07_generators",
+    "source": "https://docs.python.org/3/tutorial/classes.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "07_generators/04_yield_from_chain.py",
+    "category": "07_generators",
+    "source": "https://docs.python.org/3/library/itertools.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "07_generators/05_fibonacci_gen.py",
+    "category": "07_generators",
+    "source": "https://docs.python.org/3/tutorial/controlflow.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "08_recursion/01_factorial_rec.py",
+    "category": "08_recursion",
+    "source": "https://raw.githubusercontent.com/TheAlgorithms/Python/master/maths/factorial.py",
+    "license": "MIT (TheAlgorithms/Python)"
+  },
+  {
+    "file": "08_recursion/02_tower_of_hanoi.py",
+    "category": "08_recursion",
+    "source": "https://raw.githubusercontent.com/TheAlgorithms/Python/master/other/tower_of_hanoi.py",
+    "license": "MIT (TheAlgorithms/Python)"
+  },
+  {
+    "file": "08_recursion/03_gcd_rec.py",
+    "category": "08_recursion",
+    "source": "https://raw.githubusercontent.com/TheAlgorithms/Python/master/maths/greatest_common_divisor.py",
+    "license": "MIT (TheAlgorithms/Python)"
+  },
+  {
+    "file": "08_recursion/04_quicksort.py",
+    "category": "08_recursion",
+    "source": "https://raw.githubusercontent.com/TheAlgorithms/Python/master/sorts/quick_sort.py",
+    "license": "MIT (TheAlgorithms/Python)"
+  },
+  {
+    "file": "08_recursion/05_mergesort.py",
+    "category": "08_recursion",
+    "source": "https://raw.githubusercontent.com/TheAlgorithms/Python/master/sorts/merge_sort.py",
+    "license": "MIT (TheAlgorithms/Python)"
+  },
+  {
+    "file": "08_recursion/06_binary_search_rec.py",
+    "category": "08_recursion",
+    "source": "https://raw.githubusercontent.com/TheAlgorithms/Python/master/searches/binary_search.py",
+    "license": "MIT (TheAlgorithms/Python)"
+  },
+  {
+    "file": "09_sorting_key/01_sort_tuples_lambda.py",
+    "category": "09_sorting_key",
+    "source": "https://docs.python.org/3/howto/sorting.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "09_sorting_key/02_sort_objects.py",
+    "category": "09_sorting_key",
+    "source": "https://docs.python.org/3/howto/sorting.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "09_sorting_key/03_sort_itemgetter.py",
+    "category": "09_sorting_key",
+    "source": "https://docs.python.org/3/howto/sorting.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "09_sorting_key/04_sort_dict_lookup.py",
+    "category": "09_sorting_key",
+    "source": "https://docs.python.org/3/howto/sorting.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "09_sorting_key/05_sort_strlen.py",
+    "category": "09_sorting_key",
+    "source": "https://docs.python.org/3/howto/sorting.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "10_dataclasses/01_inventory_item.py",
+    "category": "10_dataclasses",
+    "source": "https://docs.python.org/3/library/dataclasses.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "10_dataclasses/02_point_nested.py",
+    "category": "10_dataclasses",
+    "source": "https://docs.python.org/3/library/dataclasses.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "10_dataclasses/03_defaults_and_method.py",
+    "category": "10_dataclasses",
+    "source": "https://docs.python.org/3/library/dataclasses.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "10_dataclasses/04_frozen_dataclass.py",
+    "category": "10_dataclasses",
+    "source": "https://docs.python.org/3/library/dataclasses.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "10_dataclasses/05_employee.py",
+    "category": "10_dataclasses",
+    "source": "https://docs.python.org/3/tutorial/classes.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "11_enum/01_color_enum.py",
+    "category": "11_enum",
+    "source": "https://docs.python.org/3/library/enum.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "11_enum/02_enum_match.py",
+    "category": "11_enum",
+    "source": "https://docs.python.org/3/tutorial/controlflow.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "11_enum/03_int_enum.py",
+    "category": "11_enum",
+    "source": "https://docs.python.org/3/library/enum.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "11_enum/04_enum_iter.py",
+    "category": "11_enum",
+    "source": "https://docs.python.org/3/library/enum.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "11_enum/05_strenum.py",
+    "category": "11_enum",
+    "source": "https://docs.python.org/3/library/enum.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "12_cli_args/01_sys_argv_slice.py",
+    "category": "12_cli_args",
+    "source": "https://docs.python.org/3/tutorial/stdlib.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "args": [
+      "one",
+      "two",
+      "three"
+    ]
+  },
+  {
+    "file": "12_cli_args/02_sys_argv_sum.py",
+    "category": "12_cli_args",
+    "source": "https://docs.python.org/3/tutorial/stdlib.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "args": [
+      "10",
+      "20",
+      "30"
+    ]
+  },
+  {
+    "file": "12_cli_args/03_argparse_echo.py",
+    "category": "12_cli_args",
+    "source": "https://docs.python.org/3/howto/argparse.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "args": [
+      "hello_cli"
+    ]
+  },
+  {
+    "file": "12_cli_args/04_argparse_square_verbose.py",
+    "category": "12_cli_args",
+    "source": "https://docs.python.org/3/howto/argparse.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "args": [
+      "4",
+      "--verbose"
+    ]
+  },
+  {
+    "file": "12_cli_args/05_argparse_power.py",
+    "category": "12_cli_args",
+    "source": "https://docs.python.org/3/howto/argparse.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "args": [
+      "4",
+      "2",
+      "-v"
+    ]
+  },
+  {
+    "file": "13_json/01_dumps_basic.py",
+    "category": "13_json",
+    "source": "https://docs.python.org/3/library/json.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "13_json/02_dumps_compact_pretty.py",
+    "category": "13_json",
+    "source": "https://docs.python.org/3/library/json.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "13_json/03_loads_nested.py",
+    "category": "13_json",
+    "source": "https://docs.python.org/3/library/json.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "13_json/04_weird_json_dup_keys.py",
+    "category": "13_json",
+    "source": "https://docs.python.org/3/library/json.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "13_json/05_json_file_roundtrip.py",
+    "category": "13_json",
+    "source": "https://docs.python.org/3/library/json.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "14_csv/01_csv_reader.py",
+    "category": "14_csv",
+    "source": "https://docs.python.org/3/library/csv.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "files": {
+      "some.csv": "name,score\nAlice,95\nBob,88\n"
+    }
+  },
+  {
+    "file": "14_csv/02_csv_delimiter.py",
+    "category": "14_csv",
+    "source": "https://docs.python.org/3/library/csv.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "files": {
+      "eggs.csv": "Spam Spam |Baked Beans|\nSpam |Lovely Spam|\n"
+    }
+  },
+  {
+    "file": "14_csv/03_csv_dict_reader.py",
+    "category": "14_csv",
+    "source": "https://docs.python.org/3/library/csv.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "files": {
+      "names.csv": "first_name,last_name\nEric,Idle\nJohn,Cleese\n"
+    }
+  },
+  {
+    "file": "14_csv/04_csv_writer.py",
+    "category": "14_csv",
+    "source": "https://docs.python.org/3/library/csv.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "14_csv/05_csv_in_memory.py",
+    "category": "14_csv",
+    "source": "https://docs.python.org/3/library/csv.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "15_datetime/01_date_isoformat.py",
+    "category": "15_datetime",
+    "source": "https://docs.python.org/3/library/datetime.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "15_datetime/02_timedelta_total.py",
+    "category": "15_datetime",
+    "source": "https://docs.python.org/3/library/datetime.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "15_datetime/03_date_strftime.py",
+    "category": "15_datetime",
+    "source": "https://docs.python.org/3/library/datetime.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "15_datetime/04_datetime_fromisoformat.py",
+    "category": "15_datetime",
+    "source": "https://docs.python.org/3/library/datetime.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "15_datetime/05_date_diff.py",
+    "category": "15_datetime",
+    "source": "https://docs.python.org/3/library/datetime.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "waitsFor56": "operator - on foreign.Value handle (waits for task 56)"
+  },
+  {
+    "file": "16_random/01_basic_random.py",
+    "category": "16_random",
+    "source": "https://docs.python.org/3/library/random.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "16_random/02_shuffle_sample.py",
+    "category": "16_random",
+    "source": "https://docs.python.org/3/library/random.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "waitsFor56": "in-place list mutation across Python bridge (random.shuffle; waits for task 56)"
+  },
+  {
+    "file": "16_random/03_choices_weights.py",
+    "category": "16_random",
+    "source": "https://docs.python.org/3/library/random.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "16_random/04_randrange_dice.py",
+    "category": "16_random",
+    "source": "https://docs.python.org/3/tutorial/stdlib.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "16_random/05_bootstrap_sample.py",
+    "category": "16_random",
+    "source": "https://docs.python.org/3/library/random.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "17_math/01_trig_log.py",
+    "category": "17_math",
+    "source": "https://docs.python.org/3/tutorial/stdlib.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "17_math/02_exp_expm1.py",
+    "category": "17_math",
+    "source": "https://docs.python.org/3/library/math.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "17_math/03_nan_checks.py",
+    "category": "17_math",
+    "source": "https://docs.python.org/3/library/math.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "17_math/04_gcd_sieve.py",
+    "category": "17_math",
+    "source": "https://raw.githubusercontent.com/TheAlgorithms/Python/master/maths/sieve_of_eratosthenes.py",
+    "license": "MIT (TheAlgorithms/Python)"
+  },
+  {
+    "file": "17_math/05_euclidean_dist.py",
+    "category": "17_math",
+    "source": "https://docs.python.org/3/library/math.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "18_re/01_findall_digits.py",
+    "category": "18_re",
+    "source": "https://docs.python.org/3/howto/regex.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "waitsFor56": "String.extract(Int) helper (task 56)"
+  },
+  {
+    "file": "18_re/02_findall_words.py",
+    "category": "18_re",
+    "source": "https://docs.python.org/3/library/re.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "waitsFor56": "String.extract(Word) helper (task 56)"
+  },
+  {
+    "file": "18_re/03_findall_f_words.py",
+    "category": "18_re",
+    "source": "https://docs.python.org/3/tutorial/stdlib.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "18_re/04_search_groups.py",
+    "category": "18_re",
+    "source": "https://docs.python.org/3/library/re.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "18_re/05_sub_replace.py",
+    "category": "18_re",
+    "source": "https://docs.python.org/3/howto/regex.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "18_re/06_split_nonword.py",
+    "category": "18_re",
+    "source": "https://docs.python.org/3/library/re.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "19_requests/01_get_status_text.py",
+    "category": "19_requests",
+    "source": "https://raw.githubusercontent.com/psf/requests/main/docs/user/quickstart.rst",
+    "license": "Apache-2.0 (psf/requests docs)",
+    "http": true
+  },
+  {
+    "file": "19_requests/02_get_json.py",
+    "category": "19_requests",
+    "source": "https://raw.githubusercontent.com/psf/requests/main/docs/user/quickstart.rst",
+    "license": "Apache-2.0 (psf/requests docs)",
+    "http": true
+  },
+  {
+    "file": "19_requests/03_get_params.py",
+    "category": "19_requests",
+    "source": "https://raw.githubusercontent.com/psf/requests/main/docs/user/quickstart.rst",
+    "license": "Apache-2.0 (psf/requests docs)",
+    "http": true
+  },
+  {
+    "file": "19_requests/04_headers.py",
+    "category": "19_requests",
+    "source": "https://raw.githubusercontent.com/psf/requests/main/docs/user/quickstart.rst",
+    "license": "Apache-2.0 (psf/requests docs)",
+    "http": true
+  },
+  {
+    "file": "19_requests/05_post_json.py",
+    "category": "19_requests",
+    "source": "https://raw.githubusercontent.com/psf/requests/main/docs/user/quickstart.rst",
+    "license": "Apache-2.0 (psf/requests docs)",
+    "http": true
+  },
+  {
+    "file": "20_pathlib/01_purepath_parts.py",
+    "category": "20_pathlib",
+    "source": "https://docs.python.org/3/library/pathlib.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "waitsFor56": "Python tuples over bridge serialize as list instead of tuple (waits for task 56)"
+  },
+  {
+    "file": "20_pathlib/02_path_join_slash.py",
+    "category": "20_pathlib",
+    "source": "https://docs.python.org/3/library/pathlib.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "waitsFor56": "operator / on foreign.Value handle (waits for task 56)"
+  },
+  {
+    "file": "20_pathlib/03_path_exists_isdir.py",
+    "category": "20_pathlib",
+    "source": "https://docs.python.org/3/library/pathlib.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "files": {
+      "hello.txt": "hi\n"
+    },
+    "waitsFor56": "operator / on foreign.Value handle (waits for task 56)"
+  },
+  {
+    "file": "20_pathlib/04_path_read_write.py",
+    "category": "20_pathlib",
+    "source": "https://docs.python.org/3/library/pathlib.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "20_pathlib/05_path_suffixes.py",
+    "category": "20_pathlib",
+    "source": "https://docs.python.org/3/library/pathlib.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "21_collections/01_counter_tally.py",
+    "category": "21_collections",
+    "source": "https://docs.python.org/3/library/collections.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "waitsFor56": "Python tuples in most_common() serialize as list over bridge (waits for task 56)"
+  },
+  {
+    "file": "21_collections/02_counter_string.py",
+    "category": "21_collections",
+    "source": "https://docs.python.org/3/library/collections.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "waitsFor56": "Python tuples in most_common() serialize as list over bridge (waits for task 56)"
+  },
+  {
+    "file": "21_collections/03_defaultdict_list.py",
+    "category": "21_collections",
+    "source": "https://docs.python.org/3/library/collections.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "21_collections/04_defaultdict_int.py",
+    "category": "21_collections",
+    "source": "https://docs.python.org/3/library/collections.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "21_collections/05_deque_ops.py",
+    "category": "21_collections",
+    "source": "https://docs.python.org/3/library/collections.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "22_itertools/01_accumulate.py",
+    "category": "22_itertools",
+    "source": "https://docs.python.org/3/library/itertools.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "22_itertools/02_combinations_permutations.py",
+    "category": "22_itertools",
+    "source": "https://docs.python.org/3/library/itertools.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "waitsFor56": "Python tuples from combinations/permutations serialize as list over bridge (waits for task 56)"
+  },
+  {
+    "file": "22_itertools/03_chain_islice.py",
+    "category": "22_itertools",
+    "source": "https://docs.python.org/3/library/itertools.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)"
+  },
+  {
+    "file": "22_itertools/04_product_repeat.py",
+    "category": "22_itertools",
+    "source": "https://docs.python.org/3/library/itertools.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "waitsFor56": "Python tuples from product serialize as list over bridge (waits for task 56)"
+  },
+  {
+    "file": "22_itertools/05_groupby_sorted.py",
+    "category": "22_itertools",
+    "source": "https://docs.python.org/3/library/itertools.html",
+    "license": "PSF-2.0 / 0BSD (Python 3 documentation)",
+    "waitsFor56": "bridge closure callbacks + tuple unpacking over foreign.Value (waits for task 56)"
+  }
+]

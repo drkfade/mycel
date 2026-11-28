@@ -10,7 +10,7 @@ import { checkArtifact } from './check-artifact.mjs';
 import { checkReleaseLicense } from './license.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const pkg = path.join(here, 'dist/Mycel-0.1.0-alpha.pkg');
+const pkg = path.join(here, 'dist/Mycel-0.2.0-alpha.pkg');
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mycel-pkg-'));
 const expanded = path.join(root, 'expanded');
 const expected = [

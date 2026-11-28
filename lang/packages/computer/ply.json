@@ -1,0 +1,12 @@
+{
+  "name": "computer",
+  "version": "0.1.0",
+  "description": "Computer control for Mycel: mouse, keyboard, screen, clipboard, apps, notify, system",
+  "main": "src/lib.myc",
+  "native": "native/index.cjs",
+  "capabilities": {
+    "control": true,
+    "screen": true,
+    "clipboard": true
+  }
+}

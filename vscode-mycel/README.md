@@ -13,7 +13,7 @@ Language support for [Mycel](https://ol1x.xyz/mycel) (`.myc` and `.olx` files).
 - **Hover** shows the type of the name under the cursor, **Go to Definition**, **completion** (names, members after a `.`, keywords) and a document **outline**.
 - **Run**: press <kbd>Cmd</kbd>+<kbd>Enter</kbd> (<kbd>Ctrl</kbd>+<kbd>Enter</kbd> elsewhere) or use the play button to run the current file with `mycel file.myc` in a terminal.
 - Snippets: `fn`, `class`, `struct`, `enum`, `match`, `for`, `test`.
-- Brackets, auto-closing pairs and `//` / `/* */` commenting.
+- Brackets, auto-closing pairs and `#` commenting.
 
 ## Requirements
 

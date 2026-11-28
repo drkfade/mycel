@@ -1,0 +1,31 @@
+var spam_words: {String: Int} = {}
+var ham_words: {String: Int} = {}
+
+fn learn(text: String, is_spam: Bool) {
+    for word in text.lower().split(" ") {
+        if is_spam {
+            spam_words[word] = spam_words.getOr(word, 0) + 1
+        } else {
+            ham_words[word] = ham_words.getOr(word, 0) + 1
+        }
+    }
+}
+
+fn score(text: String) -> Int {
+    var total = 0
+    for word in text.lower().split(" ") {
+        total += spam_words.getOr(word, 0) - ham_words.getOr(word, 0)
+    }
+    return total
+}
+
+learn("win free money now", true)
+learn("free prize click now", true)
+learn("lunch at noon", false)
+learn("meeting notes for today", false)
+
+for message in ["free money", "lunch today", "win a prize", "free lunch"] {
+    let s = score(message)
+    let label = if s > 0 { "spam" } else { "not spam" }
+    print(message, "->", label, s)
+}

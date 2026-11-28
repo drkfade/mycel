@@ -155,7 +155,7 @@ Top-level initializers run once, when you enter them.`;
 export async function startRepl(o: { capabilities: Capabilities }): Promise<number> {
   const session = new ReplSession({ capabilities: o.capabilities, onOutput: (t) => process.stdout.write(t) });
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout, prompt: "mycel> " });
-  console.log("mycel 0.1.0 repl — :help for commands, :quit to leave");
+  console.log("mycel 0.2.0 repl — :help for commands, :quit to leave");
   let buf = "";
   rl.prompt();
   const lines: string[] = [];

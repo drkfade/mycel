@@ -1,4 +1,4 @@
-import std.test
+import test
 import eval
 
 test "precedence and associativity" {

@@ -1,4 +1,4 @@
-// A function that might fail returns Result<Int, Error>
+# A function that might fail returns Result<Int, Error>
 fn parseAge(text: String) -> Result<Int, Error> {
   if text.isEmpty {
     return Err(Error("age cannot be empty"))

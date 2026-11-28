@@ -25,6 +25,8 @@ test("every extern declared in the prelude and std has a native implementation (
   assert.ok(declared.size > 150, `only ${declared.size} natives declared?`);
   const missing = [...declared].filter((k) => typeof rt.natives[k] !== "function");
   assert.deepEqual(missing, [], "declared in .olx but not implemented");
-  const orphan = Object.keys(rt.natives).filter((k) => !declared.has(k));
+  // natives the checker emits for syntax that has no declaration: `text.extract(kind)`
+  const SYNTHETIC = new Set(["String.extract"]);
+  const orphan = Object.keys(rt.natives).filter((k) => !declared.has(k) && !SYNTHETIC.has(k));
   assert.deepEqual(orphan, [], "implemented but not declared (unreachable)");
 });

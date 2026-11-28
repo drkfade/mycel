@@ -206,6 +206,8 @@ export function display(v: any, quote = false, depth = 0): string {
 
 export function eq(a: any, b: any): boolean {
   if (a === b) return true;
+  if (a && typeof a.$eq === "function") return a.$eq(b);
+  if (b && typeof b.$eq === "function") return b.$eq(a);
   if ((typeof a === "bigint" && typeof b === "number") || (typeof a === "number" && typeof b === "bigint")) return Number(a) === Number(b);
   if (a === null || b === null || a === undefined || b === undefined) return false;
   if (typeof a !== "object" || typeof b !== "object") return false;
@@ -220,6 +222,8 @@ export function eq(a: any, b: any): boolean {
 }
 
 function cmpPrim(a: any, b: any): number {
+  if (a && typeof a.$num === "function") a = a.$num();
+  if (b && typeof b.$num === "function") b = b.$num();
   if (typeof a === "object" && a !== null) {
     if (typeof a.$op_lt === "function") return a.$op_lt(b) ? -1 : b.$op_lt(a) ? 1 : 0;
     throw new Panic(`${kindOf(a)} cannot be ordered (it does not define operator <)`);
@@ -256,6 +260,7 @@ export function createRuntime(ctx: RuntimeCtx, nativeFactory: (rt: Runtime) => R
     if (typeof x === "string") return Array.from(x);
     if (x && typeof x.iter === "function") { const it = x.iter(); return (function* () { for (;;) { const r = it.next(); if (r === null) return; yield r; } })(); }
     if (x && typeof x.next === "function") return (function* () { for (;;) { const r = x.next(); if (r === null) return; yield r; } })();
+    if (x && typeof x[Symbol.iterator] === "function") return x;
     throw new Panic(`${kindOf(x)} is not iterable`);
   };
   const tup = (...a: any[]) => Object.setPrototypeOf(a, TUP);
@@ -330,12 +335,15 @@ export function createRuntime(ctx: RuntimeCtx, nativeFactory: (rt: Runtime) => R
       });
       return p;
     },
-    $idiv(a: bigint, b: bigint) { if (b === 0n) throw new Panic("division by zero"); return w(a / b); },
+    /** `//`: whole-number division, rounded down (Python): -7 // 2 is -4. */
+    $idiv(a: bigint, b: bigint) { if (b === 0n) throw new Panic("division by zero"); let q = a / b; if (a % b !== 0n && (a < 0n) !== (b < 0n)) q -= 1n; return w(q); },
+    $fidiv(a: any, b: any) { a = Number(a); b = Number(b); if (b === 0) throw new Panic("division by zero"); return Math.floor(a / b); },
+    $fmod(a: any, b: any) { a = Number(a); b = Number(b); const r = a % b; return r !== 0 && (r < 0) !== (b < 0) ? r + b : r; },
     $div(a: any, b: any) {
       if (b === 0n || b === 0) throw new Panic("division by zero");
       return Number(a) / Number(b);
     },
-    $imod(a: bigint, b: bigint) { if (b === 0n) throw new Panic("remainder by zero"); return a % b; },
+    $imod(a: bigint, b: bigint) { if (b === 0n) throw new Panic("remainder by zero"); const r = a % b; return r !== 0n && (r < 0n) !== (b < 0n) ? r + b : r; },
     $ipow(a: bigint, b: bigint) {
       if (b < 0n) throw new Panic("negative exponent in Int `**` (use Float for fractional results)");
       let r = 1n, base = a, e = b;
@@ -344,23 +352,25 @@ export function createRuntime(ctx: RuntimeCtx, nativeFactory: (rt: Runtime) => R
     },
     $shl(a: bigint, b: bigint) { if (b < 0n || b > 63n) throw new Panic(`shift amount ${b} is out of range 0..63`); return w(a << b); },
     $shr(a: bigint, b: bigint) { if (b < 0n) throw new Panic(`shift amount ${b} is negative`); return b > 63n ? (a < 0n ? -1n : 0n) : a >> b; },
-    $neg: (x: any) => (typeof x === "bigint" ? w(-x) : typeof x === "number" ? -x : x.$op_sub()),
+    $neg: (x: any) => { if (x && typeof x.$num === "function") x = x.$num(); return typeof x === "bigint" ? w(-x) : typeof x === "number" ? -x : x.$op_sub(); },
     $arith(op: string, a: any, b: any) {
+      if (a && typeof a.$num === "function") a = a.$num();
+      if (b && typeof b.$num === "function") b = b.$num();
       if (typeof a === "bigint" && typeof b === "bigint") {
         if (op === "/") return helpers.$div(a, b);
-        switch (op) { case "+": return w(a + b); case "-": return w(a - b); case "*": return w(a * b); case "%": return helpers.$imod(a, b); }
+        switch (op) { case "+": return w(a + b); case "-": return w(a - b); case "*": return w(a * b); case "//": return helpers.$idiv(a, b); case "%": return helpers.$imod(a, b); }
       }
       if (typeof a === "bigint" && typeof b === "number") {
         const fa = Number(a);
-        switch (op) { case "+": return fa + b; case "-": return fa - b; case "*": return fa * b; case "/": return helpers.$div(fa, b); case "%": return fa % b; case "**": return fa ** b; }
+        switch (op) { case "+": return fa + b; case "-": return fa - b; case "*": return fa * b; case "/": return helpers.$div(fa, b); case "//": return helpers.$fidiv(fa, b); case "%": return helpers.$fmod(fa, b); case "**": return fa ** b; }
       }
       if (typeof a === "number" && typeof b === "bigint") {
         const fb = Number(b);
-        switch (op) { case "+": return a + fb; case "-": return a - fb; case "*": return a * fb; case "/": return helpers.$div(a, fb); case "%": return a % fb; case "**": return a ** fb; }
+        switch (op) { case "+": return a + fb; case "-": return a - fb; case "*": return a * fb; case "/": return helpers.$div(a, fb); case "//": return helpers.$fidiv(a, fb); case "%": return helpers.$fmod(a, fb); case "**": return a ** fb; }
       }
-      if (typeof a === "number" && typeof b === "number") switch (op) { case "+": return a + b; case "-": return a - b; case "*": return a * b; case "/": return a / b; case "%": return a % b; case "**": return a ** b; }
+      if (typeof a === "number" && typeof b === "number") switch (op) { case "+": return a + b; case "-": return a - b; case "*": return a * b; case "/": return a / b; case "//": return helpers.$fidiv(a, b); case "%": return helpers.$fmod(a, b); case "**": return a ** b; }
       if (typeof a === "string" && op === "+") return helpers.$sc(a, b);
-      const names: Record<string, string> = { "+": "$op_add", "-": "$op_sub", "*": "$op_mul", "/": "$op_div", "%": "$op_mod" };
+      const names: Record<string, string> = { "+": "$op_add", "-": "$op_sub", "*": "$op_mul", "/": "$op_div", "//": "$op_floordiv", "%": "$op_mod" };
       if (a && typeof a[names[op]] === "function") return a[names[op]](b);
       throw new Panic(`operator ${op} is not defined for ${kindOf(a)}`);
     },
@@ -369,7 +379,7 @@ export function createRuntime(ctx: RuntimeCtx, nativeFactory: (rt: Runtime) => R
       switch (op) { case "<": return c < 0; case "<=": return c <= 0; case ">": return c > 0; default: return c >= 0; }
     },
     $sc(a: string, b: string) {
-      if (a.length + b.length > L.maxStringLength) throw new Panic(`string length limit of ${L.maxStringLength} exceeded`, "limit", "memory");
+      if (a.length + b.length > L.maxStringLength) throw new Panic(`string length limit of ${L.maxStringLength} exceeded (raise it with --max-string=<chars>)`, "limit", "memory");
       return a + b;
     },
     // Negative indexes count from the end (Python, Ruby): a[-1] is the last element.

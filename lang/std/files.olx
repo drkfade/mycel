@@ -1,14 +1,14 @@
-import std.fs
+import fs
 
-// Python-style file and path operations with capability grants.
-// Reading needs --allow-read; writing needs --allow-write.
-//
-// Examples:
-//   import std.files
-//   files.write("hello.txt", "world").unwrap()
-//   let text = files.read("hello.txt").unwrap()
-//   let p = files.path("data").join("items.txt")
-//   if p.exists() { print(p.text().unwrap()) }
+# Python-style file and path operations with capability grants.
+# Reading needs --allow-read; writing needs --allow-write.
+#
+# Examples:
+#   import std.files
+#   files.write("hello.txt", "world").unwrap()
+#   let text = files.read("hello.txt").unwrap()
+#   let p = files.path("data").join("items.txt")
+#   if p.exists() { print(p.text().unwrap()) }
 
 pub struct Path {
   let raw: String

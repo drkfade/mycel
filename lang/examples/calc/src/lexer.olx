@@ -1,4 +1,4 @@
-// Turns text into tokens. Every failure is a Result, never a crash.
+# Turns text into tokens. Every failure is a Result, never a crash.
 pub enum Token {
   Num(Float)
   Ident(String)

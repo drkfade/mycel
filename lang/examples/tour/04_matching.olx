@@ -1,4 +1,4 @@
-// Enums with payloads and exhaustive pattern matching.
+# Enums with payloads and exhaustive pattern matching.
 enum Json {
   Null
   Num(Float)

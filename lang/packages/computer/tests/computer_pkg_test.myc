@@ -1,0 +1,48 @@
+import test
+from computer import mouse, keyboard, screen, clipboard, apps, notify, system
+
+test "mouse and keyboard work through mock backend" {
+  mouse.moveTo(320, 240).unwrap()
+  let pos = mouse.position().unwrap()
+  test.assertEq(pos.x, 320)
+  test.assertEq(pos.y, 240)
+  mouse.click().unwrap()
+  mouse.doubleClick("right").unwrap()
+  mouse.scroll(0, -120).unwrap()
+  mouse.drag(10, 20, 300, 400).unwrap()
+  let afterDrag = mouse.position().unwrap()
+  test.assertEq(afterDrag.x, 300)
+  test.assertEq(afterDrag.y, 400)
+
+  keyboard.typeText("hello mycel").unwrap()
+  keyboard.press("Enter").unwrap()
+  keyboard.hotkey("cmd", "c").unwrap()
+  test.assertFalse(keyboard.isDown("Escape").unwrap())
+}
+
+test "screen, clipboard, apps, notify, and system work through mock backend" {
+  let sz = screen.size().unwrap()
+  test.assertTrue(sz.width > 0 && sz.height > 0)
+  let img = screen.screenshot().unwrap()
+  test.assertTrue(img.width > 0 && img.height > 0)
+  let c = img.pixel(0, 0).unwrap()
+  test.assertTrue(c.hex().startsWith("#"))
+  let px = screen.pixel(1, 1).unwrap()
+  test.assertEq(px.a, 255)
+
+  clipboard.set("copied text").unwrap()
+  test.assertEq(clipboard.get().unwrap(), "copied text")
+
+  apps.open("Notes").unwrap()
+  test.assertTrue(apps.running().unwrap().contains("Notes"))
+  apps.openUrl("https://ol1x.xyz").unwrap()
+  apps.quit("Notes").unwrap()
+  test.assertFalse(apps.running().unwrap().contains("Notes"))
+
+  notify.show("Mycel", "Ready").unwrap()
+  test.assertTrue(system.os().unwrap().length > 0)
+  test.assertTrue(system.user().unwrap().length > 0)
+  let batt = system.battery().unwrap()
+  test.assertTrue(batt.percent != nil)
+  test.assertTrue(system.idle().unwrap() >= 0.0)
+}

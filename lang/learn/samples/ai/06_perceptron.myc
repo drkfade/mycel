@@ -1,0 +1,33 @@
+var w1 = 0.0
+var w2 = 0.0
+var bias = 0.0
+let rate = 0.1
+
+let examples = [
+    (0.0, 0.0, 0.0),
+    (0.0, 1.0, 0.0),
+    (1.0, 0.0, 0.0),
+    (1.0, 1.0, 1.0)
+]
+
+fn predict(a: Float, b: Float) -> Float {
+    let total = a * w1 + b * w2 + bias
+    if total > 0.0 {
+        return 1.0
+    }
+    return 0.0
+}
+
+for step in 0..20 {
+    for (a, b, target) in examples {
+        let error = target - predict(a, b)
+        w1 += rate * error * a
+        w2 += rate * error * b
+        bias += rate * error
+    }
+}
+
+for (a, b, target) in examples {
+    print(f"{a:.0f} AND {b:.0f} -> {predict(a, b):.0f}")
+}
+print(f"weights: {w1:.2f} {w2:.2f} bias {bias:.2f}")

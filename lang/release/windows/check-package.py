@@ -8,7 +8,7 @@ import zipfile
 
 release = Path(__file__).resolve().parents[1]
 dist = release / 'dist'
-name = 'Mycel-0.1.0-alpha-windows-x64.zip'
+name = 'Mycel-0.2.0-alpha-windows-x64.zip'
 archive = dist / name
 sha = lambda data: hashlib.sha256(data).hexdigest()
 receipt = json.loads((release / 'work/windows/package-receipt.json').read_text())

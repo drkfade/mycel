@@ -31,7 +31,7 @@ test("init → run → test → fmt --check → build works end to end", () => {
   assert.equal(ply(p, ["build"]).code, 0);
   const built = spawnSync("node", [path.join(p, "build", "app.js")], { encoding: "utf8" });
   assert.equal(built.stdout, "Hello, world!\n");
-  assert.equal(ply(p, ["--version"]).out.trim(), "mycel 0.1.0");
+  assert.equal(ply(p, ["--version"]).out.trim(), "mycel 0.2.0");
 });
 
 test("multi-file project: nested modules, imports, visibility, cycles", () => {
@@ -115,9 +115,9 @@ test("semver ranges", () => {
 });
 
 test("fmt: canonical layout, idempotent, never changes meaning", () => {
-  const messy = `fn main(){\nlet   x=[1,2 ,3]\n\n\n    if x.length>2 {\n  print( f"a {x}" )\n}\n  // keep me\n}\n`;
+  const messy = `fn main(){\nlet   x=[1,2 ,3]\n\n\n    if x.length>2 {\n  print( f"a {x}" )\n}\n  # keep me\n}\n`;
   const once = format(messy);
-  assert.equal(once, `fn main() {\n  let x = [1, 2, 3]\n\n  if x.length>2 {\n    print(f"a {x}")\n  }\n  // keep me\n}\n`);
+  assert.equal(once, `fn main() {\n  let x = [1, 2, 3]\n\n  if x.length>2 {\n    print(f"a {x}")\n  }\n  # keep me\n}\n`);
   assert.equal(format(once), once);
   const multi = `fn f() -> String {\n  return """\n    keep   spacing\n  """\n}\n`;
   assert.equal(format(multi), multi);
@@ -181,9 +181,9 @@ test("permission flags grant exactly what is asked", () => {
   void exec;
 });
 
-test("doc: markdown from signatures and /// comments", () => {
+test("doc: markdown from signatures and ## comments", () => {
   const { documentModule } = require("../src/doc") as typeof import("../src/doc");
-  const md = documentModule(`/// Adds two numbers.\n/// Overflow panics.\npub fn add(a: Int, b: Int) -> Int { return a + b }\nfn hidden() {}\n/// A point.\npub struct P { let x: Int }\npub enum E { A, B(n: Int) }\n`, "demo");
+  const md = documentModule(`## Adds two numbers.\n## Overflow panics.\npub fn add(a: Int, b: Int) -> Int { return a + b }\nfn hidden() {}\n## A point.\npub struct P { let x: Int }\npub enum E { A, B(n: Int) }\n`, "demo");
   assert.match(md, /## add\n\n```mycel\npub fn add\(a: Int, b: Int\) -> Int\n```\n\nAdds two numbers\.\nOverflow panics\./);
   assert.match(md, /## P/);
   assert.match(md, /enum E \{ A, B\(n: Int\) \}/);

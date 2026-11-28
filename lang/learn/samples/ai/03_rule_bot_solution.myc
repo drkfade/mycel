@@ -1,0 +1,19 @@
+fn reply(message: String) -> String {
+    let text = message.lower()
+    if "refund" in text {
+        return "I can help with a refund. What is your order number?"
+    }
+    if "hours" in text or "open" in text {
+        return "We are open 9 to 5, Monday to Friday."
+    }
+    if "hello" in text or "hi" in text {
+        return "Hello! How can I help?"
+    }
+    if "thanks" in text {
+        return "You are welcome!"
+    }
+    return "Sorry, I did not understand that."
+}
+
+print(reply("Thanks a lot"))
+print(reply("Tell me a joke"))

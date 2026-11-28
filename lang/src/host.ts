@@ -1,11 +1,17 @@
 import * as vm from "vm";
+import * as fs from "fs";
+import * as path from "path";
 import { Diagnostic, DiagnosticJson, Source, Span, formatDiagnostic, toJson } from "./diag";
 import { compileProgram, makeResolver, Program, renderDiagnostics } from "./modules";
 import { generate } from "./codegen";
-import { createRuntime, newCtx, Panic, RunLimits, Runtime, LiveValue, liveValues } from "./runtime";
+import { createRuntime, newCtx, Panic, RunLimits, Runtime, LiveValue, liveValues, display, makeTuple } from "./runtime";
 import { preludeNatives } from "./natives";
-import { stdNatives, Capabilities, StdinReader } from "./stdlib";
+import { stdNatives, Capabilities, StdinReader, checkFsAccess } from "./stdlib";
+import { withinPath } from "./paths";
+import { readManifest } from "./project";
 import { ModuleInfo } from "./types";
+import { ForeignInfo, foreignNatives } from "./foreign";
+import { pycompatNatives } from "./pycompat";
 
 export { Capabilities } from "./stdlib";
 export interface HostModule { source: string; natives: Record<string, (...a: any[]) => any> }
@@ -19,7 +25,11 @@ export interface RunOptions {
   capabilities?: Capabilities;
   limits?: RunLimits;
   onOutput?: (text: string) => void;
+  /** Visible safety notice callback (e.g. input control panic-key warning); defaults to stderr in CLI runs. */
+  onNotice?: (text: string) => void;
   signal?: AbortSignal;
+  /** The project's Python/npm packages (ply.lock "foreign", see foreign.ts); calls need capabilities.packages. */
+  foreign?: ForeignInfo;
   /** Native modules supplied by the embedder: name -> Ply declarations (extern fn ...) + implementations. */
   hostModules?: Record<string, HostModule>;
   args?: string[];
@@ -65,6 +75,13 @@ export interface RunResult {
   live?: LiveValue[];
 }
 
+export interface PackageNativeSpec {
+  pkg: string;
+  dir: string;
+  native: string;
+  pkgCaps?: Capabilities;
+  keys: string[];
+}
 export interface Compiled {
   program: Program;
   code?: string;
@@ -73,9 +90,10 @@ export interface Compiled {
   prefixLines?: number;
   entry: string;
   hostNative: Record<string, (...a: any[]) => any>;
+  packageNatives?: PackageNativeSpec[];
 }
 
-const HELPERS = ["$Obj", "$Early", "$tick", "$w", "$t", "$range", "$eq", "$s", "$str", "$fs", "$fmt", "$iter", "$isRange", "$isGen", "$kindOf", "$gen", "$meta", "$mix", "$variant", "$impl", "$thr", "$norm", "$nomatch", "$fu", "$q", "$castFail", "$try", "$tryA", "$spawn", "$idiv", "$div", "$imod", "$ipow", "$shl", "$shr", "$neg", "$arith", "$cmp", "$sc", "$ai", "$as", "$mg", "$si", "$slice", "$prop", "$d", "$extReg", "$tests", "$M", "$n", "$drop", "$live"];
+const HELPERS = ["$Obj", "$Early", "$tick", "$w", "$t", "$range", "$eq", "$s", "$str", "$fs", "$fmt", "$iter", "$isRange", "$isGen", "$kindOf", "$gen", "$meta", "$mix", "$variant", "$impl", "$thr", "$norm", "$nomatch", "$fu", "$q", "$castFail", "$try", "$tryA", "$spawn", "$idiv", "$fidiv", "$fmod", "$div", "$imod", "$ipow", "$shl", "$shr", "$neg", "$arith", "$cmp", "$sc", "$ai", "$as", "$mg", "$si", "$slice", "$prop", "$d", "$extReg", "$tests", "$M", "$n", "$drop", "$live"];
 
 export function compile(opts: RunOptions): Compiled {
   const file = opts.file ?? "main.myc";
@@ -85,13 +103,119 @@ export function compile(opts: RunOptions): Compiled {
     virtual[name] = hm.source;
     for (const [k, f] of Object.entries(hm.natives)) hostNative[`${name}.${k}`] = f;
   }
-  const resolve = makeResolver({ roots: opts.roots ?? [], packages: opts.packages, virtual });
+  const resolve = makeResolver({ roots: opts.roots ?? [], packages: opts.packages, virtual, foreign: opts.foreign });
   const entry = opts.entryName ?? "main";
-  const program = compileProgram({ entry: { name: entry, file, text: opts.source ?? "" }, resolve });
+  const program = compileProgram({ entry: { name: entry, file, text: opts.source ?? "" }, resolve, foreign: opts.foreign });
   if (!program.ok) return { program, entry, hostNative };
   const g = generate(program.checker, program.modules, { live: opts.liveValues ? entry : undefined });
   const w = wrapGenerated(g, entry);
-  return { ...w, program, hostNative };
+  const packageNatives = collectPackageNatives(program.modules, opts.packages);
+  return { ...w, program, hostNative, packageNatives };
+}
+
+function collectPackageNatives(modules: ModuleInfo[], packages?: Record<string, string>): PackageNativeSpec[] {
+  if (!packages) return [];
+  const specs: PackageNativeSpec[] = [];
+  for (const [pkg, dir] of Object.entries(packages)) {
+    let manifest;
+    try { manifest = readManifest(dir); } catch { continue; }
+    if (!manifest.native) continue;
+    const keys = new Set<string>();
+    for (const m of modules) {
+      if (m.name !== pkg && !m.name.startsWith(pkg + ".")) continue;
+      for (const g of m.fns.values()) for (const f of g) if (f.native) keys.add(f.native);
+      for (const d of m.types.values()) {
+        for (const l of [...d.methods.values(), ...d.statics.values()]) for (const f of l) if (f.native) keys.add(f.native);
+        d.getters.forEach((f) => { if (f.native) keys.add(f.native); });
+        d.setters.forEach((f) => { if (f.native) keys.add(f.native); });
+        d.ctors.forEach((f) => { if (f.native) keys.add(f.native); });
+      }
+    }
+    if (keys.size) specs.push({ pkg, dir, native: manifest.native, pkgCaps: manifest.capabilities, keys: [...keys] });
+  }
+  return specs;
+}
+
+function hasAnyPackageGrant(declared: Capabilities | undefined, granted: Capabilities | undefined): boolean {
+  if (declared?.compute) return true;
+  if (!declared || !granted) return false;
+  if (declared.control && granted.control) return true;
+  if (declared.screen && granted.screen) return true;
+  if (declared.clipboard && granted.clipboard) return true;
+  if (declared.fs?.read && granted.fs?.read) return true;
+  if (declared.fs?.write && granted.fs?.write) return true;
+  if (declared.net?.hosts && granted.net?.hosts) return true;
+  if (declared.net?.listen && granted.net?.listen) return true;
+  if (declared.process?.run && granted.process?.run) return true;
+  if (declared.env?.read && granted.env?.read) return true;
+  if (declared.packages && granted.packages) return true;
+  return false;
+}
+
+function denyHintForKey(pkg: string, key: string, declared?: Capabilities): { what: string; why: string } {
+  if (pkg === "computer") {
+    if (key.startsWith("computer.screen.")) return { what: "screen access", why: 'this run was not granted screen access — run with --allow-screen or add "capabilities": { "screen": true } to ply.json' };
+    if (key.startsWith("computer.clipboard.")) return { what: "clipboard access", why: 'this run was not granted clipboard access — run with --allow-clipboard or add "capabilities": { "clipboard": true } to ply.json' };
+    return { what: "computer control", why: 'this run was not granted control access — run with --allow-control or add "capabilities": { "control": true } to ply.json' };
+  }
+  if (!declared || Object.keys(declared).length === 0) {
+    return { what: `native package "${pkg}"`, why: `package "${pkg}" declares a native helper without listing required capabilities in its ply.json` };
+  }
+  return { what: `native package "${pkg}"`, why: `this run was not granted the capabilities declared by "${pkg}" (${JSON.stringify(declared)}) in ply.json` };
+}
+
+function packageNativesFor(rt: Runtime, specs: PackageNativeSpec[] | undefined, opts: RunOptions, abortFn: (reason: string) => void): Record<string, (...a: any[]) => any> {
+  if (!specs?.length) return {};
+  const ctx = rt.ctx;
+  const P = () => ctx.M["prelude"];
+  const ok = (v: unknown) => P().Result$Ok.of(v);
+  const err = (cls: string, msg: string) => P().Result$Err.of(new (P()[cls])().$init(msg));
+  const denied = (what: string, why: string) => err("CapabilityError", `${what} denied: ${why}`);
+  const caps = opts.capabilities ?? {};
+  const cleanups: (() => void)[] = ((ctx as any).cleanups ??= []);
+  const notice = (text: string) => {
+    if (opts.onNotice) opts.onNotice(text);
+    else process.stderr.write(text.endsWith("\n") ? text : text + "\n");
+  };
+  const out: Record<string, (...a: any[]) => any> = {};
+  for (const spec of specs) {
+    if (!hasAnyPackageGrant(spec.pkgCaps, caps)) {
+      for (const key of spec.keys) {
+        const h = denyHintForKey(spec.pkg, key, spec.pkgCaps);
+        out[key] = () => denied(h.what, h.why);
+      }
+      continue;
+    }
+    const realDir = fs.realpathSync(spec.dir);
+    const candidate = path.resolve(realDir, spec.native);
+    const realNative = fs.existsSync(candidate) ? fs.realpathSync(candidate) : candidate;
+    if (!withinPath(realDir, realNative)) {
+      for (const key of spec.keys) out[key] = () => err("CapabilityError", `native helper for "${spec.pkg}" escapes package directory`);
+      continue;
+    }
+    const loaded = require(realNative);
+    const factory = typeof loaded === "function" ? loaded : typeof loaded?.createNatives === "function" ? loaded.createNatives : typeof loaded?.default === "function" ? loaded.default : undefined;
+    if (!factory) throw new Panic(`package "${spec.pkg}" native module ${spec.native} must export a factory function`);
+    const helpers = {
+      capabilities: caps,
+      ok,
+      err,
+      denied,
+      makeTuple,
+      Panic,
+      onCleanup: (fn: () => void) => cleanups.push(fn),
+      abort: abortFn,
+      notice,
+      checkFsWrite: (p: string) => checkFsAccess(caps, p, "write"),
+      checkFsRead: (p: string) => checkFsAccess(caps, p, "read"),
+      signal: ctx.signal,
+    };
+    const fns = factory(rt, helpers) as Record<string, (...a: any[]) => any>;
+    for (const [k, fn] of Object.entries(fns ?? {})) {
+      if (k.startsWith(spec.pkg + ".")) out[k] = fn;
+    }
+  }
+  return out;
 }
 
 /** Wrap generated module code in the helper-destructuring factory and index statement lines to source spans. */
@@ -189,10 +313,19 @@ export async function execute(c: Compiled, opts: RunOptions): Promise<RunResult>
     const errs = diags.filter((d) => d.severity === "error");
     return { ...base, millis: Date.now() - t0, error: { kind: "compile", message: `${errs.length} compile error${errs.length === 1 ? "" : "s"}`, trace: [], human: renderDiagnostics(diags) } };
   }
-  const ctx = newCtx(opts.limits ?? {}, write, opts.signal);
+  const abortCtrl = new AbortController();
+  let abortReason: string | undefined;
+  let onParentAbort: (() => void) | undefined;
+  if (opts.signal) {
+    if (opts.signal.aborted) abortCtrl.abort(opts.signal.reason);
+    else { onParentAbort = () => abortCtrl.abort(opts.signal!.reason); opts.signal.addEventListener("abort", onParentAbort, { once: true }); }
+  }
+  const ctx = newCtx(opts.limits ?? {}, write, abortCtrl.signal);
   if (opts.onUi) (ctx as any).onUi = opts.onUi;
   if (opts.liveValues) (ctx as any).live = new Map();
-  const rt: Runtime = createRuntime(ctx, (r) => ({ ...preludeNatives(r), ...stdNatives(r, opts.capabilities ?? {}, opts.args ?? [], opts.stdin, opts.inputSync), ...c.hostNative }));
+  const triggerAbort = (reason: string) => { abortReason = reason; abortCtrl.abort(reason); };
+  const foreignGrant = { ...(opts.capabilities?.packages ?? {}), ...(opts.capabilities?.java ? { java: true as const } : {}) };
+  const rt: Runtime = createRuntime(ctx, (r) => ({ ...preludeNatives(r), ...stdNatives(r, opts.capabilities ?? {}, opts.args ?? [], opts.stdin, opts.inputSync), ...foreignNatives(r, Object.keys(foreignGrant).length ? foreignGrant : undefined, opts.foreign), ...pycompatNatives(r), ...packageNativesFor(r, c.packageNatives, opts, triggerAbort), ...c.hostNative }));
   let error: RunError | undefined;
   let value: unknown;
   let tests: TestResult[] | undefined;
@@ -212,12 +345,16 @@ export async function execute(c: Compiled, opts: RunOptions): Promise<RunResult>
     const factory = script.runInThisContext() as (rt: unknown) => void;
     const racers: Promise<never>[] = [];
     if (Number.isFinite(ctx.limits.maxMillis) && ctx.limits.maxMillis < 2 ** 31) racers.push(new Promise<never>((_, rej) => { timer = setTimeout(() => rej(new Panic(`time limit of ${ctx.limits.maxMillis} ms exceeded`, "limit", "time")), ctx.limits.maxMillis); }));
-    if (opts.signal) racers.push(new Promise<never>((_, rej) => { onAbort = () => rej(new Panic("the run was aborted", "abort")); if (opts.signal!.aborted) onAbort(); else opts.signal!.addEventListener("abort", onAbort, { once: true }); }));
+    racers.push(new Promise<never>((_, rej) => { onAbort = () => rej(new Panic(abortReason ?? "the run was aborted", "abort")); if (abortCtrl.signal.aborted) onAbort(); else abortCtrl.signal.addEventListener("abort", onAbort, { once: true }); }));
     const exec = (async () => {
       factory({ ...rt.helpers });
       const mod = ctx.M[c.entry];
       if (opts.mode === "test") { tests = await runTests(ctx, opts.testFilter, c, fail); return; }
       if (mod && typeof mod.main === "function") value = await mod.main();
+      // `fn main() -> Result<...>` that returns Err failed (Rust's rule): silence and exit 0 would hide e.g. a
+      // capability refusal propagated with `?`
+      const P = ctx.M["prelude"];
+      if (P && value instanceof P.Result$Err) throw new Panic(`main returned ${display(value)}`);
       // a server started with web's app.run() keeps the program alive after main returns (Flask-style)
       const keep = (ctx as any).keepAlive as Promise<unknown>[] | undefined;
       if (keep?.length) await Promise.all(keep);
@@ -240,7 +377,8 @@ export async function execute(c: Compiled, opts: RunOptions): Promise<RunResult>
     Error.stackTraceLimit = prevLimit;
     if (timer) clearTimeout(timer);
     for (const c of (ctx as any).cleanups ?? []) { try { c(); } catch { /* best effort */ } }
-    if (onAbort) opts.signal?.removeEventListener("abort", onAbort);
+    if (onAbort) abortCtrl.signal.removeEventListener("abort", onAbort);
+    if (onParentAbort) opts.signal?.removeEventListener("abort", onParentAbort);
   }
   const taskErrors = ctx.taskErrors.map((e) => fail(e).human);
   const activeUi = (ctx as any).uiManager?.getActiveTree?.();
@@ -295,6 +433,8 @@ export interface IsolatedOptions extends Omit<RunOptions, "onOutput" | "signal" 
   /** Heap cap for the run, in MB (enforced by the engine: exceeding it ends the worker, not the host). */
   maxMemoryMb?: number;
   onOutput?: (text: string) => void;
+  /** Visible safety notice callback (e.g. input control panic-key warning); defaults to stderr in CLI runs. */
+  onNotice?: (text: string) => void;
   signal?: AbortSignal;
 }
 

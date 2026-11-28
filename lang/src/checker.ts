@@ -1,6 +1,8 @@
 import { VALUE_WORDS, TYPE_WORDS, MODULE_WORDS } from "./habits";
 import * as A from "./ast";
 import { Diagnostic, Span, closest } from "./diag";
+import { EXTRACT_KINDS } from "./extract";
+const EXTRACT_KINDS_ALL = new Set<string>(EXTRACT_KINDS);
 import {
   Ty, T, TypeDecl, FnInfo, FieldInfo, ModuleInfo, GlobalInfo, VariantInfo, ExtInfo,
   prune, show, subst, app, opt, fnTy, freshVar, mkParam, occurs, same, supertypes, isNum, isPrim, containsVar, collectVars,
@@ -35,6 +37,8 @@ export interface CheckOptions { maxErrors?: number }
 
 export class Checker {
   diags: Diagnostic[] = [];
+  /** modules the project's Python/npm packages provide (ply.lock), for did-you-mean on a missing import */
+  foreignNames: string[] = [];
   modules = new Map<string, ModuleInfo>();
   order: ModuleInfo[] = [];
   prelude!: ModuleInfo;
@@ -151,10 +155,11 @@ export class Checker {
   }
 
   private bindImports(m: ModuleInfo, phase: 1 | 2) {
+    const canon = (name: string, d: Extract<A.Decl, { k: "import" }>) => (!d.flag && !d.quoted && !this.modules.has(name) && this.modules.has(`std.${name}`) ? `std.${name}` : name);
     for (const d of m.ast!.decls) {
       if (d.k !== "import") continue;
       const full = d.path.join(".");
-      const target = this.modules.get(full);
+      const target = this.modules.get(canon(full, d));
       const bindMember = (modName: string, member: string, alias: string | undefined, span: Span) => {
         const mod = this.modules.get(modName);
         if (!mod) return false;
@@ -172,7 +177,7 @@ export class Checker {
           return true;
         }
         if ((m.types.has(name) || m.fns.has(name) || m.globals.has(name)) && m.ast!.decls.some((x) => (x.k === "class" || x.k === "enum" || x.k === "interface" || x.k === "alias" ? x.name === name : x.k === "fn" ? x.fn.name === name : x.k === "let" && (x.stmt.pat as any).name === name))) {
-          this.err(span, "E0206", `the imported name \`${name}\` conflicts with a declaration in this module`, { suggestion: `import it under another name: \`import ${modName}.{${member} as ${name}2}\`` });
+          this.err(span, "E0206", `the imported name \`${name}\` conflicts with a declaration in this module`, { suggestion: `import it under another name: \`from ${modName} import ${member} as ${name}2\`` });
           return true;
         }
         if (t) m.imports.set(name, { kind: "type", decl: t });
@@ -187,12 +192,17 @@ export class Checker {
         continue;
       }
       // `import a.b.member`: module a.b, member `member`
-      if (!target && d.path.length > 1 && this.modules.has(d.path.slice(0, -1).join("."))) {
-        bindMember(d.path.slice(0, -1).join("."), d.path[d.path.length - 1], d.alias, d.span);
-        continue;
+      if (!target && d.path.length > 1) {
+        const parent = canon(d.path.slice(0, -1).join("."), d);
+        if (this.modules.has(parent)) {
+          bindMember(parent, d.path[d.path.length - 1], d.alias, d.span);
+          continue;
+        }
       }
       if (phase === 2) continue;
-      this.err(d.span, "E0204", Object.prototype.hasOwnProperty.call(MODULE_WORDS, full) ? MODULE_WORDS[full] : `cannot find module \`${full}\``, { suggestion: "check the path; modules are files under src/ (src/models/user.olx is `models.user`) or std.* from the standard library" });
+      const near = closest(full, [...this.modules.keys()].filter((k) => !k.includes(":") && k !== "prelude").map((k) => (k.startsWith("std.") ? k.slice(4) : k)).concat(this.foreignNames));
+      const install = `if it is a Python, npm, or Java package, install it (\`ply install ${d.path[0]} --python|--npm|--java\`) or add \`--python\`/\`--npm\`/\`--java\` to the import`;
+      this.err(d.span, "E0204", Object.prototype.hasOwnProperty.call(MODULE_WORDS, full) ? MODULE_WORDS[full] : `cannot find module \`${full}\``, { suggestion: near ? `did you mean \`${near}\`? — or ${install}` : `check the path (modules are files under src/: src/models/user.myc is \`models.user\`; built-ins: \`import json\`); ${install}` });
     }
   }
 
@@ -372,7 +382,7 @@ export class Checker {
   // ======================================================================
   memberJs(n: string): string {
     if (n.startsWith("operator ")) {
-      const names: Record<string, string> = { "+": "add", "-": "sub", "*": "mul", "/": "div", "%": "mod", "==": "eq", "<": "lt", "[]": "idx", "**": "pow", "&": "and", "|": "or", "^": "xor", "<<": "shl", ">>": "shr" };
+      const names: Record<string, string> = { "+": "add", "-": "sub", "*": "mul", "/": "div", "//": "floordiv", "%": "mod", "==": "eq", "<": "lt", "[]": "idx", "**": "pow", "&": "and", "|": "or", "^": "xor", "<<": "shl", ">>": "shr" };
       return "$op_" + (names[n.slice(9)] ?? "x");
     }
     return ["constructor", "__proto__", "prototype", "toString", "valueOf", "hasOwnProperty", "isPrototypeOf", "propertyIsEnumerable", "toLocaleString", "toJSON", "then", "catch", "finally"].includes(n) ? n + "_" : jsId(n);
@@ -682,6 +692,10 @@ export class Checker {
     if (f.k === "nil") return t.k === "opt";
     if (t.k === "opt") return f.k === "opt" ? this.assign(f.inner, t.inner) : this.assign(f, t.inner);
     if (f.k === "opt") return false;
+    const fa = f.k === "app" ? f : this.declTypeOf(f);
+    const isFVal = (x: Ty) => x.k === "app" && x.decl.name === "Value" && x.decl.module.name === "std.foreign";
+    if (isFVal(f) && !isPrim(t, "Void") && t.k !== "fn" && (t.k === "prim" || (t.k === "app" && t.decl.builtin && (t.decl.name === "Array" || t.decl.name === "Map")) || isFVal(t))) return true;
+    if (isFVal(t) && !isPrim(f, "Void")) return true;
     switch (t.k) {
       case "prim": return f.k === "prim" && f.name === t.name;
       case "nil": return false;
@@ -695,7 +709,6 @@ export class Checker {
       case "param": return f.k === "param" && f === t;
       case "app": {
         if (f.k === "param") return f.bounds.some((b) => this.assign(b, t));
-        const fa = f.k === "app" ? f : this.declTypeOf(f);
         if (!fa) return false;
         for (const s of supertypes(fa)) if (s.decl === t.decl) return s.args.length === t.args.length && s.args.every((a, i) => this.assignArg(a, t.args[i]));
         if (t.decl.kind === "interface" && f.k !== "app") return this.conforms(f, t);
@@ -1166,6 +1179,7 @@ export class Checker {
     }
     const exp = prune(f.ret).k === "var" ? undefined : f.ret;
     const t = this.infer(s.value, cx, exp);
+    if (s.implicit && isPrim(t, "Void")) return; // the last line of a closure body is a call that gives nothing: no result
     f.returns.push({ ty: t, span: s.span });
     if (isPrim(f.ret, "Void") && f.retDeclared) {
       if (!isPrim(t, "Void")) this.err(s.value.span, "E0266", `this function returns nothing, but \`return\` gives a ${show(t)}`, { suggestion: `declare the return type: \`-> ${show(t)}\`` });
@@ -1263,6 +1277,7 @@ export class Checker {
     }
     const t = this.infer(c.expr, cx, T.Bool);
     if (!this.assignable(t, T.Bool)) this.mismatch(c.expr, t, T.Bool, "condition");
+    else this.coerceForeign(c.expr, T.Bool);
     const n = this.narrowings(c.expr, true, cx);
     return { scope: n.size ? { ...cx, scope: this.applyNarrow(cx.scope, n) } : cx, cond: t };
   }
@@ -1310,7 +1325,7 @@ export class Checker {
     const fs = show(f), xs = show(x);
     if (isPrim(f, "Int") && isPrim(x, "Float")) suggestion = "convert with `.toFloat()`";
     else if (isPrim(f, "Float") && isPrim(x, "Int")) { suggestion = "convert with `.toInt()` (truncates) or `.round()` / `.floor()` / `.ceil()`"; }
-    else if (isPrim(x, "String") && !isPrim(f, "String")) suggestion = `convert to text with "\${...}" or str(value)`;
+    else if (isPrim(x, "String") && !isPrim(f, "String")) suggestion = `convert to text with f"{value}" or str(value)`;
     else if (f.k === "opt" && this.canAssign(f.inner, x)) { why = "the value might be nil"; suggestion = "unwrap it: `value!` (panics on nil), `value ?? fallback`, or `if let v = value { ... }`"; }
     else if (f.k === "app" && f.decl.name === "Task" && this.canAssign(f.args[0], x)) { why = "calling an async function gives a Task"; suggestion = "add `await` before the call"; }
     else if (x.k === "app" && x.decl.name === "Result" && x.decl.builtin && !(f.k === "app" && f.decl === x.decl)) suggestion = "wrap it: `Ok(value)` or `Err(error)`";
@@ -1326,8 +1341,9 @@ export class Checker {
     this.err(e.span, "E0300", `type mismatch: expected ${xs}, found ${fs}`, { why: why ?? `the ${what} has type ${fs}, but ${xs} is required here`, suggestion });
   }
 
-  /** `3` where a Float is expected becomes `3.0` (literals only). */
+  /** `3` where a Float is expected becomes `3.0` (literals only), and annotate foreign value coercions. */
   coerceLit(e: A.Expr, expected: Ty) {
+    this.coerceForeign(e, expected);
     const x = prune(expected);
     const target = x.k === "opt" ? prune(x.inner) : x;
     if (!(isPrim(target, "Float"))) return;
@@ -1335,6 +1351,26 @@ export class Checker {
     else if (e.k === "unary" && e.op === "-" && e.operand.k === "int") { this.coerceLit(e.operand, expected); (e as any).ty = T.Float; }
     else if (e.k === "array") e.elems.forEach((x2) => { const el = prune(expected); if (el.k === "app") this.coerceLit(x2, el.args[0]); });
     else if (e.k === "ternary") { this.coerceLit(e.then, expected); this.coerceLit(e.else, expected); }
+  }
+
+  private isForeignVal(t: Ty | undefined): boolean {
+    if (!t) return false;
+    const p = prune(t);
+    return p.k === "app" && p.decl.name === "Value" && p.decl.module.name === "std.foreign";
+  }
+
+  private foreignTargetTag(expected: Ty): string | undefined {
+    const x = prune(expected);
+    if (x.k === "opt") { const inner = this.foreignTargetTag(x.inner); return inner ? `${inner}?` : undefined; }
+    if (isPrim(x, "Int") || isPrim(x, "Float") || isPrim(x, "String") || isPrim(x, "Bool")) return (x as Extract<Ty, { k: "prim" }>).name;
+    if (x.k === "app" && x.decl.builtin && (x.decl.name === "Array" || x.decl.name === "Map")) return x.decl.name;
+    return undefined;
+  }
+
+  private coerceForeign(e: A.Expr, expected: Ty) {
+    if (!this.isForeignVal((e as any).ty)) return;
+    const tag = this.foreignTargetTag(expected);
+    if (tag) (e as any).fcoerce = tag;
   }
 
   infer(e: A.Expr, cx: Ctx, exp?: Ty): Ty {
@@ -1597,6 +1633,7 @@ export class Checker {
     if (selfT && selfT.k === "app" && this.hasMember(selfT, name)) return this.err(e.span, "E0352", `cannot find \`${name}\` in this scope`, { why: `${selfT.decl.name} has a member named \`${name}\`, but members are always accessed through self`, suggestion: `write \`self.${name}\`` });
     if (Object.prototype.hasOwnProperty.call(VALUE_WORDS, name)) return this.err(e.span, "E0352", VALUE_WORDS[name], { why: `\`${name}\` is not defined in Mycel`, suggestion: "see `mycel help habits`" });
     if (this.innerImplicit.has(name)) return this.err(e.span, "E0352", `cannot find \`${name}\` here`, { why: `\`${name}\` was first set inside a \`{ ... }\` block, so it only exists inside that block`, suggestion: `set it before the block (e.g. \`${name} = 0\`), then change it inside` });
+    if (name === "it") return this.err(e.span, "E0352", "`it` can only be used inside a `{ ... }` closure that takes one argument", { why: "`it` is the single argument of a closure written in braces, like `nums.map { it * 2 }`", suggestion: "put the code in braces where a function is expected, or name the argument: `{ x => x * 2 }`" });
     return this.err(e.span, "E0352", `cannot find \`${name}\` in this scope`, { why: "no variable, function, type or import has this name here", suggestion: near ? `did you mean \`${near}\`?` : `declare it with \`let ${name} = ...\`${cx.mod.imports.size ? "" : ", or import it"}` });
   }
 
@@ -1679,9 +1716,9 @@ export class Checker {
         p = prune(p);
       }
     }
-    if (e.op === "!") { if (!isPrim(p, "Bool")) return this.err(e.span, "E0360", `\`!\` needs a Bool, not ${show(p)}`, { suggestion: p.k === "opt" ? "compare with nil: `value != nil`" : "write a comparison, e.g. `x != 0`" }); return T.Bool; }
+    if (e.op === "!") { if (!isPrim(p, "Bool") && !this.isForeignVal(p)) return this.err(e.span, "E0360", `\`!\` needs a Bool, not ${show(p)}`, { suggestion: p.k === "opt" ? "compare with nil: `value != nil`" : "write a comparison, e.g. `x != 0`" }); return T.Bool; }
     if (e.op === "~") { if (!isPrim(p, "Int")) return this.err(e.span, "E0360", `\`~\` needs an Int, not ${show(p)}`); return T.Int; }
-    if (isPrim(p, "Int") || isPrim(p, "Float")) return p;
+    if (isPrim(p, "Int") || isPrim(p, "Float") || this.isForeignVal(p)) return p;
     const base = this.declTypeOf(p);
     if (base) { const m = this.findMethods(base, "operator -").find((c) => c.fn.params.length === 0); if (m) { (e as any).opFn = m.fn; return subst(m.fn.ret, m.map); } }
     if (p.k === "param" && p.bounds.some((b) => b.k === "app" && b.decl.name === "Numeric")) return p;
@@ -1725,6 +1762,7 @@ export class Checker {
       else if (pr.k === "var" && pl.k !== "var") { this.assign(pr, pl); pr = prune(pr); }
       else if (pl.k === "var" && pr.k === "var") { this.assign(pl, pr); }
       if (pl.k === "err" || pr.k === "err") return T.Bool;
+      if (this.isForeignVal(pl) || this.isForeignVal(pr)) return T.Bool;
       const base = this.declTypeOf(pl);
       if (base) { const m = this.findMethods(base, "operator ==").find((c) => c.fn.params.length === 1); if (m) { (e as any).opFn = m.fn; return T.Bool; } }
       if (!this.assignable(r, l) && !this.assignable(l, r)) {
@@ -1735,11 +1773,25 @@ export class Checker {
       }
       return T.Bool;
     }
-    const l0 = this.infer(e.left, cx, ["+", "-", "*", "/", "%", "**"].includes(op) ? exp : undefined);
+    const l0 = this.infer(e.left, cx, ["+", "-", "*", "/", "//", "%", "**"].includes(op) ? exp : undefined);
+    const nd = this.diags.length;
     const r0 = this.infer(e.right, cx, isNum(l0) ? l0 : undefined);
+    if (op === "//" && e.right.k === "id") this.slashSlashComment(e, nd);
     this.tryLitFloat(e.right, l0); this.tryLitFloat(e.left, r0);
     const l = prune(e.left && (e.left as any).ty), r = prune((e.right as any).ty);
     return this.binOp(op, l, r, e);
+  }
+
+  /** `let a = 5 // count`: the lexer reads `// count` as floor division by `count`; when `count` does not exist, the writer meant a comment. */
+  private slashSlashComment(e: Extract<A.Expr, { k: "binary" }>, from: number) {
+    const d = this.diags[from];
+    if (!d || d.severity !== "error" || !/^cannot find `/.test(d.message) || !e.right.span?.src) return;
+    const src = e.right.span.src, t = src.text;
+    const at = t.lastIndexOf("//", e.right.span.start);
+    if (at < 0 || at < e.left.span.end) return;
+    const ls = t.lastIndexOf("\n", at - 1) + 1, nl = t.indexOf("\n", at), le = nl < 0 ? t.length : nl;
+    const span = { src, start: at, end: le };
+    this.diags.splice(from, this.diags.length - from, { severity: "error", code: "E0001", message: "comments start with # in Mycel", span, why: "`//` is whole-number division in Mycel (`7 // 2` is 3), and `" + (e.right as any).name + "` is not a name in scope, so this looks like an old comment", suggestion: `write \`${(t.slice(ls, at) + "#" + t.slice(at + 2, le)).trimEnd()}\` (or run \`mycel fmt --fix\` to rewrite old files)` });
   }
 
   private binOp(op: string, l0: Ty, r0: Ty, e: A.Expr): Ty {
@@ -1761,7 +1813,7 @@ export class Checker {
         this.assign(l, r);
         l = prune(l); r = prune(r);
         if (op === "/") return T.Float;
-        if (["+", "-", "*", "%", "**"].includes(op)) return cmp ? T.Bool : l;
+        if (["+", "-", "*", "//", "%", "**"].includes(op)) return cmp ? T.Bool : l;
         if (cmp) return T.Bool;
       }
     }
@@ -1783,6 +1835,24 @@ export class Checker {
       return T.Float;
     }
     if (op === "+" && isPrim(l, "String") && isPrim(r, "String")) return T.String;
+    if (this.isForeignVal(l) || this.isForeignVal(r)) {
+      if (cmp) return T.Bool;
+      if (!bits.includes(op)) {
+        if (op === "/") return T.Float;
+        if (isPrim(l, "Float") || isPrim(r, "Float")) return T.Float;
+        if (op === "+" && (isPrim(l, "String") || isPrim(r, "String"))) return T.String;
+        return this.isForeignVal(l) ? l : r;
+      }
+    }
+    if (this.isForeignVal(l) || this.isForeignVal(r)) {
+      if (cmp) return T.Bool;
+      if (!bits.includes(op)) {
+        if (op === "/") return T.Float;
+        if (isPrim(l, "Float") || isPrim(r, "Float")) return T.Float;
+        if (op === "+" && (isPrim(l, "String") || isPrim(r, "String"))) return T.String;
+        return this.isForeignVal(l) ? l : r;
+      }
+    }
     if (cmp && ((isPrim(l, "String") && isPrim(r, "String")) || (isPrim(l, "Char") && isPrim(r, "Char")))) return T.Bool;
     if (op === "+" && l.k === "app" && l.decl.name === "Array" && l.decl.builtin && this.assignable(r, l)) return l;
     if (l.k === "param" && r === l) {
@@ -1892,6 +1962,7 @@ export class Checker {
         const gs = this.findGetter(base, t.name);
         if (gs?.setter) { (t as any).mres = { kind: "setter", fn: gs.setter }; return subst(gs.ty, gs.map); }
         if (gs) { this.err(t.span, "E0371", `property \`${t.name}\` has no setter`, { suggestion: `add \`set ${t.name}(value) { ... }\`` }); return subst(gs.ty, gs.map); }
+        if (this.isForeignVal(objTy)) { (t as any).mres = { kind: "foreign-set-attr", name: t.name }; return objTy; }
         return this.inferMember(t, cx);
       }
       case "index": {
@@ -1899,6 +1970,7 @@ export class Checker {
         const it = this.infer(t.index, cx);
         if (ot.k === "app" && ot.decl.name === "Array" && ot.decl.builtin) { if (!this.assignable(it, T.Int)) this.mismatch(t.index, it, T.Int, "index"); (t as any).idx = "array"; return ot.args[0]; }
         if (ot.k === "app" && ot.decl.name === "Map" && ot.decl.builtin) { if (!this.assignable(it, ot.args[0])) this.mismatch(t.index, it, ot.args[0], "key"); (t as any).idx = "map"; return ot.args[1]; }
+        if (this.isForeignVal(ot)) { if (isPrim(prune(it), "Void")) this.mismatch(t.index, it, T.Any, "key"); (t as any).idx = "foreign"; return ot; }
         if (ot.k === "err") return ot;
         return this.err(t.span, "E0374", `cannot assign through an index on ${show(ot)}`, { why: isPrim(ot, "String") ? "Strings are immutable" : undefined, suggestion: "indexed assignment works on arrays and maps" });
       }
@@ -1936,6 +2008,9 @@ export class Checker {
     } else if (isPrim(ot, "String")) {
       if (isRange) { (e as any).idx = "slice"; res = T.String; }
       else { if (!this.assignable(it, T.Int)) this.mismatch(e.index, it, T.Int, "index"); (e as any).idx = "string"; res = T.Char; }
+    } else if (this.isForeignVal(ot)) {
+      if (isPrim(pit, "Void")) this.mismatch(e.index, it, T.Any, "index");
+      (e as any).idx = "foreign"; res = ot;
     } else if (ot.k === "err") res = ot;
     else {
       const base = this.declTypeOf(ot);
@@ -2078,12 +2153,14 @@ export class Checker {
       if (only.fn.owner) this.checkAccess(only.fn.vis, only.fn.owner, cx, e.span, n);
       return this.fnValueType(only.fn, only.map);
     }
+    if (this.isForeignVal(ot)) { (e as any).mres = { kind: "foreign-attr", name: n }; return ot; }
     return this.err(e.span, "E0390", `${show(ot)} has no member \`${n}\``, this.memberSuggestion(base, n, ot));
   }
 
   private hasMember(b: Extract<Ty, { k: "app" }>, n: string) { return !!(this.findField(b, n) || this.findGetter(b, n) || this.findMethods(b, n).length); }
 
   private memberSuggestion(base: Extract<Ty, { k: "app" }>, n: string, ot: Ty) {
+    if (isPrim(ot, "String") && ["has", "contains_all", "contains_any", "containsAll", "containsAny", "hasAll", "hasAny"].includes(n)) return { why: "Mycel has one way to ask whether text holds something: `in`", suggestion: "write `\"@\" in w`; \"all of\" is `a in w and b in w`, \"any of\" is `a in w or b in w`" };
     if (isPrim(ot, "String") && n === "join") return { why: "`join` in Mycel is called on the list (e.g. `items.join(\", \")`), not on the separator", suggestion: "write `list.join(separator)`" };
     const names = new Set<string>();
     for (const s of supertypes(base)) { for (const k of s.decl.fields.keys()) names.add(k); for (const k of s.decl.methods.keys()) if (!k.startsWith("operator")) names.add(k); for (const k of s.decl.getters.keys()) names.add(k); }
@@ -2120,6 +2197,52 @@ export class Checker {
   }
 
   // ---------- calls ----------
+  /** `re.findAll("\\d+", text)`: the common patterns have a one-word spelling that needs no regex. */
+  private regexHint(e: Extract<A.Expr, { k: "call" }>, c: Extract<A.Expr, { k: "member" }>) {
+    const lit = e.args[0].value as Extract<A.Expr, { k: "str" }>;
+    if (lit.parts.some((p: any) => typeof p !== "string")) return;
+    const pat = lit.parts.join("");
+    const NUMBERS = ["-?\\d+(\\.\\d+)?", "\\d+(\\.\\d+)?", "-?\\d+(?:\\.\\d+)?", "\\d+(?:\\.\\d+)?", "-?[0-9]+(\\.[0-9]+)?", "\\d+\\.?\\d*", "-?\\d*\\.?\\d+", "\\d*\\.?\\d+"];
+    const INT = /^(\\b)?(\\d\+|\[0-9\]\+)(\\b)?$/, WORD = /^(\\b)?(\\w\+|\[A-Za-z\]\+|\[a-zA-Z\]\+)(\\b)?$/;
+    const kind = INT.test(pat) ? "Int" : NUMBERS.includes(pat) ? "Number" : WORD.test(pat) ? "Word" : undefined;
+    if (!kind) return;
+    this.warn(e.span, "W0302", `\`re.${c.name}("${pat}", ...)\` needs a regex for something with a one-word spelling`, { why: "Mycel pulls numbers and words out of text without a pattern", suggestion: `write \`text.extract(${kind})\` (it gives typed values, e.g. [${kind === "Number" ? "Float" : kind === "Word" ? "String" : "Int"}])` });
+  }
+
+  /** `Integer`, `int`, `Words`...: a near miss of a kind name. */
+  private looksLikeKind(name: string): boolean { return !!closest(name, [...EXTRACT_KINDS_ALL]) || /^(int|float|number|word|words|operator|bool|boolean|digit|digits|letter|str|string|integer)$/i.test(name); }
+
+  /** `text.extract(Int)`, `text.extract(Number, Operator)`, `text.extract(Word) { "@" in it }`: a closed set of kinds, typed results. */
+  private inferExtract(e: Extract<A.Expr, { k: "call" }>, c: Extract<A.Expr, { k: "member" }>, cx: Ctx): Ty {
+    const recv = prune(this.infer(c.obj, cx));
+    if (recv.k !== "err" && !isPrim(recv, "String")) return this.err(c.span, "E0390", `\`extract\` pulls pieces out of text (a String), not ${show(recv)}`, { suggestion: "call it on a String: `\"12 + 3\".extract(Int)`" });
+    const kinds: string[] = [];
+    let filter: A.Expr | undefined;
+    for (const a of e.args) {
+      if (a.name === "where" || (a.value.k === "lambda" && !a.name)) {
+        if (filter) return this.err(a.span, "E0431", "`extract` takes one filter");
+        filter = a.value; continue;
+      }
+      if (a.name || a.value.k !== "id" || !EXTRACT_KINDS_ALL.has(a.value.name)) {
+        const given = a.value.k === "id" ? a.value.name : "this";
+        const near = a.value.k === "id" ? closest(a.value.name, [...EXTRACT_KINDS_ALL]) : undefined;
+        return this.err(a.span, "E0431", `${a.value.k === "id" ? `\`${given}\` is not something \`extract\` can pull out of text` : "`extract` takes kinds like `Int` or `Word`"}${near ? ` — did you mean \`${near}\`?` : ""}`, { why: "the kinds are a closed set: Int, Float, Number, Word, Operator, Bool", suggestion: near ? `write \`.extract(${near})\`` : "write one of `.extract(Int)`, `.extract(Float)`, `.extract(Number)`, `.extract(Word)`, `.extract(Operator)`, `.extract(Bool)`; for anything else use `.split(...)` and a condition" });
+      }
+      if (kinds.includes(a.value.name)) return this.err(a.span, "E0431", `\`${a.value.name}\` is asked for twice`);
+      kinds.push(a.value.name);
+    }
+    if (!kinds.length) return this.err(e.span, "E0431", "`extract` needs a kind", { suggestion: "write `.extract(Int)`, `.extract(Word)`, ..." });
+    const one: Record<string, Ty> = { Int: T.Int, Float: T.Float, Number: T.Float, Word: T.String, Operator: T.String, Bool: T.Bool };
+    const elem = kinds.length === 1 ? one[kinds[0]] : this.preludeType("Piece");
+    if (filter) {
+      if (kinds.length !== 1) return this.err(filter.span, "E0431", "a filter works with one kind", { suggestion: "extract one kind, or filter the result with `.filter { ... }`" });
+      this.inferLambda(filter as any, cx, fnTy([elem], T.Bool));
+      (filter as any).ty = fnTy([elem], T.Bool);
+    }
+    (e as any).extract = { kinds, filter };
+    return this.arrayOf(elem);
+  }
+
   private inferCall(e: Extract<A.Expr, { k: "call" }>, cx: Ctx, exp?: Ty): Ty {
     const c = e.callee;
     const typeArgs = e.typeArgs?.map((t) => this.resolveType(t, cx));
@@ -2128,11 +2251,20 @@ export class Checker {
       const sym = this.lookupModuleSym(c.name, cx);
       if (sym?.k === "fn") { (c as any).sym = sym; return this.resolveCall(e, e.args, cx, sym.fns.map((fn) => ({ fn, map: new Map() })), typeArgs, exp, c.name, "fn", {}); }
       if (sym?.k === "type") { (c as any).sym = sym; return this.inferCtor(e, sym.decl, typeArgs, cx, exp); }
+      if (sym?.k === "module") {
+        const cfns = sym.mod.fns.get("call");
+        if (cfns?.some((f) => f.pub)) { (c as any).sym = { k: "fn", fns: cfns }; return this.resolveCall(e, e.args, cx, cfns.map((fn) => ({ fn, map: new Map() })), typeArgs, exp, `${c.name}.call`, "fn", {}); }
+      }
       if (sym?.k === "global") { /* a global holding a function */ }
       else if (!sym) {
         const bv = this.bareVariant(c.name);
         if (bv) { (c as any).sym = { k: "variant", ...bv }; return this.inferVariantCall(e, bv.decl, bv.v, cx, exp); }
       }
+    }
+    if (c.k === "member" && c.obj.k === "id" && ["findAll", "find", "isMatch", "split"].includes(c.name) && e.args.length && e.args[0].value.k === "str" && !cx.scope.lookup(c.obj.name) && this.lookupModuleSym(c.obj.name, cx)?.k === "module") this.regexHint(e, c);
+    if (c.k === "member" && c.name === "extract" && e.args.length) {
+      const a0 = e.args[0].value; // a type name where a value would be: `.extract(Int)` is never an ordinary call
+      if (a0.k === "id" && !cx.scope.lookup(a0.name) && (EXTRACT_KINDS_ALL.has(a0.name) || (!this.lookupModuleSym(a0.name, cx) && this.looksLikeKind(a0.name)))) return this.inferExtract(e, c, cx);
     }
     if (c.k === "member") {
       const ref = this.resolveRef(c.obj, cx);
@@ -2189,6 +2321,12 @@ export class Checker {
           if (chained) { (e as any).chain = true; (e as any).chainInner = r; (c as any).chain = true; const p = prune(r); return p.k === "opt" || p.k === "err" ? p : opt(p); }
           return r;
         }
+        if (this.isForeignVal(ot)) {
+          e.args.forEach((a) => { const at = this.infer(a.value, cx); if (isPrim(prune(at), "Void")) this.err(a.value.span, "E0300", "cannot pass a Void expression as an argument"); });
+          (e as any).call = { kind: "foreign-method", name: c.name };
+          if (chained) { (e as any).chain = true; (e as any).chainInner = ot; (c as any).chain = true; return opt(ot); }
+          return ot;
+        }
         // a field holding a function: fall through to value call (errors for unknown members come from inferMember)
         const mt = this.valueMember(ot, c, cx);
         (c as any).ty = mt;
@@ -2207,6 +2345,11 @@ export class Checker {
   private callValue(e: Extract<A.Expr, { k: "call" }>, ct: Ty, cx: Ctx, name: string): Ty {
     const p = prune(ct);
     if (p.k === "err") { e.args.forEach((a) => this.infer(a.value, cx)); return p; }
+    if (this.isForeignVal(p)) {
+      e.args.forEach((a) => { const at = this.infer(a.value, cx); if (isPrim(prune(at), "Void")) this.err(a.value.span, "E0300", "cannot pass a Void expression as an argument"); });
+      (e as any).call = { kind: "foreign-invoke" };
+      return p;
+    }
     if (p.k !== "fn") {
       e.args.forEach((a) => this.infer(a.value, cx));
       const isProperty = e.args.length === 0 && (e.callee.k === "member" || (e.callee.k === "id" && !!cx.selfTy));
@@ -2231,20 +2374,25 @@ export class Checker {
   }
 
   /** Map call arguments onto parameters; reports arity / name errors. */
-  matchArgs(params: FnInfo["params"], args: A.Arg[], span: Span, name: string): { list: (A.Arg | undefined)[]; rest: A.Arg[] } | undefined {
+  matchArgs(params: FnInfo["params"], args: A.Arg[], span: Span, name: string, isForeignKw = false): { list: (A.Arg | undefined)[]; rest: A.Arg[]; extraKw?: A.Arg[] } | undefined {
     const list: (A.Arg | undefined)[] = new Array(params.length).fill(undefined);
     const rest: A.Arg[] = [];
+    const extraKw: A.Arg[] = [];
     const variadic = params.length > 0 && params[params.length - 1].variadic;
     let pos = 0, bad = false;
     const sigText = () => `${name}(${params.map((p) => `${p.name}: ${show(p.ty)}${p.hasDefault ? " = ..." : ""}`).join(", ")})`;
     for (const a of args) {
       if (a.name === undefined) {
+        if (isForeignKw) while (pos < params.length && params[pos].name === "named") pos++;
         if (pos < params.length && !(variadic && pos === params.length - 1)) list[pos++] = a;
         else if (variadic) rest.push(a);
         else { this.err(a.span, "E0401", `too many arguments in call to \`${name}\``, { why: `it takes ${params.length} argument${params.length === 1 ? "" : "s"}, but ${args.length} were given`, suggestion: `signature: ${sigText()}` }); bad = true; break; }
       } else {
         const i = params.findIndex((p) => p.name === a.name);
-        if (i < 0) { this.err(a.span, "E0402", `\`${name}\` has no parameter named \`${a.name}\``, { suggestion: closest(a.name, params.map((p) => p.name)) ? `did you mean \`${closest(a.name, params.map((p) => p.name))}\`?` : `parameters: ${params.map((p) => p.name).join(", ")}` }); bad = true; continue; }
+        if (i < 0) {
+          if (isForeignKw) { extraKw.push(a); continue; }
+          this.err(a.span, "E0402", `\`${name}\` has no parameter named \`${a.name}\``, { suggestion: closest(a.name, params.map((p) => p.name)) ? `did you mean \`${closest(a.name, params.map((p) => p.name))}\`?` : `parameters: ${params.map((p) => p.name).join(", ")}` }); bad = true; continue;
+        }
         if (list[i]) { this.err(a.span, "E0403", `argument \`${a.name}\` is given twice`); bad = true; continue; }
         list[i] = a;
       }
@@ -2255,11 +2403,26 @@ export class Checker {
       this.err(span, "E0404", `missing argument${missing.length > 1 ? "s" : ""} ${missing.map((m) => "`" + m.name + "`").join(", ")} in call to \`${name}\``, { why: `${name} requires ${params.filter((p) => !p.hasDefault && !p.variadic).length} argument(s)`, suggestion: `signature: ${sigText()}` });
       return undefined;
     }
-    return { list, rest };
+    return { list, rest, extraKw };
   }
 
   private argFits(fn: FnInfo, args: A.Arg[]): boolean {
     const params = fn.params;
+    const isForeignKw = !!fn.module?.name.includes(":") && params.some((p) => p.name === "named");
+    if (isForeignKw) {
+      const variadic = params.length > 0 && params[params.length - 1].variadic;
+      const regular = params.filter((p) => p.name !== "named");
+      const pos = args.filter((a) => a.name === undefined).length;
+      if (!variadic && pos > regular.length) return false;
+      const covered = new Set<number>();
+      let pi = 0;
+      for (let k = 0; k < pos; k++) {
+        while (pi < params.length && params[pi].name === "named") pi++;
+        if (pi < params.length && !params[pi].variadic) covered.add(pi++);
+      }
+      for (const a of args) if (a.name !== undefined) { const j = params.findIndex((p) => p.name === a.name); if (j >= 0) covered.add(j); }
+      return params.every((p, i) => p.name === "named" || covered.has(i) || p.hasDefault || p.variadic);
+    }
     const variadic = params.length > 0 && params[params.length - 1].variadic;
     const pos = args.filter((a) => a.name === undefined).length;
     if (!variadic && args.length > params.length) return false;
@@ -2280,7 +2443,7 @@ export class Checker {
     if (!cands.length) {
       const c0 = cands0[0];
       args.forEach((a) => this.infer(a.value, cx));
-      if (cands0.length === 1) { this.matchArgs(c0.fn.params, args, e.span, name); }
+      if (cands0.length === 1) { const isFK = !!c0.fn.module?.name.includes(":") && c0.fn.params.some((p) => p.name === "named"); this.matchArgs(c0.fn.params, args, e.span, name, isFK); }
       else this.err(e.span, "E0405", `no overload of \`${name}\` takes ${args.length} argument${args.length === 1 ? "" : "s"}`, { suggestion: `overloads:\n${cands0.map((c) => "  " + this.fnSig(c.fn)).join("\n")}` });
       return subst(c0.fn.ret, c0.map);
     }
@@ -2300,6 +2463,7 @@ export class Checker {
       chosen = fit[0];
     }
     const fn = chosen.fn;
+    const isFK = !!fn.module?.name.includes(":") && fn.params.some((p) => p.name === "named");
     if ((fn as any).inferRet && !this.bodyDone.has(fn) && !(fn as any).hasUntypedParams) this.checkFnBody(fn);
     const inst = new Map(chosen.map);
     fn.typeParams.forEach((p, i) => inst.set(p, typeArgs?.[i] ?? freshVar()));
@@ -2309,8 +2473,8 @@ export class Checker {
     // expected-type hint: lets `let x: [Int] = make()` infer T from the context
     if (exp && containsVar(ret) && prune(ret).k !== "var" && !isPrim(exp, "Void") && !isPrim(exp, "Any")) { const ex = prune(exp); if (this.canAssign(ret, ex)) this.assignable(ret, ex); }
     const params = fn.params.map((p) => ({ ...p, ty: subst(p.ty, inst) }));
-    const ordered = this.matchArgs(params, args, e.span, name);
-    const info = { kind, fn, ordered: ordered?.list ?? [], rest: ordered?.rest ?? [], inst, ...extra };
+    const ordered = this.matchArgs(params, args, e.span, name, isFK);
+    const info = { kind, fn, ordered: ordered?.list ?? [], rest: ordered?.rest ?? [], extraKw: ordered?.extraKw ?? [], inst, ...extra };
     (e as any).call = info;
     if (!ordered) { args.forEach((a) => this.infer(a.value, cx)); return ret; }
     const doArg = (a: A.Arg, pt: Ty, label: string) => {
@@ -2334,6 +2498,7 @@ export class Checker {
     // non-closure arguments first so closures see the type parameters they bind
     ordered.list.forEach((a, i) => { if (a && a.value.k !== "lambda") doArg(a, params[i].ty, params[i].name); });
     ordered.rest.forEach((a) => { if (a.value.k !== "lambda") { const el = prune(params[params.length - 1].ty); doArg(a, el.k === "app" ? el.args[0] : el, params[params.length - 1].name); } });
+    ordered.extraKw?.forEach((a) => { const t = this.infer(a.value, cx); if (isPrim(prune(t), "Void")) this.err(a.value.span, "E0300", "cannot pass a Void expression as a named argument"); });
     ordered.list.forEach((a, i) => { if (a && a.value.k === "lambda") doArg(a, params[i].ty, params[i].name); });
     ordered.rest.forEach((a) => { if (a.value.k === "lambda") { const el = prune(params[params.length - 1].ty); doArg(a, el.k === "app" ? el.args[0] : el, params[params.length - 1].name); } });
     ((fn as any).callSites ??= []).push({ span: e.span, args });
@@ -2415,6 +2580,8 @@ export class Checker {
     let x = exp ? prune(exp) : undefined;
     if (x?.k === "opt") x = prune(x.inner);
     const expFn = x && x.k === "fn" ? x : undefined;
+    // `{ it * 2 }`: with no named parameter, `it` is the single argument where a one-argument function is expected
+    if (e.implicitIt && !e.params.length && expFn && expFn.params.length === 1) e.params = [{ name: "it", span: e.span } as A.Param];
     if (expFn && expFn.params.length !== e.params.length && !info) {
       this.err(e.span, "E0430", `this closure takes ${e.params.length} parameter${e.params.length === 1 ? "" : "s"}, but ${expFn.params.length} ${expFn.params.length === 1 ? "is" : "are"} expected here`, { suggestion: `write it as (${expFn.params.map((_, i) => "p" + (i + 1)).join(", ")}) => ...` });
     }
@@ -2547,6 +2714,7 @@ export class Checker {
       for (const s of supertypes(t)) if (s.decl.builtin && (s.decl.name === "Iterable" || s.decl.name === "Iterator")) return s.args[0];
     }
     if (isPrim(t, "String")) return T.Char;
+    if (this.isForeignVal(t)) return t;
     if (t.k === "opt") { this.err(at.span, "E0440", `cannot loop over ${show(t)} because it might be nil`, { suggestion: "unwrap it first: `if let items = value { for x in items { ... } }` or `value ?? []`" }); return this.iterElem(t.inner, at); }
     this.err(at.span, "E0441", `${show(t)} is not iterable`, { why: "`for` works on arrays, sets, maps, ranges, strings, generators and types implementing Iterable<T>", suggestion: isPrim(t, "Int") ? "loop over a range: `for i in 0..n`" : `implement Iterable<T> by adding \`fn iter() -> Iterator<T>\` to ${show(t)}` });
     return T.err;

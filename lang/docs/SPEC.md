@@ -8,7 +8,9 @@ File extension `.myc` (`.olx` is accepted everywhere); project manifest `ply.jso
 
 * Source is UTF-8. Identifiers: letters (any script), digits, `_`; they cannot start with a digit or contain `$`
   (that is how generated code can never collide with a user name).
-* Comments: `// line`, `/* block */`, `/// doc` (read by `mycel doc`).
+* Comments: `# line` (to the end of the line; a `#` inside a string is text) and `## doc` (read by `mycel doc`). There are no block
+  comments: put `#` on each line. `//` is whole-number division, so using it (or `/* */`) as a comment is an error that shows the fixed
+  line; `mycel fmt --fix` rewrites old files.
 * Statements end at a newline or `;`. A newline is *ignored* inside `(...)`/`[...]`, after a binary operator or `,`,
   and when the next line starts with `.name`, `?.`, `&&`, `||`, `??` or `|>` (so method chains and long conditions
   wrap naturally). A capitalised `.Variant` at the start of a line begins a new statement/arm.
@@ -38,17 +40,19 @@ parameters and fields always need a type or an initial value. Nothing converts i
 literal is accepted where a Float is expected (`let f: Float = 3`), and where a `json.Json` is expected, JSON-shaped
 literals are that JSON value (JavaScript): `let v: json.Json = {"name": "Ada", "tags": [1, true, nil]}`. A variable
 still names its kind (`.Str(name)`); the compiler suggests it. Type parameters are **invariant** and erased at
-run time. Numbers mix like Python: `Int` and `Float` arithmetic yields `Float` (`n * 1.5`), `7 / 2` is `3.5`, and whole-number division is `7.div(2)`.
+run time. Numbers mix like Python: `Int` and `Float` arithmetic yields `Float` (`n * 1.5`), `7 / 2` is `3.5` (`/` is always exact), and whole-number division is `//` with Python's floor semantics: `7 // 2` is `3`,
+`-7 // 2` is `-4`, and with a `Float` operand the result is a floored `Float` (`7.0 // 2` is `3.0`); `//=` compounds it, and `x // 0`
+is a division-by-zero panic. `%` is the matching floor remainder (`-7 % 3` is `2`), so `(a // b) * b + a % b == a`.
 
 ## 3. Declarations
 
 ```
-let name[: T] = expr         var name[: T] = expr         // let: binding is immutable. var of optional type may omit "= nil"
+let name[: T] = expr         var name[: T] = expr         # let: binding is immutable. var of optional type may omit "= nil"
 fn name<T: Bound>(a: T, b: Int = 1, ...rest: Int) -> R { ... }      fn f(x: Int) => x * 2
 async fn / gen fn / extern fn (body supplied by the host) / pub fn
 class Name<T>: Base, Iface { var x: Int = 0   let y: Int   init(...) {}   fn m() {}   static fn s() {}
                              get area: Float { ... }   set area(v: Float) { ... }   operator +(o: Name) -> Name { ... } }
-struct P { let x: Int, y: Int }     // immutable value type: structural ==, generated with(x: ...) copy, no inheritance
+struct P { let x: Int, y: Int }     # immutable value type: structural ==, generated with(x: ...) copy, no inheritance
 enum E { A, B(n: Int), C(String, Int)   fn method() {}   get prop: T { ... } }
 interface I: J { get name: String   fn f() -> Int   fn g() -> String { default body } }
 type Alias<T> = ...        extend Int { fn double() -> Int { self * 2 } }      extend Int: Iface { ... }
@@ -66,7 +70,7 @@ test "name" { ... }        import a.b      import a.b as c      import a.b.{x, Y
   can carry default methods; every non-optional field must be assigned in each `init` (or have a default); an
   `init` of a subclass must call `super.init(...)` unless the base has a no-argument initializer. A class without
   `init` gets a memberwise initializer (all fields in order, defaults optional).
-* **Operators** overloadable via `operator`: `+ - * / % ** == < [] & | ^ << >>` and unary `-`. Defining `<` gives
+* **Operators** overloadable via `operator`: `+ - * / // % ** == < [] & | ^ << >>` and unary `-`. Defining `<` gives
   `> <= >=`; `T: Comparable` generics use `<` on class types that define it.
 * **Extensions** add methods (not stored fields) to any type, including builtins and arrays (`extend<T> [T]`), and
   may declare conformance to an interface.
@@ -84,7 +88,28 @@ Precedence, low to high: assignment (`= += -= *= /= %= **= ??= <<= >>=`) · `con
 * `a |> f` calls `f(a)`; `a |> g(b)` calls `g(a, b)`. Ranges: `0..n` (excludes n), `0..=n`, usable for slicing
   (`xs[1..3]`, `s[..2]`) and `for`.
 * Leading-dot shorthand `.Circle(r: 1.0)` takes its enum type from context. Lambdas: `x => x + 1`, `fn(x) => x + 1`, `fn(x) { return x + 1 }`,
-  `(a, b) => a + b`, `(x: Int) -> Int => { return x }`.
+  `(a, b) => a + b`, `(x: Int) -> Int => { return x }` (the old forms; closures in braces below are the form to teach).
+* **Closures in braces**: a closure has a visible start and end. `nums.filter { it > 5 }`, `nums.map { it * 2 }`,
+  `nums.reduce(0) { (a, b) => a + b }`, `{ x => x * 2 }`, `{ (x: Int) => x * 2 }`; `it` is the single argument when none is named, and
+  only exists in a closure given where a one-argument function is expected (elsewhere: "`it` can only be used inside a `{ ... }` closure").
+  Several statements go on separate lines; the last expression is the result (or `return`). A closure can trail a call (`text.extract(Int) { it > 5 }`),
+  or sit inside the parentheses (`nums.filter({ it > 5 })`). **Where `{` is a closure and where it is a map:** a `{` where a value is
+  expected is a *map* when it is `{}` or has a `key: value` colon directly inside it (a `:` after `?` is a ternary's); anything else (`it > 5`, `x => ...`,
+  `(a, b) => ...`, `let`/`return`/`if` first, or statements on separate lines) is a *closure*. After a call, member or lower-case name, `{` with a space
+  before it is a trailing closure. In the head of an `if`/`while`/`for`/`match` the `{` starts the body, unless the closure's `}` (plus any
+  `.member` / `(args)` chained after it) is followed by the body's own `{`: `if xs.any { it > 0 } { ... }` works, `if xs.any(x => x > 0) { ... }` too.
+  A struct pattern's `{` touches the name (`P{x, y}`) and is never a closure.
+* **Pulling things out of text** (the design rule: the common thing a beginner wants is ONE obvious call with a plain-English name; regex,
+  manual loops and index juggling are the fallback, never the first answer): `text.extract(kind)` with the closed kind set `Int, Float, Number,
+  Word, Operator, Bool`, typed results (`"12 + 3*4".extract(Int)` is `[12, 3, 4]`, a `[Int]`). `Int` is a whole number (`3.5` is a Float, not an Int),
+  `Float` has a decimal point, `Number` is either as a `Float`; `Word` is letters, digits and `_` with inner `@ . - '` kept and edge punctuation
+  dropped (`"Hi, a@b.com!"` gives `Hi`, `a@b.com`); `Operator` is `+ - * / // % ** ^ = == != < > <= >= && || ! & | ~ ( )`; `Bool` is the whole words
+  true/false/yes/no in any case. A `-` is a sign when the nearest non-space character before it is not part of a value (`(-3)`, `2 * -3`, `1, -2`); in
+  `12 - 3` and `5 -3` it is subtraction. A number glued to letters before it (`abc123`, `v2`) is not a number. Several kinds keep their order and give
+  `Piece` values for `match`: `"12 + 3*4".extract(Number, Operator)` is `[Piece.Number(12.0), Piece.Operator("+"), ...]`. A filter uses the same closure form as
+  everywhere: `text.extract(Word) { "@" in it and ".com" in it }` or `text.extract(Word, where: { "@" in it })` (one kind only). `in` is THE way to ask
+  whether text holds something (`"@" in w`; "all of" is `a in w and b in w`, "any" is `or`): there is no `.has`, `containsAll` or `containsAny`.
+  There are no Email/Url/Date/Line/Letter/Digit kinds (lines are `.lines()`), and no regex strings in this API; a digit or word regex gets a hint pointing here.
 * Comprehensions (Python): `[e for p in xs]`, `[e for p in xs if c]`, `{k: v for p in xs}` (a map). Several
   `for`/`if` clauses run left to right like nested loops (`[(a, b) for a in xs for b in ys if a != b]`); `p` is any
   pattern (`for (k, v) in m`, `for i, x in list` = position + value); `xs` is anything `for` can walk. The names
@@ -129,7 +154,21 @@ A file is a module named by its path under `src/` (`src/models/user.olx` → `mo
 (`user.User`). Import cycles are rejected with the cycle spelled out. A package is a directory with `ply.json`
 (`name`, `version`, `dependencies`, `capabilities`); dependencies are semver ranges (`^1.2.0 ~1.2.3 >=1.0.0 1.x *`)
 or `path:../dir`, installed flat into `ply_modules/` with `ply.lock` (sha256 integrity, verified by `ply install`).
-`ply publish` copies a package to the local registry (`$PLY_REGISTRY`, default `~/.olx/registry`); versions are immutable.
+`ply publish` copies a package to the local registry (`$PLY_REGISTRY`, default `~/.ply/registry`); versions are immutable.
+
+**Python and npm packages**: `ply install requests --python` / `ply install lodash --npm` (the runtime flag may
+stand anywhere among the arguments; two runtimes in one command are refused with both commands to type; Java, Rust,
+Go and Swift flags are recognised and refused as "not supported yet"). ply.json lists exact versions under `python` /
+`npm`; ply.lock's `foreign` section records hashes (sha256 / npm integrity) and the modules each package provides.
+Imports use the module's real name: `import requests`, `import numpy as np`, `from requests import get`,
+`import "@scope/pkg" as pkg` (a name that is not an identifier is quoted and needs `as`). A runtime flag in the import
+(`import json --python`, the same flags as `ply install`, anywhere in the statement) is needed only when two runtimes
+provide the name or for Python's standard library; a Mycel module of the same name wins without a flag. Mistakes are
+E0207 with the fix (installed under another name, wrong runtime, not installed). Each foreign module becomes a
+generated Mycel module whose functions return `Result<foreign.Value, Error>` (`std.foreign`); calling one needs
+`capabilities.packages` (or `--allow-pkg`), because a package runs with the full power of the user's account.
+`mycel translate file.py` turns beginner Python into Mycel using Python's own parser; `std.pycompat` keeps Python's
+printing and arithmetic where the two languages differ.
 
 ## 9. Safety model
 

@@ -129,9 +129,9 @@ test("std module completion and member completion", async () => {
   } finally { c.close(); }
 });
 
-test("hover docs from /// comments", async () => {
+test("hover docs from ## comments", async () => {
   const c = client(); try {
-    const src = "/// Calculates double the input value.\nfn double(n: Int) -> Int {\n  return n * 2\n}\n\nfn main() {\n  let d = double(4)\n}\n";
+    const src = "## Calculates double the input value.\nfn double(n: Int) -> Int {\n  return n * 2\n}\n\nfn main() {\n  let d = double(4)\n}\n";
     await open(c, src);
     const h = await c.request("textDocument/hover", {
       textDocument: { uri },

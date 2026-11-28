@@ -23,7 +23,7 @@ const EXPECT: Record<string, string> = {
   todo: "",
 };
 function load(dir: string) {
-  const ctx: any = vm.createContext({ console, setTimeout, clearTimeout, queueMicrotask, crypto: globalThis.crypto, TextEncoder, TextDecoder });
+  const ctx: any = vm.createContext({ console, setTimeout, clearTimeout, queueMicrotask, crypto: globalThis.crypto, TextEncoder, TextDecoder, AbortController });
   ctx.self = ctx;
   vm.runInContext(fs.readFileSync(path.join(dir, "mycel.js"), "utf8"), ctx);
   vm.runInContext(fs.readFileSync(path.join(play, "examples.js"), "utf8"), ctx);

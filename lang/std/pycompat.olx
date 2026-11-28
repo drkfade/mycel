@@ -1,0 +1,79 @@
+# Python's own formatting and arithmetic, for programs written by `mycel translate` (task 55).
+# Mycel prints `true`, `nil` and `["a"]`; Python prints `True`, `None` and `['a']`. Mycel's `%` and `//` round down
+# like Python's, so these are kept for programs written by `mycel translate`, which still calls them by name.
+
+## Python's ValueError: raised by int("x7") and float("abc"), so `except ValueError:` translates to a catch.
+pub class ValueError: Error {}
+
+## Python's str(value): True/False/None, 'quoted' strings inside lists/dicts/tuples, {1, 2} sets, 2.0 floats.
+pub extern fn str(value: Any) -> String
+## Python's repr(value): like str, and a String itself is quoted.
+pub extern fn repr(value: Any) -> String
+## Python's int(value): a String is parsed (ValueError when it is not a whole number), a Float is truncated.
+pub extern fn int(value: Any) -> Int
+## Python's float(value): a String is parsed (ValueError when it is not a number), an Int converted.
+pub extern fn float(value: Any) -> Float
+## Python's truth test: 0, 0.0, "", nil, empty collections and false are false.
+pub extern fn truthy(value: Any) -> Bool
+## Python's a // b on Ints (rounds down: -7 // 2 == -4).
+pub extern fn floordiv(a: Int, b: Int) -> Int
+## Python's a // b on Floats.
+pub extern fn floordiv(a: Float, b: Float) -> Float
+## Python's a % b on Ints (the sign of b: -7 % 3 == 2).
+pub extern fn mod(a: Int, b: Int) -> Int
+## Python's a % b on Floats.
+pub extern fn mod(a: Float, b: Float) -> Float
+## Python's round(x): halves go to the even neighbour (round(2.5) == 2).
+pub extern fn round(x: Float) -> Int
+## Python's round(x, digits).
+pub extern fn round(x: Float, digits: Int) -> Float
+
+## Python's xs[lo:hi]: negative bounds count from the end, nil is open, and bounds past the end are clamped.
+pub extern fn slice<T>(xs: [T], lo: Int?, hi: Int?) -> [T]
+## Python's s[lo:hi] on a String.
+pub extern fn slice(s: String, lo: Int?, hi: Int?) -> String
+
+## Python's sorted(xs): tuples and lists compare item by item, Int and Float compare as numbers.
+pub extern fn sorted<T>(xs: [T]) -> [T]
+## Python's sorted(xs, key=f) where the key may be a tuple: sorted(items, key=lambda kv: (-kv[1], kv[0])).
+pub extern fn sortedBy<T, K>(xs: [T], key: (T) -> K) -> [T]
+
+## Python's max(xs, key=f): the first item with the largest key.
+pub extern fn maxBy<T, K>(xs: [T], key: (T) -> K) -> T
+## Python's min(xs, key=f): the first item with the smallest key.
+pub extern fn minBy<T, K>(xs: [T], key: (T) -> K) -> T
+
+## Python's list + list.
+pub fn concat<T>(a: [T], b: [T]) -> [T] {
+  var out: [T] = []
+  for x in a { out.push(x) }
+  for x in b { out.push(x) }
+  return out
+}
+## Python's list * n.
+pub fn repeat<T>(a: [T], n: Int) -> [T] {
+  var out: [T] = []
+  for _ in 0..n { for x in a { out.push(x) } }
+  return out
+}
+
+## Python's s.zfill(width): keeps a leading '+' or '-' before the zero padding.
+pub extern fn zfill(s: String, width: Int) -> String
+## Python's s.split() with no separator: splits on any whitespace run and drops empty ends.
+pub extern fn splitWs(s: String) -> [String]
+## Python's f.readlines(): splits into lines keeping the trailing newline on each line.
+pub extern fn splitLinesKeep(s: String) -> [String]
+## Python's sum() on a list of dynamic foreign values.
+pub extern fn sum<T>(xs: [T]) -> Any
+## Python's s.strip() on a String or foreign Value.
+pub extern fn strip(x: Any) -> String
+## Python's a ** b when an operand is a dynamic foreign value.
+pub extern fn pow(a: Any, b: Any) -> Any
+
+## Unwrap a Result or throw its Error so Python `try/except` catches I/O failures.
+pub fn orThrow<T>(r: Result<T, Error>) -> T {
+  match r {
+    .Ok(v) => return v
+    .Err(e) => throw e
+  }
+}

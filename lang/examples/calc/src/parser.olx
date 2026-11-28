@@ -1,4 +1,4 @@
-import lexer.{Token, tokenize}
+from lexer import Token, tokenize
 
 pub enum Expr {
   Num(Float)
@@ -19,7 +19,7 @@ class Parser {
     return match op { "+" => 1, "-" => 1, "*" => 2, "/" => 2, "%" => 2, "^" => 3, _ => 0 }
   }
 
-  // precedence climbing; "^" is right associative
+  # precedence climbing; "^" is right associative
   fn expression(minPrec: Int) -> Result<Expr, Error> {
     var left = self.unary()?
     while true {

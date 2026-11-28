@@ -2,15 +2,15 @@ name = "Ada"
 score = 42
 points_needed = 8
 
-// Mixing variables into text
+# Mixing variables into text
 print(f"Player {name} has {score} points.")
 
-// Calculating inside braces
+# Calculating inside braces
 print(f"Next level in {score + points_needed} points.")
 
-// Number formatting (two decimal places)
+# Number formatting (two decimal places)
 ratio = 355.0 / 113.0
 print(f"Pi estimate: {ratio:.2f}")
 
-// Debug print shows the variable name and value
+# Debug print shows the variable name and value
 print(f"{name=} {score=}")

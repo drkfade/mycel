@@ -1,5 +1,5 @@
-// select (from Go): wait on several channels at once and handle whichever is ready first.
-import std.task
+# select (from Go): wait on several channels at once and handle whichever is ready first.
+import task
 
 async fn worker(name: String, out: task.Channel<String>, ms: Int) {
   await task.sleep(ms)
@@ -12,11 +12,11 @@ async fn main() {
   spawn worker("fast", fast, 5)
   spawn worker("slow", slow, 40)
 
-  // (which channel, its value); the value is nil when that channel was closed
+  # (which channel, its value); the value is nil when that channel was closed
   let (which, msg) = await task.select([fast, slow])
   print(which, msg ?? "closed")
 
-  // with a timeout: nil when nothing arrives in time
+  # with a timeout: nil when nothing arrives in time
   if let (_, m) = await task.select([slow], timeout: 10) { print(m ?? "closed") } else { print("slow is still working") }
   print(await slow.recv() ?? "closed")
 }

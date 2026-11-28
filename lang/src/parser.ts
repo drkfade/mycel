@@ -7,9 +7,9 @@ const BIN: Record<string, [number, boolean]> = {
   "|>": [1, false], "??": [3, true], "||": [4, false], "&&": [5, false],
   "==": [6, false], "!=": [6, false], "<": [7, false], "<=": [7, false], ">": [7, false], ">=": [7, false],
   "..": [8, false], "..=": [8, false], "|": [9, false], "^": [10, false], "&": [11, false],
-  "<<": [12, false], ">>": [12, false], "+": [13, false], "-": [13, false], "*": [14, false], "/": [14, false], "%": [14, false], "**": [15, true],
+  "<<": [12, false], ">>": [12, false], "+": [13, false], "-": [13, false], "*": [14, false], "/": [14, false], "//": [14, false], "%": [14, false], "**": [15, true],
 };
-const ASSIGN = new Set(["=", "+=", "-=", "*=", "/=", "%=", "**=", "??=", "<<=", ">>="]);
+const ASSIGN = new Set(["=", "+=", "-=", "*=", "/=", "//=", "%=", "**=", "??=", "<<=", ">>="]);
 const MODS = new Set(["pub", "private", "protected", "static", "override", "async", "gen", "extern"]);
 
 export function parse(src: Source): A.Module {
@@ -48,7 +48,7 @@ class Parser {
   fail(msg: string, span: Span = this.here(), opts: { why?: string; suggestion?: string; code?: string } = {}): never {
     const h = this.habitHere();
     if (h) {
-      const sug = h.includes("slicing is Python") ? "write `[1..2]`" : opts.suggestion;
+      const sug = h.includes("slicing is Python") ? "write `[1..2]`" : h.includes("empty dictionary") ? "write `{}`, e.g. `var counts: {String: Int} = {}`" : h.includes("dictionary type") ? "write the map type with braces, e.g. `var counts: {String: Int} = {}`" : opts.suggestion;
       opts = { ...opts, why: opts.why ?? msg, suggestion: sug };
       msg = h;
     }
@@ -68,6 +68,8 @@ class Parser {
         const tk = this.toks[j];
         if (tk.k === "op" && tk.v === "]") bracketDepth++;
         else if (tk.k === "op" && tk.v === "[") {
+          if (bracketDepth === 0 && this.isOp("[", at(-1)) && this.isOp("]", at(1))) return "`[:]` is Swift's empty dictionary — Mycel's empty map is `{}`";
+          if (bracketDepth === 0 && this.toks[j + 1]?.k === "id" && /^[A-Z]/.test(this.toks[j + 1].v) && j + 2 === this.i && at(1)?.k === "id" && /^[A-Z]/.test(at(1).v)) return `\`[${this.toks[j + 1].v}: ${at(1).v}]\` is Swift's dictionary type — Mycel writes the map type with braces: \`{${this.toks[j + 1].v}: ${at(1).v}}\``;
           if (bracketDepth === 0) return "`[a:b]` slicing is Python — Mycel slices with a range: `[a..b]`";
           bracketDepth--;
         }
@@ -187,17 +189,26 @@ class Parser {
     return t.k === "kw" && (t.v === "let" || t.v === "var") && !(this.toks[j + 1]?.k === "op" && ["(", "["].includes(this.toks[j + 1].v));
   }
 
+  /** `from X import ...` (Python's form; `import` must follow on the same line). */
+  isFromImport(): boolean {
+    if (!(this.t.k === "id" && this.t.v === "from")) return false;
+    for (let j = this.i + 1; j < this.toks.length && this.toks[j].k !== "nl" && this.toks[j].k !== "eof"; j++) if (this.toks[j].k === "kw" && this.toks[j].v === "import") return true;
+    return false;
+  }
+
   startsDecl(): boolean {
     let j = this.i;
     while (this.toks[j].k === "kw" && MODS.has(this.toks[j].v)) j++;
     const t = this.toks[j];
     if (t.k === "id" && t.v === "test" && this.toks[j + 1].k === "str") return true;
+    if (j === this.i && this.isFromImport()) return true;
     return t.k === "kw" && ["fn", "class", "struct", "interface", "enum", "type", "extend", "import"].includes(t.v);
   }
 
   decl(): A.Decl {
-    this.habitWord();
     const start = this.t.start;
+    if (this.isFromImport()) return { ...this.fromImportDecl(), span: this.span(start), pub: false } as A.Decl;
+    this.habitWord();
     const mods = this.modifiers();
     const t = this.t;
     const mk = <T extends object>(d: T): A.Decl => ({ ...(d as any), span: this.span(start), pub: mods.pub });
@@ -238,15 +249,34 @@ class Parser {
     return m;
   }
 
+  /** `--python` inside an import statement (owner 27 Nov: the same flags as `ply install`, anywhere in the statement).
+   *  Mycel has no `--` operator, so two touching `-` before a touching name can only be this flag. */
+  importFlag(flag: { name: string; span: Span; nonTrailing?: boolean } | undefined): { name: string; span: Span; nonTrailing?: boolean } | undefined {
+    while (this.isOp("-") && this.isOp("-", this.peek()) && this.peek().start === this.t.end && this.peek(2).k === "id" && this.peek(2).start === this.peek().end) {
+      const s = this.t.start; this.next(); this.next();
+      const name = this.next().v, span = this.span(s);
+      if (flag && flag.name !== name) this.fail(`two runtime flags in one import: \`--${flag.name}\` and \`--${name}\``, span, { suggestion: `keep one: \`--${flag.name}\`` });
+      const atEnd = this.t.k === "nl" || this.t.k === "eof" || this.isOp(";");
+      flag = { name, span, ...(!atEnd ? { nonTrailing: true } : {}) };
+    }
+    return flag;
+  }
+
+  /** `import a.b [as x]`, `import "@scope/pkg" as x --npm`, each with a trailing `--<runtime>` flag on foreign modules. */
   importDecl() {
     this.next();
-    const path: string[] = [this.ident("after `import`").v];
-    if (this.t.k === "id" && this.t.v === "from") this.fail("`import x from \"y\"` is JavaScript — Mycel writes `import std.name` (or `import npm \"y\" as x` for an npm package)", this.here(), { code: "E0101", suggestion: "see `mycel help habits`" });
-    let names: { name: string; alias?: string; span: Span }[] | undefined, alias: string | undefined, all = false;
-    while (this.isOp(".")) {
+    let flag = this.importFlag(undefined);
+    let quoted = false;
+    let path: string[];
+    if (this.t.k === "str") { quoted = true; path = [this.strLiteralText()]; }
+    else path = [this.ident("after `import`").v];
+    flag = this.importFlag(flag);
+    if (this.t.k === "id" && this.t.v === "from") this.fail("`import x from \"y\"` is JavaScript — Mycel writes `import y` or `from y import x`", this.here(), { code: "E0101", suggestion: "see `mycel help habits`" });
+    let names: { name: string; alias?: string; span: Span }[] | undefined, alias: string | undefined, all = false, braceForm = false;
+    while (!quoted && this.isOp(".")) {
       this.next();
       if (this.isOp("{")) {
-        const o = this.next(); names = [];
+        const o = this.next(); names = []; braceForm = true;
         this.skipNl();
         while (!this.isOp("}")) {
           const nt = this.ident("in the import list");
@@ -260,12 +290,71 @@ class Parser {
         this.expectOp("}", "to close the import list", o);
         break;
       }
-      if (this.isOp("*")) { this.next(); all = true; break; }
+      if (this.isOp("*")) {
+        const sp = this.span(this.next().start);
+        this.fail("wildcard imports (`*`) are not supported — import the module or list the names you want", sp, { code: "E0101", suggestion: `write \`import ${path.join(".")}\` or \`from ${path.join(".")} import name\`` });
+      }
       path.push(this.ident("in the import path").v);
     }
-    if (this.acceptKw("as")) alias = this.ident("after `as`").v;
+    flag = this.importFlag(flag);
+    if (this.acceptKw("as")) {
+      alias = this.ident("after `as`").v;
+      flag = this.importFlag(flag);
+    }
     this.endStmt("import");
-    return { k: "import" as const, path, names, alias, all };
+    return { k: "import" as const, path, names, alias, all, flag, quoted, braceForm };
+  }
+
+  /** Canonical selective import: `from X import Y [as Z], W [--<lang>]`. */
+  fromImportDecl() {
+    this.next();
+    let flag = this.importFlag(undefined);
+    let quoted = false;
+    const path: string[] = [];
+    if (this.t.k === "str") { quoted = true; path.push(this.strLiteralText()); }
+    else { path.push(this.ident("after `from`").v); while (this.isOp(".")) { this.next(); path.push(this.ident("in the module path").v); } }
+    flag = this.importFlag(flag);
+    if (!this.acceptKw("import")) this.fail(`expected \`import\` after \`from ${path.join(".")}\``, this.here(), { suggestion: `write \`from ${path.join(".")} import name\`` });
+    flag = this.importFlag(flag);
+    const names: { name: string; alias?: string; span: Span }[] = [];
+    let all = false;
+    if (this.isOp("*")) {
+      const sp = this.span(this.next().start);
+      this.fail("wildcard imports (`*`) are not supported — list the names you want or import the module", sp, { code: "E0101", suggestion: `write \`from ${quoted ? JSON.stringify(path[0]) : path.join(".")} import name\` or \`import ${quoted ? JSON.stringify(path[0]) : path.join(".")}\`` });
+    } else if (this.isOp("[")) {
+      const sp = this.span(this.next().start);
+      const items: string[] = [];
+      while (!this.isOp("]") && this.t.k !== "nl" && this.t.k !== "eof") {
+        if (this.t.k === "id") {
+          let s = this.next().v;
+          if (this.acceptKw("as") && this.t.k === "id") s += " as " + this.next().v;
+          items.push(s);
+          if (!this.acceptOp(",")) break;
+        } else break;
+      }
+      if (this.isOp("]")) this.next();
+      const mod = quoted ? JSON.stringify(path[0]) : path.join(".");
+      this.fail(`\`from ${mod} import [...]\` takes no brackets`, sp, { code: "E0101", suggestion: `write without brackets: \`from ${mod} import ${items.join(", ") || "name"}\`` });
+    } else {
+      const paren = this.acceptOp("(");
+      for (;;) {
+        if (paren) this.skipNl();
+        const nt = this.ident("in the import list");
+        let al: string | undefined;
+        if (this.acceptKw("as")) al = this.ident("after `as`").v;
+        names.push({ name: nt.v, alias: al, span: this.span(nt.start) });
+        if (paren) this.skipNl();
+        if (!this.acceptOp(",")) {
+          flag = this.importFlag(flag);
+          break;
+        }
+        flag = this.importFlag(flag);
+      }
+      if (paren) this.expectOp(")", "to close the import list");
+    }
+    flag = this.importFlag(flag);
+    this.endStmt("import");
+    return { k: "import" as const, path, names: all ? undefined : names, all, flag, quoted, fromForm: true };
   }
 
   typeParams(): A.TypeParam[] {
@@ -848,7 +937,13 @@ class Parser {
 
   // ---------- expressions ----------
   /** `noBrace`: stop before `{` ending a condition (call-less struct literals don't exist, so `{` never continues an expression). */
-  expr(_cond = false): A.Expr { return this.assign(); }
+  expr(cond = false): A.Expr {
+    const saved = this.inCond; this.inCond = cond;
+    try { return this.assign(); } finally { this.inCond = saved; }
+  }
+  /** True while parsing the head of `if`/`while`/`for`/`match` outside any bracket: there a `{` starts the body unless it is
+   *  a closure that is itself followed by the body's `{`. */
+  inCond = false;
 
   assign(): A.Expr {
     const left = this.ternary();
@@ -1030,6 +1125,11 @@ class Parser {
         e = { k: "member", obj: e, name: nt.v, optional, span: this.span(start) };
         continue;
       }
+      if (t.v === "{" && t.sp && this.trailingClosureOk(e)) {
+        const c = this.closure();
+        e = e.k === "call" ? { ...e, args: [...e.args, { value: c, span: c.span }], span: this.span(start) } : { k: "call", callee: e, args: [{ value: c, span: c.span }], span: this.span(start) };
+        continue;
+      }
       if (t.v === "!" && !t.sp) { this.next(); e = { k: "force", operand: e, span: this.span(start) }; continue; }
       if (t.v === "?" && !t.sp) { this.next(); e = { k: "propagate", operand: e, span: this.span(start) }; continue; }
       break;
@@ -1106,6 +1206,100 @@ class Parser {
     if (!this.isOp("}")) this.fail("an `if` used as a value holds one expression in each branch", this.here(), oneExpr);
     this.expectOp("}", "to close the branch", o);
     return e;
+  }
+
+  /** Index of the `}` matching the `{` at `from`, or -1. */
+  matchBrace(from: number): number {
+    let d = 0;
+    for (let j = from; j < this.toks.length; j++) {
+      const k = this.toks[j];
+      if (k.k === "eof") return -1;
+      if (k.k === "op") { if ("([{".includes(k.v)) d++; else if (")]}".includes(k.v)) { d--; if (d === 0) return k.v === "}" ? j : -1; } }
+    }
+    return -1;
+  }
+
+  /** `{` in an expression position: a closure, or a map literal? A map is `{}` or has a `key: value` colon directly inside
+   *  its braces (a `:` after a `?` belongs to a ternary). Everything else is a closure: `{ it > 5 }`, `{ x => x * 2 }`,
+   *  `{ (a, b) => a + b }`, or several statements on separate lines / `let` / `return` first. */
+  braceIsClosure(): boolean {
+    const end = this.matchBrace(this.i);
+    if (end < 0) return false;
+    let a = this.i + 1;
+    while (this.toks[a].k === "nl") a++;
+    if (a >= end) return false; // `{}` is the empty map
+    const first = this.toks[a];
+    if (first.k === "kw" && ["let", "var", "return", "if", "for", "while", "fn", "throw", "break", "continue", "match", "try"].includes(first.v)) return true;
+    if (first.k === "id" && this.isOp("=>", this.toks[a + 1])) return true;
+    if (this.isOp("(", first)) {
+      const save = this.i; this.i = a;
+      try { if (this.isLambdaAhead()) return true; } finally { this.i = save; }
+    }
+    let d = 0, q = 0;
+    for (let j = this.i + 1; j < end; j++) {
+      const k = this.toks[j];
+      if (k.k === "op") {
+        if ("([{".includes(k.v)) d++;
+        else if (")]}".includes(k.v)) d--;
+        else if (d === 0 && k.v === "?" && k.sp) q++;
+        else if (d === 0 && k.v === ":") { if (q > 0) q--; else return false; }
+        else if (d === 0 && k.v === ";") return true;
+      } else if (d === 0 && k.k === "nl") {
+        const p = this.toks[j - 1], n = this.toks[j + 1];
+        if (!(p.k === "op" && [",", ":", "{"].includes(p.v)) && !(n && n.k === "op" && ["}", ",", ":"].includes(n.v)) && j !== this.i + 1) return true;
+      }
+    }
+    return true;
+  }
+
+  /** `f(x) { ... }`, `xs.map { ... }`: a closure after a call, member or lower-case name. In an `if`/`while`/`for`/`match`
+   *  head the `{` is the body unless the closure is followed by the body's own `{` (`if xs.any { it > 0 } { ... }`). */
+  trailingClosureOk(e: A.Expr): boolean {
+    if (!(e.k === "call" || e.k === "member" || (e.k === "id" && /^[a-z_]/.test(e.name)))) return false;
+    if (!this.braceIsClosure()) return false;
+    if (!this.inCond) return true;
+    const end = this.matchBrace(this.i);
+    if (end < 0) return false;
+    let j = end + 1; // skip `.member`, `?.member`, `(args)` chained after the closure, then expect the body's `{`
+    for (;;) {
+      const k = this.toks[j];
+      if (k && k.k === "op" && (k.v === "." || k.v === "?.") && this.toks[j + 1] && (this.toks[j + 1].k === "id" || this.toks[j + 1].k === "kw")) { j += 2; continue; }
+      if (k && k.k === "op" && k.v === "(" && !k.sp) { let d = 0; for (; j < this.toks.length; j++) { const q = this.toks[j]; if (q.k === "op") { if (q.v === "(") d++; else if (q.v === ")" && --d === 0) break; } } j++; continue; }
+      return !!k && this.isOp("{", k);
+    }
+  }
+
+  /** `{ it > 5 }`, `{ x => x * 2 }`, `{ (a, b) => a + b }`, `{ (x: Int) => x * 2 }`; `it` is the single argument when none is named. */
+  closure(): A.Expr {
+    const o = this.expectOp("{", "to start the closure");
+    this.skipNl();
+    let params: A.Param[] = [], explicit = false, ret: A.TypeExpr | undefined;
+    if (this.t.k === "id" && this.isOp("=>", this.peek())) { const n = this.next(); params = [{ name: n.v, span: this.span(n.start) }]; explicit = true; this.next(); }
+    else if (this.isOp("(") && this.isLambdaAhead()) {
+      params = this.params(); explicit = true;
+      if (this.acceptOp("->")) ret = this.type();
+      this.expectOp("=>", "after the closure parameters");
+    }
+    const stmts: A.Stmt[] = [];
+    this.skipNl();
+    const saved = this.inCond; this.inCond = false;
+    while (!this.isOp("}")) {
+      if (this.t.k === "eof") this.expectOp("}", "to close the closure", o);
+      stmts.push(this.stmt());
+      this.endStmt();
+      this.skipNl();
+    }
+    this.inCond = saved;
+    const c = this.next();
+    const span = this.span(o.start, c.end);
+    let body: A.Expr | A.Block;
+    if (stmts.length === 1 && stmts[0].k === "expr") body = stmts[0].expr;
+    else {
+      const last = stmts[stmts.length - 1];
+      if (last && last.k === "expr") stmts[stmts.length - 1] = { k: "return", value: last.expr, implicit: true, span: last.span } as A.Stmt;
+      body = { k: "block", stmts, span };
+    }
+    return { k: "lambda", params, ret, body, brace: true, implicitIt: !explicit, span } as A.Expr;
   }
 
   lambda(isAsync: boolean): A.Expr {
@@ -1261,6 +1455,7 @@ class Parser {
           return mk({ k: "array", elems });
         }
         if (t.v === "#" && this.isOp("[", this.peek())) this.fail("`#[...]` is not Mycel syntax", this.here(), { code: "E0101", why: "sets are made the way Python, JavaScript and Swift make them", suggestion: "write `Set([1, 2])`" });
+        if (t.v === "{" && this.braceIsClosure()) return this.closure();
         if (t.v === "{") {
           const o = this.next(); this.skipNl();
           const entries: { key: A.Expr; value: A.Expr }[] = [];

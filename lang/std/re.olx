@@ -1,4 +1,4 @@
-// Regular expressions (JavaScript syntax). Patterns are limited to 2000 characters and inputs to 1 MB.
+# Regular expressions (JavaScript syntax). Patterns are limited to 2000 characters and inputs to 1 MB.
 pub struct Match { let text: String, start: Int, end: Int, groups: [String?], named: {String: String} }
 pub extern class Regex {
   static fn compile(pattern: String, flags: String = "") -> Result<Regex, Error>

@@ -1,2 +1,2 @@
-/// Next line from standard input (without the newline), or nil at end of input. Needs the host to provide stdin.
+## Next line from standard input (without the newline), or nil at end of input. Needs the host to provide stdin.
 pub extern async fn readLine() -> String?

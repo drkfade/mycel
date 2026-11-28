@@ -1,0 +1,93 @@
+## Tensors for Mycel (`tensor`): lists and tables of numbers that do maths fast, and learn.
+## The heavy maths runs in the host (typed arrays), Mycel code only calls it.
+## Saving and loading weights needs `--allow-write` / `--allow-read`; everything else needs no permission.
+
+pub fn version() -> String => "0.1.0"
+
+pub extern class Tensor {
+  get shape: [Int]
+  get ndim: Int
+  get size: Int
+  get grad: Tensor
+  get requiresGrad: Bool
+
+  fn item() -> Float
+  fn toList() -> [Float]
+  fn toString() -> String
+  fn requireGrad() -> Tensor
+  fn detach() -> Tensor
+  fn backward()
+  fn zeroGrad()
+
+  fn reshape(shape: [Int]) -> Tensor
+  fn transpose() -> Tensor
+  fn permute(axes: [Int]) -> Tensor
+  fn rows(start: Int, end: Int) -> Tensor
+  fn indexSelect(ids: [Int]) -> Tensor
+
+  fn matmul(other: Tensor) -> Tensor
+  fn sum() -> Tensor
+  fn sum(axis: Int) -> Tensor
+  fn sum(axis: Int, keep: Bool) -> Tensor
+  fn mean() -> Tensor
+  fn mean(axis: Int) -> Tensor
+  fn mean(axis: Int, keep: Bool) -> Tensor
+  fn max() -> Tensor
+  fn max(axis: Int) -> Tensor
+  fn max(axis: Int, keep: Bool) -> Tensor
+  fn argmax() -> Int
+
+  fn exp() -> Tensor
+  fn log() -> Tensor
+  fn sqrt() -> Tensor
+  fn tanh() -> Tensor
+  fn sigmoid() -> Tensor
+  fn relu() -> Tensor
+  fn gelu() -> Tensor
+  fn pow(p: Float) -> Tensor
+  fn softmax() -> Tensor
+  fn softmax(axis: Int) -> Tensor
+  fn logSoftmax() -> Tensor
+  fn logSoftmax(axis: Int) -> Tensor
+  fn crossEntropy(targets: [Int]) -> Tensor
+  fn layerNorm(gamma: Tensor, beta: Tensor) -> Tensor
+
+  operator +(other: Tensor) -> Tensor
+  operator +(other: Float) -> Tensor
+  operator -() -> Tensor
+  operator -(other: Tensor) -> Tensor
+  operator -(other: Float) -> Tensor
+  operator *(other: Tensor) -> Tensor
+  operator *(other: Float) -> Tensor
+  operator /(other: Tensor) -> Tensor
+  operator /(other: Float) -> Tensor
+}
+
+pub extern class Optimizer {
+  fn step()
+  fn zeroGrad()
+  fn setLr(lr: Float)
+}
+
+pub extern fn seed(n: Int)
+pub extern fn random() -> Float
+pub extern fn zeros(shape: [Int]) -> Tensor
+pub extern fn ones(shape: [Int]) -> Tensor
+pub extern fn full(shape: [Int], value: Float) -> Tensor
+pub extern fn randn(shape: [Int]) -> Tensor
+pub extern fn randnStd(shape: [Int], std: Float) -> Tensor
+pub extern fn rand(shape: [Int]) -> Tensor
+pub extern fn arange(n: Int) -> Tensor
+pub extern fn scalar(x: Float) -> Tensor
+pub extern fn array(values: [Float]) -> Tensor
+pub extern fn fromList(values: [Float], shape: [Int]) -> Tensor
+pub extern fn table(rows: [[Float]]) -> Tensor
+pub extern fn causalMask(n: Int) -> Tensor
+pub extern fn sample(probs: Tensor) -> Int
+pub extern fn sampleList(probs: [Float]) -> Int
+pub extern fn sgd(params: [Tensor], lr: Float) -> Optimizer
+pub extern fn sgdMomentum(params: [Tensor], lr: Float, momentum: Float) -> Optimizer
+pub extern fn adam(params: [Tensor], lr: Float) -> Optimizer
+pub extern fn clipGradNorm(params: [Tensor], maxNorm: Float) -> Float
+pub extern fn save(path: String, params: [Tensor]) -> Result<Void, Error>
+pub extern fn load(path: String, params: [Tensor]) -> Result<Void, Error>

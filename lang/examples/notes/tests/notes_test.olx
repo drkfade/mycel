@@ -1,5 +1,5 @@
-import std.test
-import std.files
+import test
+import files
 import store
 import models.Note
 
@@ -30,7 +30,7 @@ test "file export and import round-trip with std.files" {
   test.assert(files.exists(exported), "exported file should exist")
   test.assertEq(files.read(exported).unwrap(), "Hello from Mycel!")
 
-  // Import into a new notebook
+  # Import into a new notebook
   let nb2 = store.openNotebook(":memory:").unwrap()
   let importedId = nb2.importNote(exported).unwrap()
   let imported = nb2.get(importedId).unwrap()!

@@ -15,6 +15,11 @@ const out = path.resolve(process.argv[2] ?? path.join(lang, "..", "site", "publi
 const mods = new Map();
 const visit = (name) => {
   if (mods.has(name)) return;
+  // The Java bridge (src/bridges/) needs child processes and a JVM; the playground never has either.
+  if (name === "bridges") {
+    mods.set(name, `const gone = (what) => () => { throw new Error(what + " is not available in the browser playground"); };\nexports.SyncJavaBridge = class { constructor() { gone("Java packages")(); } };\nexports.installMaven = gone("Java packages");\nexports.scanJarProvides = gone("Java packages");`);
+    return;
+  }
   const file = path.join(dist, name + ".js");
   let code = fs.readFileSync(file, "utf8").replace(/\n\/\/# sourceMappingURL=.*$/m, "");
   mods.set(name, code);
@@ -41,7 +46,7 @@ const fsShim = { existsSync: (p) => p in STD, readFileSync: (p) => { if (p in ST
   statSync: notInBrowser("files"), readdirSync: () => [], realpathSync: (p) => p };
 const vmShim = { Script: class { constructor(code, o) { this.code = code + "\\n//# sourceURL=" + ((o && o.filename) || "ply:bundle"); } runInThisContext() { return (0, eval)(this.code); } } };
 const BUILTINS = { fs: fsShim, path: pathShim, vm: vmShim, crypto: { randomUUID: () => crypto.randomUUID(), createHash: notInBrowser("std.crypto hashing") },
-  http: {}, https: {}, child_process: {}, worker_threads: {}, "node:sqlite": {}, readline: {}, os: { homedir: () => "/", tmpdir: () => "/tmp" } };
+  zlib: {}, url: { fileURLToPath: (u) => u, pathToFileURL: (p) => p }, http: {}, https: {}, child_process: {}, worker_threads: {}, module: { createRequire: () => notInBrowser("npm packages") }, "node:sqlite": {}, readline: {}, os: { homedir: () => "/", tmpdir: () => "/tmp" } };
 if (typeof globalThis.process === "undefined") globalThis.process = { on() {}, off() {}, env: {}, platform: "browser", argv: [], cwd: () => "/" };
 if (typeof globalThis.setImmediate === "undefined") globalThis.setImmediate = (f) => setTimeout(f, 0);
 `;

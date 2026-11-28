@@ -14,7 +14,7 @@ param([string]$SourceDir = $PSScriptRoot)
     }
     # Check the payload before changing an existing install or PATH.
     $version = & (Join-Path $SourceDir 'mycel.exe') --version
-    if ($LASTEXITCODE -ne 0 -or $version -ne 'mycel 0.1.0') { throw 'Mycel executable smoke test failed.' }
+    if ($LASTEXITCODE -ne 0 -or $version -ne 'mycel 0.2.0') { throw 'Mycel executable smoke test failed.' }
     # User PATH is read and written raw through the registry. [Environment]::GetEnvironmentVariable('Path','User')
     # returns the expanded value and SetEnvironmentVariable writes REG_SZ, which would hard-code entries such as
     # %USERPROFILE%\AppData\Local\Microsoft\WindowsApps on every install, rollback and uninstall.

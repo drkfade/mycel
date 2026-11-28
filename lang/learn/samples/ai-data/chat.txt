@@ -1,0 +1,71 @@
+158 names, 50 characters, 4974 training characters, 808 held out
+model: 2 blocks, 4 heads, width 32, 29234 numbers to learn
+step    0  train loss 3.917  held-out loss 3.924
+step   10  train loss 3.106  held-out loss 3.179
+step   20  train loss 3.008  held-out loss 3.129
+step   30  train loss 2.938  held-out loss 2.940
+step   40  train loss 2.873  held-out loss 2.898
+step   50  train loss 2.767  held-out loss 2.909
+step   60  train loss 2.706  held-out loss 2.780
+step   70  train loss 2.551  held-out loss 2.758
+step   80  train loss 2.553  held-out loss 2.492
+step   90  train loss 2.187  held-out loss 2.623
+step  100  train loss 2.336  held-out loss 2.573
+step  110  train loss 2.265  held-out loss 2.438
+step  120  train loss 2.191  held-out loss 2.487
+step  130  train loss 2.270  held-out loss 2.322
+step  140  train loss 2.141  held-out loss 2.482
+step  150  train loss 2.197  held-out loss 2.373
+step  160  train loss 1.972  held-out loss 2.345
+step  170  train loss 2.069  held-out loss 2.380
+step  180  train loss 2.057  held-out loss 2.270
+step  190  train loss 1.890  held-out loss 2.264
+step  200  train loss 1.765  held-out loss 2.327
+step  210  train loss 1.993  held-out loss 2.446
+step  220  train loss 1.845  held-out loss 2.202
+step  230  train loss 1.934  held-out loss 2.361
+step  240  train loss 1.953  held-out loss 2.293
+step  250  train loss 1.697  held-out loss 2.450
+step  260  train loss 1.888  held-out loss 2.151
+step  270  train loss 1.783  held-out loss 2.337
+step  280  train loss 1.857  held-out loss 2.311
+step  290  train loss 1.920  held-out loss 2.301
+step  300  train loss 1.742  held-out loss 2.264
+step  310  train loss 1.890  held-out loss 2.305
+step  320  train loss 1.758  held-out loss 2.387
+step  330  train loss 1.716  held-out loss 2.290
+step  340  train loss 1.843  held-out loss 2.416
+step  350  train loss 1.712  held-out loss 2.275
+step  360  train loss 1.868  held-out loss 2.226
+step  370  train loss 1.769  held-out loss 2.337
+step  380  train loss 1.691  held-out loss 2.275
+step  390  train loss 1.662  held-out loss 2.248
+step  400  train loss 1.582  held-out loss 2.139
+step  410  train loss 1.672  held-out loss 2.340
+step  420  train loss 1.453  held-out loss 2.284
+step  430  train loss 1.605  held-out loss 2.412
+step  440  train loss 1.475  held-out loss 2.219
+step  450  train loss 1.513  held-out loss 2.070
+step  460  train loss 1.587  held-out loss 2.119
+step  470  train loss 1.468  held-out loss 2.098
+step  480  train loss 1.483  held-out loss 2.246
+step  490  train loss 1.544  held-out loss 2.365
+step  500  train loss 1.489  held-out loss 2.520
+step  510  train loss 1.478  held-out loss 2.073
+step  520  train loss 1.447  held-out loss 2.184
+step  530  train loss 1.534  held-out loss 2.238
+step  540  train loss 1.529  held-out loss 2.186
+step  550  train loss 1.526  held-out loss 2.406
+step  560  train loss 1.531  held-out loss 2.379
+step  570  train loss 1.251  held-out loss 2.183
+step  580  train loss 1.482  held-out loss 2.213
+step  590  train loss 1.472  held-out loss 2.146
+step  600  train loss 1.404  held-out loss 2.216
+ Inow wach swe tem.
+. That son
+A
+F: Sever word.
+It cann ast. I canks 
+Mortout.
+P: A lee ween, the ch
+Tow: atsere wat.

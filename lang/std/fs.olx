@@ -1,4 +1,4 @@
-// File system access. Every function needs a grant (`capabilities.fs.read` / `.write`); a denied call returns Err(CapabilityError).
+# File system access. Every function needs a grant (`capabilities.fs.read` / `.write`); a denied call returns Err(CapabilityError).
 pub extern fn readText(path: String) -> Result<String, Error>
 pub extern fn writeText(path: String, text: String) -> Result<Void, Error>
 pub extern fn appendText(path: String, text: String) -> Result<Void, Error>
@@ -8,7 +8,7 @@ pub extern fn list(path: String) -> Result<[String], Error>
 pub extern fn mkdirs(path: String) -> Result<Void, Error>
 pub extern fn remove(path: String) -> Result<Void, Error>
 pub extern fn size(path: String) -> Result<Int, Error>
-// Pure path operations use the host platform's drive/UNC/separator rules.
+# Pure path operations use the host platform's drive/UNC/separator rules.
 pub extern fn join(a: String, b: String) -> String
 pub extern fn dirname(path: String) -> String
 pub extern fn basename(path: String) -> String

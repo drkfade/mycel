@@ -1,10 +1,10 @@
-// The prelude: always in scope. Types here are `extern`: their bodies live in src/natives.
-// Everything user-visible about builtin types is declared in this file, so `ply check` and the
-// diagnostics know exactly what exists.
+# The prelude: always in scope. Types here are `extern`: their bodies live in src/natives.
+# Everything user-visible about builtin types is declared in this file, so `ply check` and the
+# diagnostics know exactly what exists.
 
 extern fn print(...values: Any)
 extern fn write(...values: Any)
-/// Python-style input: shows the prompt, waits for one line, returns it without the newline.
+## Python-style input: shows the prompt, waits for one line, returns it without the newline.
 extern fn input(prompt: String = "") -> String
 extern fn panic(message: String) -> Never
 extern fn assert(condition: Bool, message: String = "assertion failed")
@@ -34,7 +34,7 @@ extern class Int: Comparable, Equatable, Hashable, Numeric, Printable {
   fn max(other: Int) -> Int
   fn clamp(lo: Int, hi: Int) -> Int
   fn toRadix(radix: Int) -> String
-  /// Whole-number integer division (like Python's //): 7.div(2) == 3.
+  ## Whole-number division, the same as `//` (prefer `7 // 2`): 7.div(2) == 3.
   fn div(other: Int) -> Int
   static fn parse(text: String) -> Int?
   static get maxValue: Int
@@ -107,7 +107,7 @@ extern class Array<T>: Iterable<T> {
   get isEmpty: Bool
   get first: T?
   get last: T?
-  /// The element at index, or nil when out of range (indexing with [i] panics instead).
+  ## The element at index, or nil when out of range (indexing with [i] panics instead).
   fn at(index: Int) -> T?
   fn push(item: T)
   fn pop() -> T?
@@ -218,6 +218,19 @@ class CapabilityError: Error {}
 class NetError: Error {}
 class SqlError: Error {}
 class TimeoutError: Error {}
+## An exception raised inside a Python or npm package (message: "ValueError: ..." — the last line of the traceback).
+class ForeignError: Error {}
+
+## What `text.extract(kind1, kind2)` gives back when more than one kind is asked for, in the order they appear:
+## "12 + 3*4".extract(Number, Operator) is [Piece.Number(12.0), Piece.Operator("+"), Piece.Number(3.0), Piece.Operator("*"), Piece.Number(4.0)].
+enum Piece {
+  Int(Int)
+  Float(Float)
+  Number(Float)
+  Word(String)
+  Operator(String)
+  Bool(Bool)
+}
 
 enum Result<T, E> {
   Ok(T)
@@ -239,7 +252,7 @@ enum Result<T, E> {
   fn andThen<U>(f: (T) -> Result<U, E>) -> Result<U, E> => match self { .Ok(v) => f(v), .Err(e) => Err(e) }
 }
 
-// ----- Python-style helpers for lists: sum(xs), max(xs), min(xs), and max(a, b) / min(a, b) -----
+# ----- Python-style helpers for lists: sum(xs), max(xs), min(xs), and max(a, b) / min(a, b) -----
 fn sum(values: [Int]) -> Int { var total = 0
   for v in values { total += v }
   return total }

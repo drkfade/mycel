@@ -77,7 +77,7 @@ jobs:
         if: always() && steps.build.outcome == 'success'
         run: |
           $local = Join-Path $env:RUNNER_TEMP 'mycel-local'
-          Expand-Archive -LiteralPath lang/release/dist/Mycel-0.1.0-alpha-windows-x64.zip -DestinationPath $local
+          Expand-Archive -LiteralPath lang/release/dist/Mycel-0.2.0-alpha-windows-x64.zip -DestinationPath $local
           node lang/release/windows/smoke.mjs "$local/mycel.exe"
           if ($LASTEXITCODE -ne 0) { throw 'Local-build smoke failed.' }
       - name: Examples, tour and learn course on locally built SEA (as shipped and CRLF)
@@ -93,7 +93,7 @@ jobs:
         run: |
           if ($env:EXPECTED_SHA256 -notmatch '^[a-fA-F0-9]{64}$') { throw 'A reviewed ZIP hash is required.' }
           $zip = Join-Path $env:RUNNER_TEMP 'mycel-cross.zip'
-          Invoke-WebRequest -Uri 'https://ol1x.xyz/mycel/download/Mycel-0.1.0-alpha-windows-x64.zip' -OutFile $zip
+          Invoke-WebRequest -Uri 'https://ol1x.xyz/mycel/download/Mycel-0.2.0-alpha-windows-x64.zip' -OutFile $zip
           if ((Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash -ine $env:EXPECTED_SHA256) { throw 'Cross-build SHA-256 mismatch.' }
           Expand-Archive -LiteralPath $zip -DestinationPath (Join-Path $env:RUNNER_TEMP 'mycel-cross')
       - name: Smoke actual Mac-built SEA and alias
@@ -109,12 +109,12 @@ jobs:
         run: |
           & lang/release/windows/test-path-entries.ps1
           & lang/release/windows/test-install-layout.ps1
-          & lang/release/windows/test-installers.ps1 -Archive lang/release/dist/Mycel-0.1.0-alpha-windows-x64.zip -Bootstrap lang/release/dist/install.ps1
+          & lang/release/windows/test-installers.ps1 -Archive lang/release/dist/Mycel-0.2.0-alpha-windows-x64.zip -Bootstrap lang/release/dist/install.ps1
       - name: PowerShell 7 installer acceptance
         if: always() && steps.build.outcome == 'success'
         shell: pwsh
         run: |
           & lang/release/windows/test-path-entries.ps1
           & lang/release/windows/test-install-layout.ps1
-          & lang/release/windows/test-installers.ps1 -Archive lang/release/dist/Mycel-0.1.0-alpha-windows-x64.zip -Bootstrap lang/release/dist/install.ps1
+          & lang/release/windows/test-installers.ps1 -Archive lang/release/dist/Mycel-0.2.0-alpha-windows-x64.zip -Bootstrap lang/release/dist/install.ps1
 # No upload-artifact, npm publish, release creation or deployment steps.

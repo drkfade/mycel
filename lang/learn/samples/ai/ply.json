@@ -1,0 +1,7 @@
+{
+  "name": "mycel_ai_course",
+  "version": "0.1.0",
+  "description": "Sample programs for the AI development track; lessons 11 to 15 import the tensor package",
+  "main": "11_tensors.myc",
+  "dependencies": { "tensor": "path:../../../packages/tensor" }
+}

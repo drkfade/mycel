@@ -14,7 +14,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const lang = path.resolve(here, '../..');
 const artifact = path.resolve(process.argv[2] ?? path.join(here, '../dist/mycel.exe'));
 const bundled = artifact.endsWith('.cjs');
-// Tour files the owner is editing by hand have a known-stale .out; listed, reported, not silently passed.
+// Tour files listed in MYCEL_CORPUS_SKIP have a known-stale .out; listed, reported, not silently passed.
 const SKIP = new Set((process.env.MYCEL_CORPUS_SKIP ?? 'tour/01_hello.olx').split(',').filter(Boolean));
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'mycel corpus Ω '));
 const home = path.join(work, 'home'); fs.mkdirSync(home);

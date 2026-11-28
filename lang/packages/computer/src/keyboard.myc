@@ -1,0 +1,9 @@
+## Keyboard typing, key presses, hotkeys, and key state inspection.
+## Requires `control` capability (`--allow-control` or `"capabilities": { "control": true }`).
+## Note: `typeText` is used because `type` is a reserved keyword in Mycel.
+## A running program that controls input shows a visible notice and stops if Escape is held for 1s.
+
+pub extern fn typeText(text: String) -> Result<Void, Error>
+pub extern fn press(key: String) -> Result<Void, Error>
+pub extern fn hotkey(...keys: String) -> Result<Void, Error>
+pub extern fn isDown(key: String) -> Result<Bool, Error>

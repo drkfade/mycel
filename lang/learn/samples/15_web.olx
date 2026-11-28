@@ -1,14 +1,14 @@
-import std.web
-import std.http
+import web
+import http
 
 fn mockReq(method: String, path: String) -> http.Request {
   return http.Request(method: method, path: path, query: {}, headers: {}, body: "")
 }
 
-// 1. Create a web application
+# 1. Create a web application
 app = web.App()
 
-// 2. Define routes
+# 2. Define routes
 app.get("/", req => web.html("<h1>Welcome to Mycel!</h1>"))
 app.get("/greet/:name", req => {
   let name = req.params.get("name", "friend")
@@ -16,7 +16,7 @@ app.get("/greet/:name", req => {
 })
 app.get("/api/status", req => web.json({"status": "online", "users": 42}))
 
-// 3. Test our routes (in real apps, call: app.run(8000))
+# 3. Test our routes (in real apps, call: app.run(8000))
 r1 = app.handle(mockReq("GET", "/"))
 print(f"[{r1.status}] {r1.body}")
 

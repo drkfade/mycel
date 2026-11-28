@@ -1,6 +1,6 @@
-import std.web
+import web
 
-/// The whole app: a page with the messages and a form, a JSON view, and the stylesheet from public/.
+## The whole app: a page with the messages and a form, a JSON view, and the stylesheet from public/.
 pub fn makeApp() -> web.App {
   var messages: [String] = []
   app = web.App()

@@ -31,10 +31,10 @@ for (const name of ['LICENSE.txt', 'README.txt', 'NODE-LICENSE.txt', 'uninstall.
 for (const dir of ['usr', 'usr/local', 'usr/local/bin', 'usr/local/share', 'usr/local/share/mycel']) fs.chmodSync(path.join(root, dir), 0o755);
 const run = (cmd, args) => execFileSync(cmd, args, { cwd: here, stdio: 'inherit' });
 run('/usr/bin/pkgbuild', ['--root', root, '--install-location', '/', '--ownership', 'recommended',
-  '--identifier', 'xyz.ol1x.mycel.pkg', '--version', '0.1.0', path.join(work, 'mycel-core.pkg')]);
+  '--identifier', 'xyz.ol1x.mycel.pkg', '--version', '0.2.0', path.join(work, 'mycel-core.pkg')]);
 run('/usr/bin/productbuild', ['--distribution', path.join(here, 'Distribution.xml'), '--resources', resources,
-  '--package-path', work, path.join(dist, 'Mycel-0.1.0-alpha.pkg')]);
-run('/usr/sbin/pkgutil', ['--payload-files', path.join(dist, 'Mycel-0.1.0-alpha.pkg')]);
+  '--package-path', work, path.join(dist, 'Mycel-0.2.0-alpha.pkg')]);
+run('/usr/sbin/pkgutil', ['--payload-files', path.join(dist, 'Mycel-0.2.0-alpha.pkg')]);
 // Unsigned is deliberate; pkgutil returns nonzero when no signature is present.
-try { run('/usr/sbin/pkgutil', ['--check-signature', path.join(dist, 'Mycel-0.1.0-alpha.pkg')]); }
+try { run('/usr/sbin/pkgutil', ['--check-signature', path.join(dist, 'Mycel-0.2.0-alpha.pkg')]); }
 catch (e) { if (e.status !== 1) throw e; }

@@ -1,0 +1,53 @@
+# Values from Python, npm, and Java packages (`ply install requests --python`, `ply install lodash --npm`).
+# Functions return values directly (simple types auto-convert; handles act as dynamic proxies for members, methods, indexing, iteration, len/str).
+# Foreign errors throw `ForeignError` (catchable optionally with `try`).
+
+## A handle or proxied value that came from a foreign package.
+pub extern class Value: Printable {
+  ## "python", "npm", or "java"
+  get runtime: String
+  ## The value's type in its own language: "int", "str", "dict", "Response", "function", ...
+  get typeName: String
+  ## None (Python) / null or undefined (JavaScript/Java)
+  get isNone: Bool
+  get asString: String?
+  ## Whole numbers only (a Python int, a JavaScript integer number or BigInt).
+  get asInt: Int?
+  ## Any number.
+  get asFloat: Float?
+  get asBool: Bool?
+  ## A list/tuple/array, element by element.
+  get asList: [Value]?
+  ## A dict/object with String keys.
+  get asMap: {String: Value}?
+  ## Keys of a dict/object; [] for anything else.
+  get keys: [String]
+  ## Elements of a list or entries of a dict; 0 for anything else.
+  get length: Int
+  ## `data["name"]` on foreign data: the member, or nil when missing.
+  operator [](key: String) -> Value
+  ## `items[0]` on foreign data (negative counts from the end).
+  operator [](index: Int) -> Value
+  ## An attribute / property: `r.attr("status_code")` (or `r.status_code`).
+  fn attr(name: String) -> Value
+  ## Call a method: `session.call("get", url)` (or `session.get(url)`).
+  fn call(method: String, ...args: Any) -> Value
+  ## Call a method with named arguments: `r.callKw("json", [], {"strict": false})`.
+  fn callKw(method: String, args: [Any], named: {String: Any}) -> Value
+  ## Call the value itself (a function or class that was returned to you).
+  fn invoke(...args: Any) -> Value
+  ## Python `obj[key]` / JavaScript `obj[key]` on a handle (a pandas frame, a Map, ...).
+  fn item(key: Any) -> Value
+  ## Python str(value) / JavaScript String(value).
+  fn toString() -> String
+}
+
+## The "not given" default of an optional parameter in generated bindings (the argument is left out of the call).
+pub extern fn unset() -> Any
+
+## Wait for a JavaScript Promise held in a Value (an async npm function); anything else is returned as it is.
+pub extern async fn resolve(value: Value) -> Value
+
+## Used by generated bindings: call `attr` of module `module` of a runtime. `names[i]` describes `values[i]`
+## ("x" positional-or-named, "/x" positional only, "*x" named only); `rest` holds extra positional arguments.
+pub extern fn callModule(runtime: String, package: String, module: String, attr: String, values: [Any], names: [String], named: {String: Any}, rest: [Any], hasRest: Bool) -> Value

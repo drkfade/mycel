@@ -1,12 +1,12 @@
-// Sets hold unique values (duplicates are dropped)
+# Sets hold unique values (duplicates are dropped)
 frontend = Set(["HTML", "CSS", "JavaScript"])
 backend = Set(["Python", "JavaScript", "Mycel"])
 
-// Membership test
+# Membership test
 print("Mycel" in backend)
 print("Rust" in backend)
 
-// Set operations: union, intersection, difference
+# Set operations: union, intersection, difference
 both = frontend & backend
 all_skills = frontend | backend
 front_only = frontend - backend

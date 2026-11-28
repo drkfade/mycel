@@ -137,7 +137,7 @@ async fn main() {
   print(await task.select([a, b], timeout: 5))
   a.close()
   print(await task.select([a, b]))
-  // the waiter select left on b was removed: this value is still queued, not swallowed
+  # the waiter select left on b was removed: this value is still queued, not swallowed
   b.send("kept")
   print(b.length)
 }`), `1 b first\na later\n(1, "ready")\nnil\n(0, nil)\n1`);
@@ -172,7 +172,7 @@ test("live values: the playground bundle returns them and the page shows them", 
   const play = path.resolve(lang, "..", "site", "public", "mycel", "play");
   const tmp = fs.mkdtempSync(path.join(require("os").tmpdir(), "mycel-live-"));
   execFileSync("node", [path.join(lang, "web", "build.mjs"), tmp]);
-  const ctx: any = vm.createContext({ console, setTimeout, clearTimeout, queueMicrotask, crypto: globalThis.crypto, TextEncoder, TextDecoder });
+  const ctx: any = vm.createContext({ console, setTimeout, clearTimeout, queueMicrotask, crypto: globalThis.crypto, TextEncoder, TextDecoder, AbortController });
   ctx.self = ctx;
   vm.runInContext(fs.readFileSync(path.join(tmp, "mycel.js"), "utf8"), ctx);
   const r = await ctx.Mycel.runSource(`let a = 6\nlet b = a * 7\nprint(b)\n`, { live: true });
@@ -180,7 +180,7 @@ test("live values: the playground bundle returns them and the page shows them", 
   const page = fs.readFileSync(path.join(play, "index.html"), "utf8"), worker = fs.readFileSync(path.join(play, "worker.js"), "utf8");
   assert.match(page, /<div class="live" id="live"/);
   assert.match(page, /showLive\(r\.live\)/);
-  assert.match(page, /worker\.postMessage\(\{ code, inputs: answers, seed, live: \$\("vals"\)\.checked \}\)/);
+  assert.match(page, /worker\.postMessage\(\{ code, inputs: answers, seed, live: \$\("vals"\)\.checked(, files: [^\n]*)? \}\)/);
   assert.match(worker, /live: !!live/);
 });
 

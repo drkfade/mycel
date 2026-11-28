@@ -1,4 +1,4 @@
-import std.json
+import json
 data = json.parse("""{"name": "Ada", "langs": ["py", "myc"]}""").unwrap()
 print(data["name"], len(data["langs"]))
 print(json.encode({"ok": true}))

@@ -1,0 +1,71 @@
+1000 names, 49 characters, 64480 training characters, 7057 held out
+model: 2 blocks, 4 heads, width 32, 29169 numbers to learn
+step    0  train loss 3.909  held-out loss 3.902
+step   10  train loss 3.114  held-out loss 3.044
+step   20  train loss 2.476  held-out loss 2.539
+step   30  train loss 2.150  held-out loss 2.377
+step   40  train loss 2.145  held-out loss 2.160
+step   50  train loss 2.062  held-out loss 1.956
+step   60  train loss 1.927  held-out loss 1.654
+step   70  train loss 1.726  held-out loss 1.781
+step   80  train loss 1.581  held-out loss 1.739
+step   90  train loss 1.622  held-out loss 1.555
+step  100  train loss 1.310  held-out loss 1.484
+step  110  train loss 1.295  held-out loss 1.385
+step  120  train loss 1.353  held-out loss 1.324
+step  130  train loss 1.248  held-out loss 1.156
+step  140  train loss 1.141  held-out loss 1.227
+step  150  train loss 0.969  held-out loss 1.153
+step  160  train loss 1.068  held-out loss 1.134
+step  170  train loss 1.098  held-out loss 1.097
+step  180  train loss 1.008  held-out loss 0.933
+step  190  train loss 1.003  held-out loss 0.962
+step  200  train loss 1.060  held-out loss 1.090
+step  210  train loss 0.802  held-out loss 0.849
+step  220  train loss 0.964  held-out loss 0.908
+step  230  train loss 0.807  held-out loss 0.867
+step  240  train loss 0.915  held-out loss 0.868
+step  250  train loss 0.754  held-out loss 0.781
+step  260  train loss 0.951  held-out loss 0.972
+step  270  train loss 0.762  held-out loss 0.622
+step  280  train loss 0.784  held-out loss 0.794
+step  290  train loss 0.866  held-out loss 0.729
+step  300  train loss 0.673  held-out loss 0.729
+step  310  train loss 0.616  held-out loss 0.791
+step  320  train loss 0.647  held-out loss 0.871
+step  330  train loss 0.735  held-out loss 0.818
+step  340  train loss 0.631  held-out loss 0.790
+step  350  train loss 0.647  held-out loss 0.654
+step  360  train loss 0.667  held-out loss 0.695
+step  370  train loss 0.701  held-out loss 0.672
+step  380  train loss 0.687  held-out loss 0.694
+step  390  train loss 0.586  held-out loss 0.737
+step  400  train loss 0.593  held-out loss 0.614
+step  410  train loss 0.668  held-out loss 0.606
+step  420  train loss 0.518  held-out loss 0.696
+step  430  train loss 0.618  held-out loss 0.624
+step  440  train loss 0.606  held-out loss 0.691
+step  450  train loss 0.585  held-out loss 0.612
+step  460  train loss 0.628  held-out loss 0.571
+step  470  train loss 0.588  held-out loss 0.653
+step  480  train loss 0.601  held-out loss 0.596
+step  490  train loss 0.595  held-out loss 0.644
+step  500  train loss 0.512  held-out loss 0.592
+step  510  train loss 0.580  held-out loss 0.624
+step  520  train loss 0.636  held-out loss 0.603
+step  530  train loss 0.543  held-out loss 0.657
+step  540  train loss 0.561  held-out loss 0.500
+step  550  train loss 0.553  held-out loss 0.556
+step  560  train loss 0.608  held-out loss 0.535
+step  570  train loss 0.599  held-out loss 0.504
+step  580  train loss 0.548  held-out loss 0.560
+step  590  train loss 0.580  held-out loss 0.504
+step  600  train loss 0.685  held-out loss 0.651
+ is 22 degreees.
+.
+2 degreees in the his
+5 degreees.
+8 degrees.heavy cloud
+A seca trin a warm wi
+Gusts 16 degrees.
+Sunead a light breeze

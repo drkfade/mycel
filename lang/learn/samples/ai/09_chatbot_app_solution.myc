@@ -1,0 +1,35 @@
+import io
+
+fn reply(message: String) -> String {
+    let text = message.lower()
+    if "refund" in text {
+        return "I can help with a refund. What is your order number?"
+    }
+    if "hours" in text or "open" in text {
+        return "We are open 9 to 5, Monday to Friday."
+    }
+    if "price" in text {
+        return "Our prices are on the website."
+    }
+    if "hello" in text or "hi" in text {
+        return "Hello! How can I help?"
+    }
+    return "Sorry, I did not understand that."
+}
+
+async fn main() {
+    print("Support bot. Type bye to stop.")
+    while true {
+        let line = await io.readLine()
+        if line == nil {
+            break
+        }
+        let message = line!
+        if message == "bye" {
+            break
+        }
+        print("you:", message)
+        print("bot:", reply(message))
+    }
+    print("Bye!")
+}

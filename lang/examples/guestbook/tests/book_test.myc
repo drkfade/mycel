@@ -1,5 +1,5 @@
-import std.test
-import std.http
+import test
+import http
 import book
 
 test "the page, a signed message, the JSON view and the stylesheet over real HTTP" {

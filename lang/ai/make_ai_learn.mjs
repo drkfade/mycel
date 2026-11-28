@@ -388,11 +388,11 @@ const COMMON_ERRORS = [
     desc: "Mycel writes `else if` as two words, exactly like JavaScript, Rust, and Go."
   },
   {
-    id: "err_slash_div",
-    title: "Expecting `//` (Python habit) for integer division",
-    broken: `let a = 15 // 4`,
-    fixed: `let a = 15.div(4)`,
-    desc: "`7 / 2` in Mycel always performs floating-point division (evaluates to `3.5`). Integer division is a method: `7.div(2)` evaluates to `3`."
+    id: "err_slash_comment",
+    title: "Starting a comment with `//` (C/JavaScript habit)",
+    broken: `// the answer\nlet a = 42`,
+    fixed: `# the answer\nlet a = 42`,
+    desc: "Comments start with `#`. `//` is whole-number division in Mycel: `15 // 4` evaluates to `3`."
   },
   {
     id: "err_none",
@@ -539,7 +539,7 @@ let md = `# Mycel Reference for AI Models & Large Language Models
 
 When generating Mycel code, AI models MUST obey these 10 core rules to avoid syntax and type errors:
 
-1. **Division**: \`a / b\` ALWAYS performs floating-point division and returns \`Float\`. For example, \`7 / 2\` evaluates to \`3.5\`. For whole-number integer division, use the \`.div()\` method: \`7.div(2)\` evaluates to \`3\` (\`Int\`). There is **NO \`//\` operator** in Mycel.
+1. **Division**: \`a / b\` ALWAYS performs floating-point division and returns \`Float\`. For example, \`7 / 2\` evaluates to \`3.5\`. For whole-number division use \`//\`: \`7 // 2\` evaluates to \`3\` (\`Int\`), rounding down like Python (\`-7 // 2\` is \`-4\`); with a \`Float\` operand the result is a floored \`Float\` (\`7.0 // 2\` is \`3.0\`). \`%\` is the matching floor remainder.
 2. **Strings vs Characters**: Strings MUST be wrapped in double quotes (\`"hello"\`). Single quotes are strictly for single-character \`Char\` literals (\`'c'\`). Using single quotes around multiple characters is a syntax error.
 3. **Function Declarations**: Declare functions using \`fn name(params) -> ReturnType { ... }\` or short arrow syntax \`fn name(params) => expr\`. NEVER use \`def\`, \`function\`, or \`func\`.
 4. **Variable Declarations**: Use \`let\` for immutable bindings and \`var\` for mutable variables. NEVER use \`const\` or \`val\`.
@@ -556,7 +556,7 @@ When generating Mycel code, AI models MUST obey these 10 core rules to avoid syn
 
 ### Lexical Structure & Keywords
 - **Files**: Extension \`.myc\` (or \`.olx\`). Top-level statements are valid directly without boilerplate \`main()\` function.
-- **Comments**: \`// line\`, \`/* block */\`, \`/// doc comment\`.
+- **Comments**: \`# line\` (no block comments; put \`#\` at the start of each line), \`## doc comment\`. \`//\` is whole-number division, not a comment.
 - **Keywords**: \`let var fn class struct interface enum type extend import pub private protected static if else while for in match return break continue throw try catch finally true false nil is as async await spawn gen yield init self super override operator extern then\`.
 - **Contextual Keywords**: \`get\`, \`set\`, \`test\`.
 
@@ -708,7 +708,7 @@ You are an expert programmer in the Mycel programming language (.myc). When writ
 
 1. DIVISION:
    - Floating-point division: 'a / b' ALWAYS yields Float (e.g. 7 / 2 == 3.5, 8 / 2 == 4.0).
-   - Whole-number integer division: Use '.div()', e.g. '7.div(2) == 3'. There is NO '//' operator in Mycel.
+   - Whole-number integer division: Use '//', e.g. '7 // 2 == 3' (floor, like Python); '/' always gives a Float.
    - Remainder: '7 % 2 == 1'. Exponentiation: '2 ** 8 == 256'.
 
 2. STRINGS & CHARACTERS:
@@ -773,16 +773,16 @@ fn sumAll(...nums: Int) -> Int { ... }
 
 ### Numbers & Division
 \`\`\`mycel
-let floatVal = 7 / 2        // 3.5 (Float)
-let intVal = 7.div(2)       // 3 (Int)
-let modVal = 7 % 2          // 1 (Int)
-let powVal = 2 ** 10        // 1024 (Int)
+let floatVal = 7 / 2        # 3.5 (Float)
+let intVal = 7 // 2          # 3 (Int)
+let modVal = 7 % 2          # 1 (Int)
+let powVal = 2 ** 10        # 1024 (Int)
 \`\`\`
 
 ### Collections & Comprehensions
 \`\`\`mycel
 let arr = [10, 20, 30]
-let last = arr[-1]          // 30
+let last = arr[-1]          # 30
 let doubled = [x * 2 for x in arr if x > 15]
 
 let map = {"apples": 5, "oranges": 10}
@@ -790,7 +790,7 @@ let count = map["apples"] ?? 0
 
 let setA = Set([1, 2, 3])
 let setB = Set([3, 4, 5])
-let common = setA & setB    // Set([3])
+let common = setA & setB    # Set([3])
 
 let tuple = ("Alice", 100)
 let name = tuple.0
@@ -1062,7 +1062,7 @@ footer a{color:var(--text-2)}
 
 1. DIVISION:
    - Floating-point division: 'a / b' ALWAYS yields Float (e.g. 7 / 2 == 3.5, 8 / 2 == 4.0).
-   - Whole-number integer division: Use '.div()', e.g. '7.div(2) == 3'. There is NO '//' operator in Mycel.
+   - Whole-number integer division: Use '//', e.g. '7 // 2 == 3' (floor, like Python); '/' always gives a Float.
    - Remainder: '7 % 2 == 1'. Exponentiation: '2 ** 8 == 256'.
 
 2. STRINGS &amp; CHARACTERS:

@@ -1,0 +1,39 @@
+import tensor
+from tensor import Tensor
+
+fn matmul_by_loops(a: [[Float]], b: [[Float]]) -> [[Float]] {
+    var rows: [[Float]] = []
+    for i in 0..a.length {
+        var row: [Float] = []
+        for j in 0..b[0].length {
+            var total = 0.0
+            for k in 0..b.length {
+                total += a[i][k] * b[k][j]
+            }
+            row.push(total)
+        }
+        rows.push(row)
+    }
+    return rows
+}
+
+fn main() {
+    let scores = tensor.array([1.0, 2.0, 3.0])
+    print(f"a list: shape {scores.shape}, {scores.size} numbers")
+    let grid = tensor.arange(6).reshape([2, 3])
+    print(grid)
+    print(f"a table: shape {grid.shape}")
+    let bias = tensor.array([10.0, 20.0, 30.0])
+    print(grid + bias)
+    print(grid.transpose())
+    print(grid.sum(0))
+    print(grid.sum(1, true))
+    print(grid.reshape([3, -1]).shape)
+    let a = tensor.table([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+    let b = tensor.table([[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+    let fast = a.matmul(b)
+    print(fast)
+    let slow = matmul_by_loops([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], [[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+    print(slow)
+    print(f"same answer: {tensor.table(slow).toList() == fast.toList()}")
+}

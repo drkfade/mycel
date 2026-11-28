@@ -1,0 +1,192 @@
+import fs
+import tensor
+from tensor import Tensor
+
+let context = 16
+let embed = 32
+let heads = 4
+let layers = 2
+let batch = 32
+let steps = 20
+let learning_rate = 0.01
+
+struct Block {
+    let ln1_g: Tensor, ln1_b: Tensor
+    let wq: Tensor, wk: Tensor, wv: Tensor, wo: Tensor
+    let bq: Tensor, bk: Tensor, bv: Tensor, bo: Tensor
+    let ln2_g: Tensor, ln2_b: Tensor
+    let w1: Tensor, b1: Tensor, w2: Tensor, b2: Tensor
+}
+
+struct Model {
+    let tok: Tensor, pos: Tensor
+    let blocks: [Block]
+    let lnf_g: Tensor, lnf_b: Tensor
+    let head_w: Tensor, head_b: Tensor
+}
+
+fn weight(rows: Int, cols: Int) -> Tensor {
+    return tensor.randnStd([rows, cols], 0.02).requireGrad()
+}
+
+fn zero(n: Int) -> Tensor {
+    return tensor.zeros([n]).requireGrad()
+}
+
+fn one(n: Int) -> Tensor {
+    return tensor.ones([n]).requireGrad()
+}
+
+fn new_block() -> Block {
+    return Block(
+        ln1_g: one(embed), ln1_b: zero(embed),
+        wq: weight(embed, embed), wk: weight(embed, embed), wv: weight(embed, embed), wo: weight(embed, embed),
+        bq: zero(embed), bk: zero(embed), bv: zero(embed), bo: zero(embed),
+        ln2_g: one(embed), ln2_b: zero(embed),
+        w1: weight(embed, 4 * embed), b1: zero(4 * embed), w2: weight(4 * embed, embed), b2: zero(embed)
+    )
+}
+
+fn new_model(vocab: Int) -> Model {
+    var blocks: [Block] = []
+    for i in 0..layers {
+        blocks.push(new_block())
+    }
+    return Model(
+        tok: weight(vocab, embed), pos: weight(context, embed),
+        blocks: blocks,
+        lnf_g: one(embed), lnf_b: zero(embed),
+        head_w: weight(embed, vocab), head_b: zero(vocab)
+    )
+}
+
+fn parameters(m: Model) -> [Tensor] {
+    var all = [m.tok, m.pos, m.lnf_g, m.lnf_b, m.head_w, m.head_b]
+    for b in m.blocks {
+        all.append([b.ln1_g, b.ln1_b, b.wq, b.wk, b.wv, b.wo, b.bq, b.bk, b.bv, b.bo, b.ln2_g, b.ln2_b, b.w1, b.b1, b.w2, b.b2])
+    }
+    return all
+}
+
+fn count_numbers(params: [Tensor]) -> Int {
+    return params.reduce(0, (total, p) => total + p.size)
+}
+
+fn attention(b: Block, x: Tensor, mask: Tensor) -> Tensor {
+    let n = x.shape[0]
+    let t = x.shape[1]
+    let d = embed.div(heads)
+    let q = (x.matmul(b.wq) + b.bq).reshape([n, t, heads, d]).permute([0, 2, 1, 3])
+    let k = (x.matmul(b.wk) + b.bk).reshape([n, t, heads, d]).permute([0, 2, 1, 3])
+    let v = (x.matmul(b.wv) + b.bv).reshape([n, t, heads, d]).permute([0, 2, 1, 3])
+    let scores = q.matmul(k.permute([0, 1, 3, 2])) * (1.0 / d.toFloat().sqrt()) + mask
+    let mixed = scores.softmax().matmul(v)
+    let joined = mixed.permute([0, 2, 1, 3]).reshape([n, t, embed])
+    return joined.matmul(b.wo) + b.bo
+}
+
+fn block_forward(b: Block, x: Tensor, mask: Tensor) -> Tensor {
+    let a = x + attention(b, x.layerNorm(b.ln1_g, b.ln1_b), mask)
+    let h = (a.layerNorm(b.ln2_g, b.ln2_b).matmul(b.w1) + b.b1).gelu()
+    return a + h.matmul(b.w2) + b.b2
+}
+
+fn forward(m: Model, ids: [Int], n: Int, t: Int) -> Tensor {
+    let positions = tensor.arange(t).toList().map((p) => p.toInt())
+    let mask = tensor.causalMask(t)
+    var x = (m.tok.indexSelect(ids).reshape([n, t, embed]) + m.pos.indexSelect(positions))
+    for b in m.blocks {
+        x = block_forward(b, x, mask)
+    }
+    return x.layerNorm(m.lnf_g, m.lnf_b).matmul(m.head_w) + m.head_b
+}
+
+fn loss_on(m: Model, text: [Int], starts: [Int]) -> Tensor {
+    var inputs: [Int] = []
+    var targets: [Int] = []
+    for s in starts {
+        for j in 0..context {
+            inputs.push(text[s + j])
+            targets.push(text[s + j + 1])
+        }
+    }
+    let logits = forward(m, inputs, starts.length, context)
+    return logits.crossEntropy(targets)
+}
+
+fn random_starts(count: Int, limit: Int) -> [Int] {
+    var starts: [Int] = []
+    for i in 0..count {
+        starts.push((tensor.random() * limit.toFloat()).toInt())
+    }
+    return starts
+}
+
+fn id_of(alphabet: [String], c: Char) -> Int {
+    return alphabet.indexOf(f"{c}")!
+}
+
+fn generate(m: Model, alphabet: [String], first: Int, newline: Int) -> String {
+    var ids = [newline, first]
+    var out = f"{alphabet[first]}"
+    for i in 0..20 {
+        let window = ids.slice(max(0, ids.length - context), ids.length)
+        let logits = forward(m, window, 1, window.length)
+        let last = logits.reshape([window.length, alphabet.length]).rows(window.length - 1, window.length)
+        let next = tensor.sample(last.softmax().reshape([alphabet.length]))
+        if next == newline {
+            return out
+        }
+        ids.push(next)
+        out += f"{alphabet[next]}"
+    }
+    return out
+}
+
+fn main() {
+    tensor.seed(7)
+    let raw = fs.readText("weather.txt").unwrap()
+    let names = raw.lines().filter((s) => s.length > 0)
+    let letters = raw.replace("\n", "").chars().unique().sorted().map((c) => f"{c}")
+    let alphabet = ["\n"] + letters
+    let vocab = alphabet.length
+    let newline = 0
+
+    var train_text: [Int] = [newline]
+    var check_text: [Int] = [newline]
+    for (i, name) in names.enumerate() {
+        for c in name.chars() {
+            if i % 10 == 9 {
+                check_text.push(id_of(alphabet, c))
+            } else {
+                train_text.push(id_of(alphabet, c))
+            }
+        }
+        if i % 10 == 9 {
+            check_text.push(newline)
+        } else {
+            train_text.push(newline)
+        }
+    }
+    print(f"{names.length} names, {vocab} characters, {train_text.length} training characters, {check_text.length} held out")
+
+    let model = new_model(vocab)
+    let params = parameters(model)
+    print(f"model: {layers} blocks, {heads} heads, width {embed}, {count_numbers(params)} numbers to learn")
+    let opt = tensor.adam(params, learning_rate)
+
+    for step in 0..=steps {
+        opt.zeroGrad()
+        let loss = loss_on(model, train_text, random_starts(batch, train_text.length - context - 1))
+        if step % 10 == 0 {
+            let held = loss_on(model, check_text, random_starts(batch, check_text.length - context - 1))
+            print(f"step {step:>4}  train loss {loss.item():.3f}  held-out loss {held.item():.3f}")
+        }
+        loss.backward()
+        opt.step()
+    }
+
+    for i in 0..8 {
+        print(generate(model, alphabet, 1 + i * 3, newline))
+    }
+}

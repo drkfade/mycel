@@ -10,6 +10,19 @@ export interface Capabilities {
   net?: { hosts?: string[] | true; listen?: boolean };
   process?: { run?: string[] | true };
   env?: { read?: string[] | true };
+  /** Python / npm / Java packages this run may call (by install name, or true for all): a granted package runs with the
+   *  full power of the user's account (foreign.ts) */
+  packages?: { python?: string[] | true; npm?: string[] | true; java?: string[] | true };
+  /** Grant calling Java JDK classes and installed Maven JARs via `--java`. */
+  java?: boolean;
+  /** Desktop automation & system control (`computer` package): mouse, keyboard, apps, notify, system. */
+  control?: boolean;
+  /** Screen capture & pixel inspection (`computer.screen`). */
+  screen?: boolean;
+  /** Clipboard read/write (`computer.clipboard`). */
+  clipboard?: boolean;
+  /** Pure computation with no outside access (`tensor` package maths). A package that declares only this needs no grant. */
+  compute?: boolean;
 }
 export interface StdinReader { readLine(): Promise<string | null> }
 
@@ -36,6 +49,24 @@ function realish(p: string): string {
       throw e;
     }
   }
+}
+
+/** Check whether `path` is allowed under `caps.fs[mode]` and return its resolved safe path or a denial message. */
+export function checkFsAccess(caps: Capabilities, path: string, mode: "read" | "write"): { path: string } | { why: string } {
+  const roots = caps.fs?.[mode] ?? [];
+  if (roots !== true && !roots.length) return { why: `this run was not granted ${mode} access to the file system (run with --allow-${mode})` };
+  let real: string;
+  try {
+    real = realish(path);
+    if (roots === true) return { path: real };
+    for (const r of roots) {
+      const root = realish(r);
+      if (withinPath(root, real)) return { path: real };
+    }
+  } catch (e: any) {
+    return { why: `cannot resolve a safe file path: ${e.message}` };
+  }
+  return { why: `outside the granted ${mode} locations (${roots.join(", ")}) (run with --allow-${mode}=<path>)` };
 }
 
 let lastUiContext: any = null;

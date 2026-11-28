@@ -1,8 +1,8 @@
-# Mycel 0.1 alpha release build
+# Mycel 0.2 alpha release build
 
 Mycel is open source (Apache-2.0 OR MIT, see `lang/LICENSE`); the compiler source
 is published as a repository, not inside the packages. The release deliverable is
-the `.pkg`, after owner approval.
+the `.pkg`.
 
 Prerequisites: macOS on arm64, Node **24.13.0**, npm/npx, Apple Command Line Tools
 (`lipo`, `strip`, `codesign`, `pkgbuild`, `productbuild`, `pkgutil`). Network is
@@ -16,7 +16,7 @@ node lang/release/verify.mjs
 node lang/release/package.mjs
 node lang/release/verify-package.mjs
 node lang/release/regressions.mjs
-shasum -a 256 lang/release/dist/Mycel-0.1.0-alpha.pkg
+shasum -a 256 lang/release/dist/Mycel-0.2.0-alpha.pkg
 ```
 
 `build.mjs` copies only compiler/CLI/std/LSP sources and manifests into
@@ -57,7 +57,6 @@ stderr receipts go under ignored `work/`; reports summarize the exact results.
 No speed or unseen capability claim is made from these synthetic acceptance tests.
 
 After changing `lang/LICENSE*` or `lang/TRADEMARK.md`, run
-`node lang/release/license.mjs --write`, then rebuild, reverify and update the
-report's SHA-256. The website download link and deployment belong to the orchestrator.
+`node lang/release/license.mjs --write`, then rebuild and reverify.
 
 Reference: https://github.com/nodejs/node/blob/v24.13.0/doc/api/single-executable-applications.md

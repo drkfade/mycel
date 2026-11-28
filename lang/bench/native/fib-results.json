@@ -1,0 +1,50 @@
+{
+  "benchmark": "fib(32)",
+  "output": "2178309",
+  "results": {
+    "native": {
+      "median_seconds": 0.01747162500396371,
+      "peak_rss_bytes_median": 1736704,
+      "runs_seconds": [
+        0.438567,
+        0.01762,
+        0.016899,
+        0.017472,
+        0.016898
+      ]
+    },
+    "Rust": {
+      "median_seconds": 0.011562375002540648,
+      "peak_rss_bytes_median": 1949696,
+      "runs_seconds": [
+        0.397319,
+        0.01167,
+        0.011313,
+        0.01065,
+        0.011562
+      ]
+    },
+    "C": {
+      "median_seconds": 0.01073741598520428,
+      "peak_rss_bytes_median": 1736704,
+      "runs_seconds": [
+        0.365958,
+        0.010831,
+        0.010564,
+        0.01037,
+        0.010737
+      ]
+    },
+    "JS": {
+      "median_seconds": 0.15119183401111513,
+      "peak_rss_bytes_median": 66813952,
+      "runs_seconds": [
+        0.148649,
+        0.151192,
+        0.146914,
+        0.151511,
+        0.155631
+      ]
+    }
+  }
+}

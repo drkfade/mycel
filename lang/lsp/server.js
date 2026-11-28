@@ -161,8 +161,8 @@ function docAbove(span) {
   const lines = span.src.text.split("\n");
   let ln = span.src.pos(span.start).line - 1;
   const out = [];
-  while (ln >= 1 && /^\s*\/\/\//.test(lines[ln - 1])) {
-    out.unshift(lines[ln - 1].replace(/^\s*\/\/\/ ?/, ""));
+  while (ln >= 1 && /^\s*##/.test(lines[ln - 1])) {
+    out.unshift(lines[ln - 1].replace(/^\s*## ?/, ""));
     ln--;
   }
   return out.length ? out.join("\n") : undefined;

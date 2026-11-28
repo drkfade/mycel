@@ -1,4 +1,4 @@
-// Classes, interfaces, inheritance, properties, static members.
+# Classes, interfaces, inheritance, properties, static members.
 interface Shape {
   get name: String
   fn area() -> Float

@@ -1,6 +1,6 @@
 score = 85
 
-// Classic if / else if / else
+# Classic if / else if / else
 if score >= 90 {
   print("Grade: A")
 } else if score >= 80 {
@@ -9,10 +9,10 @@ if score >= 90 {
   print("Keep practicing")
 }
 
-// if as an expression (returns a value)
+# if as an expression (returns a value)
 status = if score >= 60 { "passed" } else { "needs review" }
 print(f"Status: {status}")
 
-// Python-style inline if
+# Python-style inline if
 label = "adult" if score >= 18 else "youth"
 print(f"Label: {label}")

@@ -1,18 +1,18 @@
-import std.sqlite
+import sqlite
 
-// Simple databases and key-value stores over SQLite.
-// Needs write permission to the database file (run with --allow-write).
-//
-// Key-Value store:
-//   let kv = db.openKV("settings.db").unwrap()
-//   kv.set("theme", "dark")
-//   print(kv.get("theme", default: "light"))
-//
-// Tables:
-//   let d = db.open("app.db").unwrap()
-//   let users = d.table("users", {"id": "integer primary key", "name": "text"}).unwrap()
-//   users.insert({"name": "Ada"}).unwrap()
-//   for u in users.all().unwrap() { print(u["name"]) }
+# Simple databases and key-value stores over SQLite.
+# Needs write permission to the database file (run with --allow-write).
+#
+# Key-Value store:
+#   let kv = db.openKV("settings.db").unwrap()
+#   kv.set("theme", "dark")
+#   print(kv.get("theme", default: "light"))
+#
+# Tables:
+#   let d = db.open("app.db").unwrap()
+#   let users = d.table("users", {"id": "integer primary key", "name": "text"}).unwrap()
+#   users.insert({"name": "Ada"}).unwrap()
+#   for u in users.all().unwrap() { print(u["name"]) }
 
 pub class KV {
   let db: sqlite.Db

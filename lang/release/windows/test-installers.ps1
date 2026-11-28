@@ -35,7 +35,7 @@ try {
     $bootstrapCode = [ScriptBlock]::Create([IO.File]::ReadAllText($Bootstrap))
     & $bootstrapCode
     Assert-True ([IO.File]::Exists((Join-Path $bin 'mycel.exe'))) 'Bootstrap did not install the executable.'
-    Assert-True ((& (Join-Path $bin 'mycel.exe') --version) -eq 'mycel 0.1.0') 'Installed executable failed.'
+    Assert-True ((& (Join-Path $bin 'mycel.exe') --version) -eq 'mycel 0.2.0') 'Installed executable failed.'
     Assert-True ($LASTEXITCODE -eq 0) 'Installed executable returned failure.'
     $afterInstall = Get-RawUserPath
     Assert-True ($afterInstall.Kind -eq [Microsoft.Win32.RegistryValueKind]::ExpandString) "Install changed the user PATH kind to $($afterInstall.Kind)."

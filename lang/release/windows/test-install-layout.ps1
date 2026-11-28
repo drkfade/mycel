@@ -25,7 +25,7 @@ try {
     $executable = Join-Path $source 'mycel.exe'
     if ($windowsHost) { Copy-Item -LiteralPath (Join-Path $release 'dist/mycel.exe') -Destination $executable }
     else {
-        [IO.File]::WriteAllText($executable, "#!/bin/sh`nprintf 'mycel 0.1.0\n'`n")
+        [IO.File]::WriteAllText($executable, "#!/bin/sh`nprintf 'mycel 0.2.0\n'`n")
         & /bin/chmod 755 $executable
         if ($LASTEXITCODE -ne 0) { throw 'Could not prepare synthetic child.' }
         $env:OS = 'Windows_NT'
@@ -62,7 +62,7 @@ try {
     Assert-True $caught 'Fault injection did not reach the replacement path.'
     Assert-True ([IO.File]::ReadAllText($userFile) -ceq 'unrelated bytes Ω') 'Rollback lost a user file.'
     Assert-True ([IO.File]::ReadAllText((Join-Path $userDirectory 'source.myc')) -ceq 'print(42)') 'Rollback lost a user directory.'
-    Assert-True ((& (Join-Path $bin 'mycel.exe') --version) -eq 'mycel 0.1.0') 'Rollback lost the old executable.'
+    Assert-True ((& (Join-Path $bin 'mycel.exe') --version) -eq 'mycel 0.2.0') 'Rollback lost the old executable.'
     Assert-True (@(Get-ChildItem -LiteralPath (Split-Path -Parent $bin) | Where-Object { $_.Name -ne 'bin' }).Count -eq 0) 'Install left staging/backup directories after recovery.'
     Write-Output "PASS: reinstall preserves unrelated file/directory bytes; injected mid-move failure restores old payload and user files ($($PSVersionTable.PSVersion), $windowsHost Windows host)."
 } finally {

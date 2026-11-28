@@ -1,0 +1,15 @@
+## Mouse position, movement, clicking, scrolling, and dragging.
+## Requires `control` capability (`--allow-control` or `"capabilities": { "control": true }`).
+## A running program that controls input shows a visible notice and stops if Escape is held for 1s.
+
+pub struct Point {
+  let x: Int, y: Int
+  fn toString() -> String => f"({self.x}, {self.y})"
+}
+
+pub extern fn position() -> Result<Point, Error>
+pub extern fn moveTo(x: Int, y: Int) -> Result<Void, Error>
+pub extern fn click(button: String = "left") -> Result<Void, Error>
+pub extern fn doubleClick(button: String = "left") -> Result<Void, Error>
+pub extern fn scroll(dx: Int = 0, dy: Int = 0) -> Result<Void, Error>
+pub extern fn drag(fromX: Int, fromY: Int, toX: Int, toY: Int, button: String = "left") -> Result<Void, Error>

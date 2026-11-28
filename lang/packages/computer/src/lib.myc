@@ -1,0 +1,5 @@
+## Computer control package for Mycel (`computer`).
+## Submodules: `computer.mouse`, `computer.keyboard`, `computer.screen`,
+## `computer.clipboard`, `computer.apps`, `computer.notify`, `computer.system`.
+
+pub fn version() -> String => "0.1.0"

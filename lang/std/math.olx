@@ -13,9 +13,9 @@ pub extern fn log2(x: Float) -> Float
 pub extern fn log10(x: Float) -> Float
 pub extern fn sqrt(x: Float) -> Float
 pub extern fn pow(x: Float, y: Float) -> Float
-/// A uniformly random Float in [0, 1). Not for cryptography (see std.crypto).
+## A uniformly random Float in [0, 1). Not for cryptography (see std.crypto).
 pub extern fn random() -> Float
-/// A random Int in [lo, hi).
+## A random Int in [lo, hi).
 pub extern fn randomInt(lo: Int, hi: Int) -> Int
 pub fn hypot(a: Float, b: Float) -> Float {
   let x = a.abs

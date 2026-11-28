@@ -4,7 +4,7 @@ import { parse } from "./parser";
 
 const OPEN = new Set(["{", "(", "["]);
 const CLOSE = new Set(["}", ")", "]"]);
-const SPACED = new Set(["=", "+=", "-=", "*=", "/=", "%=", "**=", "??=", "==", "!=", "<=", ">=", "&&", "||", "??", "=>", "->", "|>"]);
+const SPACED = new Set(["=", "+=", "-=", "*=", "/=", "//", "//=", "%=", "**=", "??=", "==", "!=", "<=", ">=", "&&", "||", "??", "=>", "->", "|>"]);
 const CONTINUE_START = new Set([".", "?.", "&&", "||", "??", "|>"]);
 
 /**
@@ -35,20 +35,6 @@ export function format(text: string, name = "<input>"): string {
     const a = src.pos(t.start).line, b = src.pos(Math.max(t.start, t.end - 1)).line;
     (byLine.get(a) ?? byLine.set(a, []).get(a)!).push(t);
     for (let l = a + 1; l <= b; l++) verbatim.add(l); // continuation lines of multi-line strings
-  }
-  // block comments spanning lines
-  const gaps: [number, number][] = [];
-  let prev = 0;
-  for (const t of toks) { gaps.push([prev, t.start]); prev = t.end; }
-  gaps.push([prev, src.text.length]);
-  for (const [a, b] of gaps) {
-    const g = src.text.slice(a, b);
-    const re = /\/\*[\s\S]*?\*\//g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(g))) {
-      const l1 = src.pos(a + m.index).line, l2 = src.pos(a + m.index + m[0].length - 1).line;
-      for (let l = l1 + 1; l <= l2; l++) verbatim.add(l);
-    }
   }
   let depth = 0;
   const out: string[] = [];

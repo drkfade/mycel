@@ -52,7 +52,7 @@ test("portable package names and cross-drive runtime requires", () => {
 });
 
 test("CRLF lexer, JSON/text diagnostics retain original offsets and columns", async () => {
-  const text = '// comment\r\nlet x = 4\r\nprint(x + 2)\r\n';
+  const text = '# comment\r\nlet x = 4\r\nprint(x + 2)\r\n';
   const tokens = lex(new Source("C:\\sample.myc", text));
   const print = tokens.find(t => t.v === "print")!;
   assert.equal(print.start, text.indexOf("print"));
@@ -116,7 +116,7 @@ test("both source aliases run CRLF nested mixed-extension imports with literal a
         const r = spawnSync(process.env.ComSpec ?? "cmd.exe", ["/d", "/s", "/c", `""${path.join(bin, command + ".cmd")}" --version"`], { cwd: dir, encoding: "utf8", windowsHide: true, windowsVerbatimArguments: true });
         // verbatim: Node would otherwise re-quote the /c string ("\"\"C:\\…\\mycel.cmd\" --version\"" is not recognized)
         assert.equal(r.status, 0, r.stderr);
-        assert.equal(r.stdout.trim(), "mycel 0.1.0");
+        assert.equal(r.stdout.trim(), "mycel 0.2.0");
       }
     }
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }

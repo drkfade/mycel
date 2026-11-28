@@ -1,8 +1,8 @@
-import std.fs
-import std.json
-import models.{Todo, fromJson, toJsonList}
+import fs
+import json
+from models import Todo, fromJson, toJsonList
 
-/// A missing file is an empty list; any other problem is an error.
+## A missing file is an empty list; any other problem is an error.
 pub fn load(path: String) -> Result<[Todo], Error> {
   if !fs.exists(path)? { return Ok([]) }
   let text = fs.readText(path)?

@@ -1,4 +1,4 @@
-import std.http
+import http
 import notes
 
 async fn main() {

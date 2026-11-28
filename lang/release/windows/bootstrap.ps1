@@ -1,4 +1,4 @@
-# Mycel 0.1 alpha Windows x64. Publish this rendered script only after review.
+# Mycel 0.2 alpha Windows x64. Publish this rendered script only after review.
 # Usage: irm https://ol1x.xyz/mycel/install.ps1 | iex
 & {
     $ErrorActionPreference = 'Stop'
@@ -11,7 +11,7 @@
         $temporary = Join-Path ([IO.Path]::GetTempPath()) ('mycel-' + [Guid]::NewGuid().ToString('N'))
         [IO.Directory]::CreateDirectory($temporary) | Out-Null
         $archive = Join-Path $temporary 'mycel.zip'
-        $url = 'https://ol1x.xyz/mycel/download/Mycel-0.1.0-alpha-windows-x64.zip'
+        $url = 'https://ol1x.xyz/mycel/download/Mycel-0.2.0-alpha-windows-x64.zip'
         $expected = '@ZIP_SHA256@'
         Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $archive
         $actual = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
@@ -29,7 +29,7 @@
         } finally { $zip.Dispose() }
         $source = Join-Path $temporary 'payload'
         Expand-Archive -LiteralPath $archive -DestinationPath $source
-        # A scriptblock works under the same policy as the owner's iex invocation;
+        # A scriptblock works under the same policy as the caller's iex invocation;
         # no machine execution policy is changed and no elevation is requested.
         $installer = [ScriptBlock]::Create([IO.File]::ReadAllText((Join-Path $source 'install.ps1')))
         & $installer -SourceDir $source

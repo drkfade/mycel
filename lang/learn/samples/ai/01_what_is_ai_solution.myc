@@ -1,0 +1,11 @@
+fn is_question(text: String) -> Bool {
+    return text.endsWith("?")
+}
+
+fn is_greeting(text: String) -> Bool {
+    let lower = text.lower()
+    return lower.startsWith("hi") or lower.startsWith("hello")
+}
+
+print(is_greeting("Hello there"))
+print(is_greeting("Is it raining?"))

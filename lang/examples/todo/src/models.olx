@@ -1,4 +1,4 @@
-import std.json
+import json
 
 pub struct Todo {
   let id: Int, title: String, done: Bool
@@ -12,7 +12,7 @@ pub struct Todo {
   }
 }
 
-/// Read one todo back from JSON, saying exactly which field is wrong.
+## Read one todo back from JSON, saying exactly which field is wrong.
 pub fn fromJson(j: json.Json) -> Result<Todo, Error> {
   let id = j.get("id")?.asInt
   let title = j.get("title")?.asString

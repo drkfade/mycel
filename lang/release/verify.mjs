@@ -43,8 +43,8 @@ try {
   }
   console.log('PASS artifact scanner: 4 contamination probes rejected');
   run('no Node on PATH', ['-c', 'command -v node'], { command: '/bin/sh', status: 1, output: '' });
-  run('version', ['--version'], { output: 'mycel 0.1.0\n' });
-  run('welcome', [], { output: /Welcome to Mycel 0\.1\.0/ });
+  run('version', ['--version'], { output: 'mycel 0.2.0\n' });
+  run('welcome', [], { output: /Welcome to Mycel 0\.2\.0/ });
   source('hello.myc', 'print("hi")\n');
   run('hello shorthand', ['hello.myc'], { output: 'hi\n' });
   run('new demo', ['new', 'demo'], { output: /created demo/ });

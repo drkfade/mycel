@@ -1,7 +1,7 @@
 # Windows release acceptance — fixed before release smoke execution, 2026-11-08
 
-No benchmark score or unseen capability claim. Own synthetic portability fixtures only.
-No hidden/sealed data. Owner forbids git index writes, so this list cannot be committed.
+No benchmark score or unseen capability claim. Synthetic portability fixtures only.
+No hidden/sealed data. Fixed acceptance list prior to smoke execution.
 Do not edit cases or existing expected outputs to obtain a pass.
 
 - Verify the pinned Node release primary key, cleartext SHASUMS signature, equality
@@ -13,7 +13,7 @@ Do not edit cases or existing expected outputs to obtain a pass.
   new project/run/test, capability deny/grant/all, junction escape, CRLF fmt,
   text+JSON diagnostics, doc, isolated hello/timeout, REPL, LSP, package commands,
   unsupported standalone JavaScript export. Alias shim must be checked on Windows.
-- Preserve original npm test assertions, including the owner-edited hello example
+- Preserve original npm test assertions, including the hello example
   and deployed-site-current check. Report failures; never edit site in this task.
 - ZIP independent CRC/extraction, exact seven-file allow-list, no loose source,
   byte-identical dual-licence/Node licenses, bootstrap's pinned hash and no exit.

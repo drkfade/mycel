@@ -2,7 +2,7 @@ import * as A from "./ast";
 import { Source } from "./diag";
 import { parse } from "./parser";
 
-/** Markdown reference for the `pub` declarations of a module, taken from signatures and `///` comments. */
+/** Markdown reference for the `pub` declarations of a module, taken from signatures and `##` comments. */
 export function documentModule(text: string, name: string, file = name, includeAll = false): string {
   const src = new Source(file, text);
   const mod = parse(src);
@@ -10,7 +10,7 @@ export function documentModule(text: string, name: string, file = name, includeA
   const docAbove = (offset: number): string => {
     let ln = src.pos(offset).line - 1;
     const out: string[] = [];
-    while (ln >= 1 && /^\s*\/\/\//.test(lines[ln - 1])) { out.unshift(lines[ln - 1].replace(/^\s*\/\/\/ ?/, "")); ln--; }
+    while (ln >= 1 && /^\s*##/.test(lines[ln - 1])) { out.unshift(lines[ln - 1].replace(/^\s*## ?/, "")); ln--; }
     return out.join("\n");
   };
   /** Source text of a declaration header: everything before its body. */

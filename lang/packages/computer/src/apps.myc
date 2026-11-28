@@ -1,0 +1,8 @@
+## Open apps, files, and URLs; list running GUI apps; gracefully quit apps.
+## Requires `control` capability (`--allow-control` or `"capabilities": { "control": true }`).
+
+pub extern fn open(name: String) -> Result<Void, Error>
+pub extern fn openFile(path: String) -> Result<Void, Error>
+pub extern fn openUrl(url: String) -> Result<Void, Error>
+pub extern fn running() -> Result<[String], Error>
+pub extern fn quit(name: String) -> Result<Void, Error>

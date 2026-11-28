@@ -1,17 +1,17 @@
-// A friendly UI kit with one simple model for desktop and browser apps.
-// Window, button, text, input, list, image, row, column, and event handlers.
-//
-// Example:
-//   import std.ui
-//   var count = 0
-//   let label = ui.text("Count: 0")
-//   ui.window("Counter", [
-//     label,
-//     ui.row([
-//       ui.button("-", onClick: () => { count -= 1; label.setText(f"Count: {count}") }),
-//       ui.button("+", onClick: () => { count += 1; label.setText(f"Count: {count}") }),
-//     ])
-//   ])
+# A friendly UI kit with one simple model for desktop and browser apps.
+# Window, button, text, input, list, image, row, column, and event handlers.
+#
+# Example:
+#   import std.ui
+#   var count = 0
+#   let label = ui.text("Count: 0")
+#   ui.window("Counter", [
+#     label,
+#     ui.row([
+#       ui.button("-", onClick: () => { count -= 1; label.setText(f"Count: {count}") }),
+#       ui.button("+", onClick: () => { count += 1; label.setText(f"Count: {count}") }),
+#     ])
+#   ])
 
 extern fn newId() -> String
 extern fn mountWindow(win: Window)

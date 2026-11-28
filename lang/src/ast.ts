@@ -61,7 +61,7 @@ export type Expr = { span: Span; id?: number } & (
   | { k: "cast"; operand: Expr; type: TypeExpr; safe: boolean } // as / as?
   | { k: "is"; operand: Expr; type: TypeExpr }
   | { k: "range"; lo?: Expr; hi?: Expr; inclusive: boolean }
-  | { k: "lambda"; params: Param[]; ret?: TypeExpr; body: Expr | Block; async?: boolean }
+  | { k: "lambda"; params: Param[]; ret?: TypeExpr; body: Expr | Block; async?: boolean; brace?: boolean; implicitIt?: boolean }
   | { k: "ternary"; cond: Expr; then: Expr; else: Expr }
   | { k: "match"; subject: Expr; arms: MatchArm[] }
   | { k: "await"; operand: Expr }
@@ -88,7 +88,7 @@ export type Stmt = { span: Span } & (
   | { k: "while"; cond: Cond; body: Block; label?: string }
   | { k: "for"; pat: Pattern; iter: Expr; body: Block; label?: string; /** `for a, b in xs`: position+value for lists, key+value for maps */ bare?: boolean }
   | { k: "match"; subject: Expr; arms: MatchArm[] }
-  | { k: "return"; value?: Expr }
+  | { k: "return"; value?: Expr; implicit?: boolean }
   | { k: "break"; label?: string }
   | { k: "continue"; label?: string }
   | { k: "throw"; value: Expr }
@@ -115,7 +115,15 @@ export type Decl = { span: Span; pub: boolean; doc?: string } & (
   | { k: "enum"; name: string; typeParams: TypeParam[]; variants: { name: string; fields: { name?: string; type: TypeExpr }[]; value?: Expr; span: Span }[]; methods: FnDecl[]; ifaces: TypeExpr[] }
   | { k: "alias"; name: string; typeParams: TypeParam[]; type: TypeExpr }
   | { k: "extend"; target: TypeExpr; typeParams: TypeParam[]; ifaces: TypeExpr[]; methods: FnDecl[] }
-  | { k: "import"; path: string[]; names?: { name: string; alias?: string; span: Span }[]; alias?: string; all?: boolean }
+  | { k: "import"; path: string[]; names?: { name: string; alias?: string; span: Span }[]; alias?: string; all?: boolean;
+      /** `import requests --python`: the runtime flag at the end of foreign imports */
+      flag?: { name: string; span: Span; nonTrailing?: boolean };
+      /** `import "@google/generative-ai" as genai --npm`: a package name that is not an identifier */
+      quoted?: boolean;
+      /** `from X import Y` canonical selective import form */
+      fromForm?: boolean;
+      /** deprecated `import X.{Y}` brace selective import form */
+      braceForm?: boolean }
   | { k: "test"; name: string; body: Block }
 );
 

@@ -1,5 +1,5 @@
-import std.env
-import std.files
+import env
+import files
 import store
 
 let dbPath = "data/notes.db"

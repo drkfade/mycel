@@ -1,15 +1,15 @@
-// Variables hold values
+# Variables hold values
 name = "Ada"
 age = 36
 print(name)
 print(age)
 
-// Updating a variable
+# Updating a variable
 score = 10
 score += 5
 print(score)
 
-// You can also seal a value with let, or mark it with var
+# You can also seal a value with let, or mark it with var
 let city = "London"
 var lives = 3
 lives -= 1

@@ -1,0 +1,91 @@
+import fs
+import tensor
+from tensor import Tensor
+
+fn main() {
+    tensor.seed(3)
+    let raw = fs.readText("names.txt").unwrap()
+    let names = raw.lines().filter((s) => s.length > 0)
+    let letters = raw.replace("\n", "").chars().unique().sorted().map((c) => f"{c}")
+    let alphabet = ["."] + letters
+    let n = alphabet.length
+
+    var counts: [[Int]] = []
+    for i in 0..n {
+        var row: [Int] = []
+        for j in 0..n {
+            row.push(0)
+        }
+        counts.push(row)
+    }
+    var xs: [Int] = []
+    var ys: [Int] = []
+    for name in names {
+        var word = ["."]
+        for c in name.chars() {
+            word.push(f"{c}")
+        }
+        word.push(".")
+        for i in 0..(word.length - 1) {
+            let a = alphabet.indexOf(word[i])!
+            let b = alphabet.indexOf(word[i + 1])!
+            counts[a][b] += 1
+            xs.push(a)
+            ys.push(b)
+        }
+    }
+    print(f"{names.length} names, {n} symbols, {xs.length} pairs of letters")
+    let a_idx = alphabet.indexOf("a")!
+    let n_idx = alphabet.indexOf("n")!
+    print(f"'a' is followed by 'n' {counts[a_idx][n_idx]} times")
+
+    let smoothed = counts.map((row) => row.map((c) => c.toFloat() + 1.0))
+    let table = tensor.table(smoothed)
+    let probs = table / table.sum(1, true)
+    let counted_loss = probs.log().indexSelect(xs).crossEntropy(ys)
+    print(f"counting table: average loss {counted_loss.item():.4f}")
+
+    var out: [String] = []
+    for i in 0..8 {
+        var cur = 0
+        var word = ""
+        for step in 0..20 {
+            let row = probs.rows(cur, cur + 1).reshape([n])
+            cur = tensor.sample(row)
+            if cur == 0 {
+                break
+            }
+            word += alphabet[cur]
+        }
+        out.push(word)
+    }
+    print(out)
+
+    let W = tensor.zeros([n, n]).requireGrad()
+    let opt = tensor.adam([W], 0.1)
+    for step in 0..=200 {
+        opt.zeroGrad()
+        let loss = W.indexSelect(xs).crossEntropy(ys)
+        if step % 50 == 0 {
+            print(f"step {step:>3}  loss {loss.item():.4f}")
+        }
+        loss.backward()
+        opt.step()
+    }
+
+    var learned: [String] = []
+    for i in 0..8 {
+        var cur = 0
+        var word = ""
+        for step in 0..20 {
+            let row = W.rows(cur, cur + 1).reshape([n]).softmax()
+            cur = tensor.sample(row)
+            if cur == 0 {
+                break
+            }
+            word += alphabet[cur]
+        }
+        learned.push(word)
+    }
+    print(learned)
+}

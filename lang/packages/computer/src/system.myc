@@ -1,0 +1,19 @@
+## Host OS, current user, battery state, and idle time in seconds.
+## Requires `control` capability (`--allow-control` or `"capabilities": { "control": true }`).
+
+pub struct Battery {
+  let percent: Int?, charging: Bool
+
+  fn toString() -> String {
+    if let p = self.percent {
+      let state = if self.charging { "charging" } else { "discharging" }
+      return f"{p}% ({state})"
+    }
+    return "no battery"
+  }
+}
+
+pub extern fn os() -> Result<String, Error>
+pub extern fn user() -> Result<String, Error>
+pub extern fn battery() -> Result<Battery, Error>
+pub extern fn idle() -> Result<Float, Error>

@@ -22,7 +22,7 @@ fs.mkdirSync(work, { recursive: true });
 const compiler = path.join(work, 'compiler');
 fs.mkdirSync(compiler, { recursive: true });
 const sourceHashes = {};
-for (const name of ['src', 'std', 'lsp', 'package.json', 'tsconfig.json']) {
+for (const name of ['src', 'std', 'lsp', 'tools', 'package.json', 'tsconfig.json']) {
   const dest = path.join(compiler, name);
   fs.rmSync(dest, { recursive: true, force: true });
   fs.cpSync(path.join(lang, name), dest, { recursive: true });

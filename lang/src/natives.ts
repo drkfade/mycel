@@ -1,3 +1,4 @@
+import { extractPieces, ExtractKind } from "./extract";
 import { Panic, Runtime, PlyRange, PlyGen, display, eq, cmpPrim, kindOf, makeTuple, I64_MAX, I64_MIN, fstr, hasSurrogates } from "./runtime";
 
 type Fn = (...a: any[]) => any;
@@ -70,6 +71,13 @@ export function preludeNatives(rt: Runtime): Record<string, Fn> {
     "Int.clamp": (x: bigint, lo: bigint, hi: bigint) => { if (lo > hi) throw new Panic(`clamp: lower bound ${lo} is above upper bound ${hi}`); return x < lo ? lo : x > hi ? hi : x; },
     "Int.toRadix": (x: bigint, r: bigint) => { if (r < 2n || r > 36n) throw new Panic("radix must be between 2 and 36"); return x.toString(Number(r)); },
     "Int.div": (a: bigint, b: bigint) => rt.helpers.$idiv(a, b),
+    // `text.extract(Int, Operator) { ... }`: the checker passes the kinds as names; several kinds give `Piece` values
+    "String.extract": (s: string, kinds: string[], filter?: (v: any) => boolean) => {
+      const ps = extractPieces(s, kinds as ExtractKind[]);
+      if (kinds.length === 1) { const vs = ps.map((p) => p.value); return filter ? vs.filter((v) => filter(v)) : vs; }
+      const P = (rt.ctx as any).M["prelude"];
+      return ps.map((p) => P["Piece$" + p.kind].of(p.value));
+    },
     "Int.parse": (s: string) => { if (!/^[+-]?\d+$/.test(s.trim())) return null; const b = BigInt(s.trim()); return b > I64_MAX || b < I64_MIN ? null : b; },
     "Int.get_maxValue": () => I64_MAX,
     "Int.get_minValue": () => I64_MIN,
@@ -132,7 +140,7 @@ export function preludeNatives(rt: Runtime): Record<string, Fn> {
     "String.endsWith": (s: string, p: string) => s.endsWith(p),
     "String.replace": (s: string, a: string, b: string) => (a === "" ? s : s.split(a).join(b)),
     "String.indexOf": (s: string, p: string) => { const i = s.indexOf(p); return i < 0 ? null : BigInt(surrogates(s) ? Array.from(s.slice(0, i)).length : i); },
-    "String.repeat": (s: string, n: bigint) => { if (n < 0n) throw new Panic("repeat count is negative"); if (s.length * N(n) > L.maxStringLength) throw new Panic(`string length limit of ${L.maxStringLength} exceeded`, "limit", "memory"); return s.repeat(N(n)); },
+    "String.repeat": (s: string, n: bigint) => { if (n < 0n) throw new Panic("repeat count is negative"); if (s.length * N(n) > L.maxStringLength) throw new Panic(`string length limit of ${L.maxStringLength} exceeded (raise it with --max-string=<chars>)`, "limit", "memory"); return s.repeat(N(n)); },
     "String.padLeft": (s: string, w: bigint, f: string = " ") => padStr(s, w, f, true),
     "String.padRight": (s: string, w: bigint, f: string = " ") => padStr(s, w, f, false),
     "String.reversed": (s: string) => Array.from(s).reverse().join(""),

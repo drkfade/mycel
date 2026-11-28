@@ -15,8 +15,8 @@ test("let is immutable, var is mutable, inference", async () => {
   assert.match(e[0].suggestion!, /var x/);
 });
 
-test("integer semantics: 64-bit, overflow panics, whole-number division with .div()", async () => {
-  assert.equal(await out(prog(`print(7 / 2)\nprint(-7 / 2)\nprint(7.div(2))\nprint(-7.div(2))\nprint(-7 % 3)\nprint(2 ** 62)`)), "3.5\n-3.5\n3\n-3\n-1\n4611686018427387904");
+test("integer semantics: 64-bit, overflow panics, whole-number division with .div(), floor `%`", async () => {
+  assert.equal(await out(prog(`print(7 / 2)\nprint(-7 / 2)\nprint(7.div(2))\nprint(-7.div(2))\nprint(-7 % 3)\nprint(2 ** 62)`)), "3.5\n-3.5\n3\n-3\n2\n4611686018427387904");
   const r = await exec(prog(`let big = 9223372036854775807\nprint(big + 1)`));
   assert.equal(r.error?.kind, "panic");
   assert.match(r.error!.message, /integer overflow/);

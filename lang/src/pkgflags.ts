@@ -25,7 +25,7 @@ const NATIVE_TRIES = new Set(["mycel", "myc", "ply", "olx", "native"]);
 export const INSTALL_HELP = `ply install — add packages to this project (ply.json + ply.lock)
 
   ply install <package>                 a Mycel package (no flag)
-  ply install --<lang> <package> [...]  a package from another language (flag BEFORE the package)
+  ply install --<lang> <package> [...]  a package from another language (the flag may go before or after)
   ply install                           everything in ply.json / ply.lock
 
   runtime      flags                        package examples
@@ -50,12 +50,13 @@ export function splitVersion(spec: string, runtime?: Runtime): { name: string; v
 }
 
 /**
- * Parse the arguments after `ply install|remove|update|why` in their original order (the flag must come first, and
- * order is lost once flags are collected into a map). Throws a PlyError that says exactly what to type.
+ * Parse the arguments after `ply install|remove|update|why`. The runtime flag may stand anywhere: `ply install --py
+ * requests`, `ply install requests --py` and `ply install requests flask --py` are the same command. Two different
+ * runtimes in one command are refused with the two commands to type instead. Throws a PlyError that says what to type.
  */
 export function parsePkgArgs(cmd: string, args: string[]): PkgRequest {
-  let runtime: Runtime | undefined, flag: string | undefined;
-  const packages: PkgRequest["packages"] = [];
+  // pass 1: classify every word, keeping positions (needed to say which package went with which flag)
+  const words: ({ flag: string; runtime: Runtime } | { spec: string })[] = [];
   for (const a of args) {
     if (a === "--") break;
     if (a.startsWith("--")) {
@@ -64,17 +65,35 @@ export function parsePkgArgs(cmd: string, args: string[]): PkgRequest {
       const rt = BY_FLAG.get(f);
       if (!rt) {
         if (NATIVE_TRIES.has(f)) throw new PlyError(`\`--${f}\`: Mycel packages take no flag — write \`ply ${cmd} <package>\``);
-        const near = closest(f, [...BY_FLAG.keys()]);
+        const near = closest(f, [...BY_FLAG.keys(), ...OPTIONS]);
         throw new PlyError(`unknown flag \`--${f}\`${near ? ` — did you mean \`--${near}\`?` : ""}\n  accepted: ${ALL_FLAGS.join(" ")}\n  (a Mycel package takes no flag; see \`ply help install\`)`);
       }
-      if (packages.length) throw new PlyError(`put the flag before the package: \`ply ${cmd} --${f} ${packages.map((p) => p.spec).join(" ")}\``);
-      if (runtime && runtime !== rt) throw new PlyError(`one runtime per command: \`--${flag}\` and \`--${f}\` name different languages — run \`ply ${cmd}\` once per language`);
-      runtime = rt; flag = f;
+      words.push({ flag: f, runtime: rt });
       continue;
     }
     if (a.startsWith("-") && a.length > 1) throw new PlyError(`unknown option \`${a}\` — runtime flags use two dashes, e.g. \`--py\` (see \`ply help install\`)`);
-    packages.push({ spec: a, ...splitVersion(a, runtime) });
+    words.push({ spec: a });
   }
+  const flags = words.filter((w): w is { flag: string; runtime: Runtime } => "flag" in w);
+  const specs = words.filter((w): w is { spec: string } => "spec" in w).map((w) => w.spec);
+  const runtimes = [...new Set(flags.map((f) => f.runtime))];
+  if (runtimes.length > 1) {
+    // Which packages belong to which flag: a command that ends in a flag is written "packages then flag"
+    // (`requests --py lodash --npm`), otherwise "flag then packages" (`--py requests --npm lodash`).
+    const trailing = "flag" in words[words.length - 1];
+    const groups = new Map<Runtime, { flag: string; specs: string[] }>();
+    for (const f of flags) if (!groups.has(f.runtime)) groups.set(f.runtime, { flag: f.flag, specs: [] });
+    let pending: string[] = [], cur: Runtime | undefined;
+    for (const w of words) {
+      if ("flag" in w) { if (trailing) { groups.get(w.runtime)!.specs.push(...pending); pending = []; } cur = w.runtime; continue; }
+      if (trailing || !cur) pending.push(w.spec); else groups.get(cur)!.specs.push(w.spec);
+    }
+    if (pending.length) groups.get(flags[0].runtime)!.specs.unshift(...pending);
+    const lines = [...groups].map(([rt, g]) => `  ply ${cmd} --${g.flag} ${(g.specs.length ? g.specs : specs).join(" ") || "<package>"}    (${runtimeLabel(rt)})`);
+    throw new PlyError(`one runtime per command: ${[...groups].map(([rt, g]) => `\`--${g.flag}\` is ${runtimeLabel(rt)}`).join(", ")} — run one command per language:\n${lines.join("\n")}`);
+  }
+  const runtime = runtimes[0], flag = flags[0]?.flag;
+  const packages: PkgRequest["packages"] = specs.map((spec) => ({ spec, ...splitVersion(spec, runtime) }));
   if (runtime && !packages.length && cmd !== "install") throw new PlyError(`\`ply ${cmd} --${flag}\` needs a package name`);
   if (runtime && !packages.length) throw new PlyError(`\`ply install --${flag}\` needs a package name: e.g. \`ply install --${flag} ${RUNTIMES.find((r) => r.runtime === runtime)!.pkg.split(/\s+/)[0]}\``);
   return { runtime, flag, packages };

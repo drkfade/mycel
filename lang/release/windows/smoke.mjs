@@ -33,7 +33,7 @@ function run(label, args, { status = 0, output, error, input = '', alias = false
   return r;
 }
 try {
-  run('version', ['--version'], { output: 'mycel 0.1.0\n' });
+  run('version', ['--version'], { output: 'mycel 0.2.0\n' });
   run('welcome', [], { output: /Welcome to Mycel/ });
   fs.mkdirSync(path.join(work, 'nested'));
   fs.writeFileSync(path.join(work, 'nested/greet.olx'), 'pub fn message() -> String => "hello Ω"\r\n');
@@ -71,7 +71,7 @@ try {
   run('project tests', ['test'], { output: /1 passed, 0 failed/ });
   run('package help', ['help', 'install'], { output: /install/ });
   if (!bundled) {
-    run('ply alias version', ['--version'], { alias: true, output: 'mycel 0.1.0\n' });
+    run('ply alias version', ['--version'], { alias: true, output: 'mycel 0.2.0\n' });
     run('ply alias project', ['run'], { alias: true, output: 'Hello, world!\n' });
   }
   const library = path.join(work, 'library'); fs.mkdirSync(path.join(library, 'src'), { recursive: true });

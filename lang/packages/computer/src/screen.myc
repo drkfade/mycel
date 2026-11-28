@@ -1,0 +1,32 @@
+## Screen dimensions, screenshots, and pixel colour inspection.
+## Requires `screen` capability (`--allow-screen` or `"capabilities": { "screen": true }`).
+## Saving an `Image` to a file also requires `--allow-write` (`capabilities.fs.write`).
+
+pub struct Size {
+  let width: Int, height: Int
+  fn toString() -> String => f"{self.width}x{self.height}"
+}
+
+pub struct Color {
+  let r: Int, g: Int, b: Int, a: Int
+
+  fn hex() -> String {
+    let rs = self.r.clamp(0, 255).toRadix(16).padLeft(2, "0").upper()
+    let gs = self.g.clamp(0, 255).toRadix(16).padLeft(2, "0").upper()
+    let bs = self.b.clamp(0, 255).toRadix(16).padLeft(2, "0").upper()
+    return f"#{rs}{gs}{bs}"
+  }
+
+  fn toString() -> String => f"rgba({self.r}, {self.g}, {self.b}, {self.a})"
+}
+
+pub extern class Image {
+  get width: Int
+  get height: Int
+  fn save(path: String) -> Result<Void, Error>
+  fn pixel(x: Int, y: Int) -> Result<Color, Error>
+}
+
+pub extern fn size() -> Result<Size, Error>
+pub extern fn screenshot() -> Result<Image, Error>
+pub extern fn pixel(x: Int, y: Int) -> Result<Color, Error>

@@ -47,7 +47,7 @@ for (const [name, data] of entries) {
 }
 const size = directory.reduce((n, b) => n + b.length, 0);
 const end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50); end.writeUInt16LE(entries.length, 8); end.writeUInt16LE(entries.length, 10); end.writeUInt32LE(size, 12); end.writeUInt32LE(offset, 16);
-const name = 'Mycel-0.1.0-alpha-windows-x64.zip';
+const name = 'Mycel-0.2.0-alpha-windows-x64.zip';
 fs.writeFileSync(path.join(dist, name), Buffer.concat([...locals, ...directory, end]));
 const hash = sha(path.join(dist, name));
 fs.writeFileSync(path.join(dist, name + '.sha256'), `${hash}  ${name}\n`);

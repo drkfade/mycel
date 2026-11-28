@@ -1,16 +1,16 @@
-// Destructuring (from Swift, Rust and Python): take a value apart where you name it.
+# Destructuring (from Swift, Rust and Python): take a value apart where you name it.
 let (city, temp) = ("Pune", 31)
 print(f"{city}: {temp}C")
 
-// in a parameter: the function receives one (String, Int) pair
+# in a parameter: the function receives one (String, Int) pair
 fn label((name, score): (String, Int)) -> String => f"{name} scored {score}"
 print(label(("Ada", 98)))
 
-// in a closure: ((a, b)) => ... takes one pair; (a, b) => ... would take two values
+# in a closure: ((a, b)) => ... takes one pair; (a, b) => ... would take two values
 let scores = {"Ada": 98, "Bob": 75}
 print(scores.entries.map(((name, s)) => f"{name}={s}").join(", "))
 
-// struct fields by name
+# struct fields by name
 struct Point { let x: Int, y: Int }
 fn manhattan(Point{x, y}: Point) => x.abs + y.abs
 print(manhattan(Point(x: 3, y: -4)))

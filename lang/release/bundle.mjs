@@ -23,6 +23,7 @@ function boot(nodeRequire, data) {
     },
   };
   function load(id) {
+    if (!Object.hasOwn(data.mods, id) && Object.hasOwn(data.mods, id + '/index')) id += '/index'; // require("./dir")
     if (cache[id]) return cache[id].exports;
     if (!Object.hasOwn(data.mods, id)) throw new Error('Missing bundled module: ' + id);
     const filename = path.join(root, id + '.js');
@@ -43,6 +44,8 @@ function boot(nodeRequire, data) {
           }
         } };
       }
+      // A package's native/*.cjs lives on disk (ply_modules); the SEA's built-in require only loads built-ins.
+      if (path.isAbsolute(name)) return nodeRequire('node:module').createRequire(name)(name);
       return nodeRequire(name);
     };
     new Function('module', 'exports', 'require', '__dirname', '__filename', data.mods[id])(
@@ -55,6 +58,8 @@ function boot(nodeRequire, data) {
 export function bundle(root = lang) {
   const mods = Object.create(null);
   function visit(id) {
+    if (Object.hasOwn(mods, id)) return;
+    if (!fs.existsSync(path.join(root, id + '.js')) && fs.existsSync(path.join(root, id, 'index.js'))) id += '/index';
     if (Object.hasOwn(mods, id)) return;
     const code = fs.readFileSync(path.join(root, id + '.js'), 'utf8')
       .replace(/^#![^\n]*\n/, '').replace(/^\/\/# sourceMappingURL=.*$/gm, '');
@@ -71,8 +76,12 @@ export function bundle(root = lang) {
   for (const file of fs.readdirSync(path.join(root, 'std')).sort()) {
     if (/\.(myc|olx)$/.test(file)) std['std/' + file] = fs.readFileSync(path.join(root, 'std', file), 'utf8');
   }
+  // Python/npm helper scripts (task 55): child processes need them, foreign.ts writes them out from here
+  for (const file of fs.readdirSync(path.join(root, 'tools')).sort()) {
+    if (/\.(py|js)$/.test(file)) std['tools/' + file.replace(/\.js$/, '')] = fs.readFileSync(path.join(root, 'tools', file), 'utf8');
+  }
   const data = { mods, std };
-  return `// Mycel 0.1 alpha. Copyright 2026 drky. All rights reserved.\n` +
+  return `// Mycel 0.2 alpha. Copyright 2026 drky. All rights reserved.\n` +
     `const app = (${boot.toString()})(require, ${JSON.stringify(data)});\n` +
     // exitCode, not process.exit(): exiting while a server's handles are still closing aborts Node on Windows
     // ("Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\\win\\async.c", exit 0xC0000409,

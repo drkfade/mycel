@@ -1,0 +1,6 @@
+fn is_question(text: String) -> Bool {
+    return text.endsWith("?")
+}
+
+print(is_question("Is it raining?"))
+print(is_question("It is raining."))

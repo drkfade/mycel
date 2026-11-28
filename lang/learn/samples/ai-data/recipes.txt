@@ -1,0 +1,71 @@
+500 names, 49 characters, 76103 training characters, 8358 held out
+model: 2 blocks, 4 heads, width 32, 29169 numbers to learn
+step    0  train loss 3.902  held-out loss 3.892
+step   10  train loss 3.097  held-out loss 3.225
+step   20  train loss 2.962  held-out loss 2.933
+step   30  train loss 2.789  held-out loss 2.767
+step   40  train loss 2.684  held-out loss 2.578
+step   50  train loss 2.583  held-out loss 2.546
+step   60  train loss 2.417  held-out loss 2.479
+step   70  train loss 2.371  held-out loss 2.174
+step   80  train loss 2.342  held-out loss 2.138
+step   90  train loss 2.126  held-out loss 2.086
+step  100  train loss 2.065  held-out loss 2.217
+step  110  train loss 1.990  held-out loss 1.965
+step  120  train loss 1.847  held-out loss 1.782
+step  130  train loss 1.778  held-out loss 1.715
+step  140  train loss 1.937  held-out loss 1.530
+step  150  train loss 1.613  held-out loss 1.968
+step  160  train loss 1.436  held-out loss 1.535
+step  170  train loss 1.456  held-out loss 1.557
+step  180  train loss 1.561  held-out loss 1.404
+step  190  train loss 1.394  held-out loss 1.409
+step  200  train loss 1.397  held-out loss 1.263
+step  210  train loss 1.265  held-out loss 1.220
+step  220  train loss 1.256  held-out loss 1.184
+step  230  train loss 1.383  held-out loss 1.337
+step  240  train loss 1.241  held-out loss 1.188
+step  250  train loss 1.019  held-out loss 1.120
+step  260  train loss 1.092  held-out loss 1.048
+step  270  train loss 1.147  held-out loss 1.045
+step  280  train loss 1.085  held-out loss 0.972
+step  290  train loss 0.990  held-out loss 1.031
+step  300  train loss 0.819  held-out loss 0.990
+step  310  train loss 0.923  held-out loss 1.004
+step  320  train loss 0.958  held-out loss 1.063
+step  330  train loss 0.868  held-out loss 0.836
+step  340  train loss 0.922  held-out loss 0.884
+step  350  train loss 0.864  held-out loss 1.083
+step  360  train loss 0.898  held-out loss 0.856
+step  370  train loss 0.717  held-out loss 0.835
+step  380  train loss 0.853  held-out loss 0.817
+step  390  train loss 0.847  held-out loss 0.774
+step  400  train loss 0.794  held-out loss 0.825
+step  410  train loss 0.816  held-out loss 0.858
+step  420  train loss 0.847  held-out loss 0.798
+step  430  train loss 0.689  held-out loss 0.794
+step  440  train loss 0.733  held-out loss 0.760
+step  450  train loss 0.845  held-out loss 0.761
+step  460  train loss 0.798  held-out loss 0.755
+step  470  train loss 0.697  held-out loss 0.830
+step  480  train loss 0.712  held-out loss 0.828
+step  490  train loss 0.810  held-out loss 0.768
+step  500  train loss 0.611  held-out loss 0.717
+step  510  train loss 0.630  held-out loss 0.731
+step  520  train loss 0.730  held-out loss 0.668
+step  530  train loss 0.638  held-out loss 0.688
+step  540  train loss 0.620  held-out loss 0.696
+step  550  train loss 0.666  held-out loss 0.600
+step  560  train loss 0.627  held-out loss 0.648
+step  570  train loss 0.646  held-out loss 0.674
+step  580  train loss 0.575  held-out loss 0.670
+step  590  train loss 0.709  held-out loss 0.705
+step  600  train loss 0.708  held-out loss 0.616
+ rekit pasrottttes.
+0 flat slags with sal
+30 detese flour. Siym
+8 ttemon soup and egs
+Bage rugar rescit. Ch
+Garoto with conim thy
+Mix parmskes. Season 
+Rrletes oats, eggs, l

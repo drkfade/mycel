@@ -1,0 +1,10 @@
+{
+  "name": "tensor",
+  "version": "0.1.0",
+  "description": "Tensors and autograd for Mycel: n-d arrays, fast maths, gradients, optimizers, seeded random numbers",
+  "main": "src/lib.myc",
+  "native": "native/index.cjs",
+  "capabilities": {
+    "compute": true
+  }
+}

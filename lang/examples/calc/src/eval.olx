@@ -1,5 +1,5 @@
-import parser.{Expr, parse}
-import std.math
+from parser import Expr, parse
+import math
 
 pub fn evaluate(e: Expr, env: {String: Float}) -> Result<Float, Error> {
   return match e {

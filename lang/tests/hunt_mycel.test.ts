@@ -74,7 +74,7 @@ print(fs.extension("Makefile"))
   assert.equal(r.output, ".baz\n\n.gz\n\n");
 });
 
-test("BQ-mycel-9: std.re.Regex Match.start/end use character codepoint offsets so s[m.start..m.end] matches m.text on strings with emoji", { skip: "open: lang/src/stdlib.ts taken by BUILDER-P8" }, async () => {
+test("BQ-mycel-9: std.re.Regex Match.start/end use character codepoint offsets so s[m.start..m.end] matches m.text on strings with emoji", { skip: "open: std.re Match.start/end codepoint offsets in stdlib.ts" }, async () => {
   const src = `
 import std.re
 let s = "🌍 hello world"
@@ -87,7 +87,7 @@ print(m.start, m.end, s[m.start..m.end])
   assert.equal(res.output, "8 13 world\n");
 });
 
-test("BQ-mycel-10: std.task.race([]) panics on empty task list instead of hanging forever", { skip: "open: lang/src/stdlib.ts taken by BUILDER-P8" }, async () => {
+test("BQ-mycel-10: std.task.race([]) panics on empty task list instead of hanging forever", { skip: "open: std.task.race([]) empty task list handling in stdlib.ts" }, async () => {
   const src = `
 import std.task
 async fn main() {
@@ -176,15 +176,15 @@ test("BQ-mycel-15: LSP server STD_MODULES includes files and db with documentati
   assert.match(srvText, /"db"/);
 });
 
-test("BQ-mycel-16: newcomer diagnostics suggest std.http for requests, std.time for datetime, sorted for sort, append for extend, indexOf for find", () => {
+test("BQ-mycel-16: newcomer diagnostics suggest import http for requests, import time for datetime, sorted for sort, append for extend, indexOf for find", () => {
   const r1 = check({ source: "import requests" });
   assert.equal(r1.ok, false);
-  assert.match(r1.diagnostics[0]?.message ?? "", /import std\.http/);
+  assert.match(r1.diagnostics[0]?.message ?? "", /import http/);
   assert.doesNotMatch(r1.diagnostics[0]?.message ?? "", /import py/);
 
   const r2 = check({ source: "import datetime" });
   assert.equal(r2.ok, false);
-  assert.match(r2.diagnostics[0]?.message ?? "", /import std\.time/);
+  assert.match(r2.diagnostics[0]?.message ?? "", /import time/);
 
   const r3 = check({ source: "let xs = [2, 1]\nxs.sort()" });
   assert.equal(r3.ok, false);
@@ -319,9 +319,9 @@ test("BQ-mycel-24: property call E0400 suggests dropping parentheses, and newcom
 
   const r3 = check({ source: "import subprocess\nimport sqlite3\nimport unittest" });
   assert.equal(r3.ok, false);
-  assert.match(r3.diagnostics[0]?.message ?? "", /std\.process/);
-  assert.match(r3.diagnostics[1]?.message ?? "", /std\.sqlite/);
-  assert.match(r3.diagnostics[2]?.message ?? "", /std\.test/);
+  assert.match(r3.diagnostics[0]?.message ?? "", /import process/);
+  assert.match(r3.diagnostics[1]?.message ?? "", /import sqlite/);
+  assert.match(r3.diagnostics[2]?.message ?? "", /import test/);
 
   const r4 = check({ source: 'let lines = "a\\nb".splitlines()' });
   assert.equal(r4.ok, false);
@@ -421,7 +421,7 @@ print("name" in obj, "missing" in obj, obj.contains("age"))
   assert.equal(res.output, "true true false\ntrue false true\n");
 });
 
-test("BQ-mycel-31: parser diagnoses Python 2 print without parens, let a, b tuple pattern, and std module import habits", () => {
+test("BQ-mycel-31: parser diagnoses Python 2 print without parens, let a, b tuple pattern, and built-in module import habits", () => {
   const r1 = check({ source: 'print "hello"' });
   assert.equal(r1.ok, false);
   assert.match(r1.diagnostics[0]?.message ?? "", /`print` is called with parentheses/);
@@ -432,9 +432,9 @@ test("BQ-mycel-31: parser diagnoses Python 2 print without parens, let a, b tupl
 
   const r3 = check({ source: "import pathlib\nimport hashlib\nimport uuid" });
   assert.equal(r3.ok, false);
-  assert.match(r3.diagnostics[0]?.message ?? "", /std\.files/);
-  assert.match(r3.diagnostics[1]?.message ?? "", /std\.crypto/);
-  assert.match(r3.diagnostics[2]?.message ?? "", /std\.crypto/);
+  assert.match(r3.diagnostics[0]?.message ?? "", /import files/);
+  assert.match(r3.diagnostics[1]?.message ?? "", /import crypto/);
+  assert.match(r3.diagnostics[2]?.message ?? "", /import crypto/);
 });
 
 
@@ -584,14 +584,15 @@ test("BQ-mycel-43: parser diagnoses Python `class Foo:` and `class Foo(Bar)` cla
   assert.match(r2.diagnostics[0]?.message ?? "", /`\(Base\)` inheritance is Python — Mycel writes `class Foo: Bar { \.\.\. }`/);
 });
 
-test("BQ-mycel-44: parser and habits diagnose `with`, `from`, `del`, `delete` statement habits", () => {
+test("BQ-mycel-44: parser and habits diagnose `with`, bracketed `from`, `del`, `delete` statement habits", () => {
   const r1 = check({ source: "with open(\"x\") as f:\n  pass" });
   assert.equal(r1.ok, false);
   assert.match(r1.diagnostics[0]?.message ?? "", /`with` is Python/);
 
-  const r2 = check({ source: "from std.math import sqrt" });
+  const r2 = check({ source: "from math import [sqrt]" });
   assert.equal(r2.ok, false);
-  assert.match(r2.diagnostics[0]?.message ?? "", /`from \.\.\. import` is Python/);
+  assert.match(r2.diagnostics[0]?.message ?? "", /takes no brackets/);
+  assert.equal(check({ source: "from math import sqrt" }).ok, true);
 
   const r3 = check({ source: "del x" });
   assert.equal(r3.ok, false);

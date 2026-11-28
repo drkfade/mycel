@@ -1,0 +1,35 @@
+import tensor
+from tensor import Tensor
+
+fn main() {
+    let x = tensor.scalar(1.0).requireGrad()
+    let inner = x * 3.0 + 2.0
+    let y = inner.pow(2.0)
+    y.backward()
+    print(f"x = {x.item()}, 3x + 2 = {inner.item()}, y = {y.item()}")
+    print(f"dy/dx = {x.grad.item()}")
+
+    let inputs = tensor.table([[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]])
+    let targets = tensor.table([[0.0], [1.0], [1.0], [1.0]])
+    let weights = tensor.zeros([2, 1]).requireGrad()
+    let bias = tensor.zeros([1]).requireGrad()
+    let opt = tensor.adam([weights, bias], 0.1)
+    for step in 0..=300 {
+        opt.zeroGrad()
+        let guess = (inputs.matmul(weights) + bias).sigmoid()
+        let error = guess - targets
+        let loss = (error * error).mean()
+        if step % 100 == 0 {
+            print(f"step {step:>3}  loss {loss.item():.4f}")
+        }
+        loss.backward()
+        opt.step()
+    }
+    let answers = (inputs.matmul(weights) + bias).sigmoid().toList()
+    let labels = ["0 OR 0", "0 OR 1", "1 OR 0", "1 OR 1"]
+    for i in 0..4 {
+        print(f"{labels[i]} -> {answers[i]:.2f}")
+    }
+    let w = weights.toList()
+    print(f"weights: {w[0]:.2f} {w[1]:.2f} bias {bias.item():.2f}")
+}

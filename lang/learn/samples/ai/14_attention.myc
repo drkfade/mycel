@@ -1,0 +1,56 @@
+import tensor
+from tensor import Tensor
+
+fn cell(v: Float) -> String {
+    if v < -100000000.0 {
+        return "    -inf"
+    }
+    return f"{v:>8.2f}"
+}
+
+fn show(label: String, t: Tensor) {
+    print(label)
+    let values = t.toList()
+    let cols = t.shape[1]
+    for r in 0..t.shape[0] {
+        var line = ""
+        for c in 0..cols {
+            line += cell(values[r * cols + c])
+        }
+        print(line)
+    }
+}
+
+fn attend(x: Tensor, wq: Tensor, wk: Tensor, wv: Tensor) -> Tensor {
+    let q = x.matmul(wq)
+    let k = x.matmul(wk)
+    let v = x.matmul(wv)
+    let scale = 1.0 / (3.0).sqrt()
+    let scores = q.matmul(k.transpose()) * scale
+    let masked = scores + tensor.causalMask(4)
+    let weights = masked.softmax()
+    return weights.matmul(v)
+}
+
+fn main() {
+    let x = tensor.table([[1.0, 0.0, 1.0], [0.0, 2.0, 0.0], [1.0, 1.0, 0.0], [0.0, 1.0, 1.0]])
+    let wq = tensor.table([[1.0, 0.0, 1.0], [0.0, 1.0, 0.0], [1.0, 0.0, 0.0]])
+    let wk = tensor.table([[0.0, 1.0, 0.0], [1.0, 0.0, 1.0], [0.0, 1.0, 1.0]])
+    let wv = tensor.table([[1.0, 1.0, 0.0], [0.0, 1.0, 1.0], [1.0, 0.0, 1.0]])
+    show("queries (what each word looks for)", x.matmul(wq))
+    show("keys (what each word offers)", x.matmul(wk))
+    show("values (what each word passes on)", x.matmul(wv))
+    let q = x.matmul(wq)
+    let k = x.matmul(wk)
+    let scale = 1.0 / (3.0).sqrt()
+    let scores = q.matmul(k.transpose()) * scale
+    show("scores: query dot key, scaled", scores)
+    show("after the causal mask", scores + tensor.causalMask(4))
+    let weights = (scores + tensor.causalMask(4)).softmax()
+    show("attention weights (each row adds to 1)", weights)
+    show("output", attend(x, wq, wk, wv))
+    let changed = tensor.table([[1.0, 0.0, 1.0], [0.0, 2.0, 0.0], [1.0, 1.0, 0.0], [5.0, 5.0, 5.0]])
+    let before = attend(x, wq, wk, wv).rows(0, 3).toList()
+    let after = attend(changed, wq, wk, wv).rows(0, 3).toList()
+    print(f"first three outputs unchanged when the last word changes: {before == after}")
+}

@@ -1,0 +1,7 @@
+{
+  "name": "tiny_gpt",
+  "version": "0.1.0",
+  "description": "A character-level transformer (a tiny GPT) trained from scratch with the tensor package",
+  "main": "src/main.myc",
+  "dependencies": { "tensor": "path:../../../packages/tensor" }
+}

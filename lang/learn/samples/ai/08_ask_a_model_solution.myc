@@ -1,0 +1,29 @@
+import env
+import http
+import json
+
+fn fake_model(req: http.Request) -> http.Response {
+    return http.jsonResponse(json.parse("{\"choices\": [{\"message\": {\"role\": \"assistant\", \"content\": \"Spam is unwanted junk email.\"}}]}").unwrap())
+}
+
+async fn ask(url: String, question: String) -> String {
+    var headers: {String: String} = {"Content-Type": "application/json"}
+    let key = env.get("MYCEL_AI_KEY").unwrapOr(nil)
+    if key != nil {
+        headers["Authorization"] = f"Bearer {key}"
+    }
+    let body = json.encode({"model": "demo", "messages": [{"role": "user", "content": question}]})
+    let reply = (await http.post(url, body, headers)).unwrap()
+    let data = reply.json().unwrap()
+    return data.get("choices")?.at(0)?.get("message")?.get("content")?.asString ?? "no answer"
+}
+
+async fn main() {
+    let server = (await http.serve(0, fake_model)).unwrap()
+    let url = f"http://127.0.0.1:{server.port}/v1/chat/completions"
+    let answer = await ask(url, "What is spam?")
+    print("Model says:", answer)
+    let again = await ask(url, "Is email spam?")
+    print("Model says:", again)
+    server.stop()
+}

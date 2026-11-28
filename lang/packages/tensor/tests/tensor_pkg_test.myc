@@ -1,0 +1,79 @@
+import std.test
+import tensor
+
+test "create, print and reshape" {
+  let a = tensor.table([[1.0, 2.0], [3.0, 4.0]])
+  test.assertEq(a.shape, [2, 2])
+  test.assertEq(a.size, 4)
+  test.assertEq(a.toList(), [1.0, 2.0, 3.0, 4.0])
+  test.assertEq(a.toString(), "tensor([[1.0, 2.0],\n        [3.0, 4.0]])")
+  test.assertEq(tensor.arange(6).reshape([2, 3]).shape, [2, 3])
+  test.assertEq(tensor.zeros([2]).toList(), [0.0, 0.0])
+  test.assertEq(tensor.ones([2, 1]).shape, [2, 1])
+}
+
+test "maths with broadcasting and matmul" {
+  let a = tensor.table([[1.0, 2.0], [3.0, 4.0]])
+  let b = tensor.table([[5.0, 6.0], [7.0, 8.0]])
+  test.assertEq(a.matmul(b).toList(), [19.0, 22.0, 43.0, 50.0])
+  test.assertEq((a + tensor.array([10.0, 20.0])).toList(), [11.0, 22.0, 13.0, 24.0])
+  test.assertEq((a * 2.0 - 1.0).toList(), [1.0, 3.0, 5.0, 7.0])
+  test.assertEq(a.sum().item(), 10.0)
+  test.assertEq(a.sum(0).toList(), [4.0, 6.0])
+  test.assertEq(a.mean(1).toList(), [1.5, 3.5])
+  test.assertEq(a.max(0).toList(), [3.0, 4.0])
+  test.assertEq(a.transpose().toList(), [1.0, 3.0, 2.0, 4.0])
+  test.assertEq(a.indexSelect([1, 0]).toList(), [3.0, 4.0, 1.0, 2.0])
+  test.assertEq(a.rows(1, 2).toList(), [3.0, 4.0])
+}
+
+test "autograd matches hand maths" {
+  let x = tensor.scalar(1.0).requireGrad()
+  let y = (x * 3.0 + 2.0).pow(2.0)
+  y.backward()
+  test.assertEq(y.item(), 25.0)
+  test.assertEq(x.grad.item(), 30.0)
+  x.zeroGrad()
+  test.assertEq(x.grad.item(), 0.0)
+}
+
+test "seeded random numbers repeat" {
+  tensor.seed(42)
+  let first = tensor.randn([3]).toList()
+  let r1 = tensor.random()
+  tensor.seed(42)
+  test.assertEq(tensor.randn([3]).toList(), first)
+  test.assertEq(tensor.random(), r1)
+  tensor.seed(1)
+  var hits = 0
+  for i in 0..1000 {
+    if tensor.sampleList([0.2, 0.8]) == 1 {
+      hits += 1
+    }
+  }
+  test.assertTrue(hits > 740 && hits < 860)
+}
+
+test "adam learns y = 2x + 1" {
+  tensor.seed(3)
+  let m = tensor.scalar(0.0).requireGrad()
+  let c = tensor.scalar(0.0).requireGrad()
+  let opt = tensor.adam([m, c], 0.1)
+  let xs = tensor.array([0.0, 1.0, 2.0, 3.0])
+  let ys = tensor.array([1.0, 3.0, 5.0, 7.0])
+  for step in 0..300 {
+    opt.zeroGrad()
+    let err = xs * m + c - ys
+    (err * err).mean().backward()
+    opt.step()
+  }
+  test.assertTrue((m.item() - 2.0).abs < 0.05)
+  test.assertTrue((c.item() - 1.0).abs < 0.1)
+}
+
+test "unary minus and scalar operators" {
+  let a = tensor.array([1.0, -2.0])
+  test.assertEq((-a).toList(), [-1.0, 2.0])
+  test.assertEq((a / 2.0).toList(), [0.5, -1.0])
+  test.assertEq((a - tensor.array([1.0, 1.0])).toList(), [0.0, -3.0])
+}

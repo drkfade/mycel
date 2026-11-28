@@ -5,13 +5,11 @@
   "patterns": [{ "include": "#illegal" }, { "include": "#comments" }, { "include": "#strings" }, { "include": "#numbers" }, { "include": "#modules" }, { "include": "#declarations" }, { "include": "#keywords" }, { "include": "#types" }, { "include": "#calls" }, { "include": "#operators" }],
   "repository": {
     "illegal": { "patterns": [
-      { "name": "invalid.illegal.error.syntax.mycel", "match": "#\\[|\\{:\\}|\\bthen\\b|\\belif\\b" }
+      { "name": "invalid.illegal.error.syntax.mycel", "match": "(?<=[=(,\\[{:]\\s?)#\\[(?=.*\\]\\s*$)|\\{:\\}|\\bthen\\b|\\belif\\b|/\\*" }
     ] },
     "comments": { "patterns": [
-      { "name": "comment.line.documentation.mycel", "match": "///.*$" },
-      { "name": "comment.block.documentation.mycel", "begin": "/\\*\\*(?!/)", "end": "\\*/" },
-      { "name": "comment.block.mycel", "begin": "/\\*", "end": "\\*/" },
-      { "name": "comment.line.double-slash.mycel", "match": "//.*$" }
+      { "name": "comment.line.documentation.mycel", "match": "##.*$" },
+      { "name": "comment.line.number-sign.mycel", "match": "#.*$" }
     ] },
     "strings": { "patterns": [
       { "name": "string.quoted.triple.format.mycel", "begin": "\\bf\"\"\"", "end": "\"\"\"", "patterns": [{ "include": "#fstring-body" }] },
@@ -60,7 +58,7 @@
     ] },
     "calls": { "match": "\\b([a-z_][\\p{L}\\p{N}_]*)(?=\\s*\\()", "name": "entity.name.function.call.mycel" },
     "operators": { "patterns": [
-      { "name": "keyword.operator.mycel", "match": "\\.\\.=|\\.\\.\\.|\\.\\.|\\?\\.|\\?\\?=?|\\|>|=>|->|[-+*/%]=?|\\*\\*=?|<<=?|>>=?|[<>]=?|==|!=|&&|\\|\\||[!&|^~?]" },
+      { "name": "keyword.operator.mycel", "match": "\\.\\.=|\\.\\.\\.|\\.\\.|\\?\\.|\\?\\?=?|\\|>|=>|->|//=?|[-+*/%]=?|\\*\\*=?|<<=?|>>=?|[<>]=?|==|!=|&&|\\|\\||[!&|^~?]" },
       { "name": "keyword.operator.assignment.mycel", "match": "=" }
     ] }
   }

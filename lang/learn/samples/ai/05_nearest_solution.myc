@@ -1,0 +1,29 @@
+let examples = [
+    (1.0, 1.0, "cat"),
+    (1.5, 2.0, "cat"),
+    (6.0, 5.0, "dog"),
+    (7.0, 7.0, "dog")
+]
+
+fn distance(ax: Float, ay: Float, bx: Float, by: Float) -> Float {
+    let dx = ax - bx
+    let dy = ay - by
+    return (dx * dx + dy * dy).sqrt()
+}
+
+fn classify(x: Float, y: Float) -> String {
+    var best_label = "?"
+    var best_distance = 1000.0
+    for (ex, ey, label) in examples {
+        let d = distance(x, y, ex, ey)
+        if d < best_distance {
+            best_distance = d
+            best_label = label
+        }
+    }
+    return best_label
+}
+
+print(classify(2.0, 1.5))
+print(classify(6.2, 5.8))
+print(classify(0.5, 0.5))

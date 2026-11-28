@@ -6,12 +6,15 @@ import { CompileError, Diagnostic, Source, formatDiagnostic } from "./diag";
 import { parse } from "./parser";
 import { Checker } from "./checker";
 import { ModuleInfo } from "./types";
+import { ForeignInfo, bindingSource, resolveForeignImports } from "./foreign";
 
 export interface ResolvedModule { file: string; text: string; isStd: boolean }
 export interface ProgramInput {
   entry: { name: string; file: string; text: string };
   /** Find a module by dotted name ("models.user", "std.io"). */
   resolve(name: string): ResolvedModule | undefined;
+  /** the project's Python/npm packages (ply.lock "foreign"): `import requests` resolves from there */
+  foreign?: ForeignInfo;
 }
 export interface Program {
   checker: Checker;
@@ -21,15 +24,23 @@ export interface Program {
 }
 
 export const STD_DIR = path.resolve(__dirname, "..", "..", "std");
+export const STD_MODULES = new Set([
+  "crypto", "csv", "db", "env", "files", "foreign", "fs", "http", "io",
+  "json", "log", "math", "process", "pycompat", "re", "sqlite", "task",
+  "test", "time", "ui", "web",
+]);
 
 /** Resolver for a project: src root, std library, installed packages, host-supplied virtual modules. */
-export function makeResolver(opts: { roots: string[]; packages?: Record<string, string>; virtual?: Record<string, string>; stdDir?: string }) {
+export function makeResolver(opts: { roots: string[]; packages?: Record<string, string>; virtual?: Record<string, string>; stdDir?: string; foreign?: ForeignInfo }) {
   const stdDir = opts.stdDir ?? STD_DIR;
-  return (name: string): ResolvedModule | undefined => {
+  const resolve = (name: string): ResolvedModule | undefined => {
     if (opts.virtual && name in opts.virtual) return { file: `<${name}>`, text: opts.virtual[name], isStd: true };
+    if (opts.virtual && STD_MODULES.has(name) && `std.${name}` in opts.virtual) return { file: `<std.${name}>`, text: opts.virtual[`std.${name}`], isStd: true };
+    // `python:requests` / `npm:lodash` / `java:java.time.LocalDate`: generated bindings (foreign.ts)
+    if (name.includes(":")) { const t = opts.foreign && bindingSource(opts.foreign, name); return t ? { file: `<${name}>`, text: t, isStd: false } : undefined; }
     const parts = name.split(".");
-    if (name === "prelude" || parts[0] === "std") {
-      const f = withExt(path.join(stdDir, ...(name === "prelude" ? ["prelude"] : parts.slice(1))), fs.existsSync);
+    if (name === "prelude" || parts[0] === "std" || STD_MODULES.has(name)) {
+      const f = withExt(path.join(stdDir, ...(name === "prelude" ? ["prelude"] : parts[0] === "std" ? parts.slice(1) : parts)), fs.existsSync);
       if (f) return { file: f, text: fs.readFileSync(f, "utf8"), isStd: true };
       return undefined;
     }
@@ -45,6 +56,16 @@ export function makeResolver(opts: { roots: string[]; packages?: Record<string, 
     }
     return undefined;
   };
+  (resolve as any).shadowOf = (modName: string): string | undefined => {
+    const p = modName.split(".");
+    if (p.length !== 1 || !STD_MODULES.has(p[0])) return undefined;
+    for (const root of opts.roots) {
+      const f = withExt(path.join(root, p[0]), fs.existsSync);
+      if (f) return path.relative(process.cwd(), f) || f;
+    }
+    return undefined;
+  };
+  return resolve;
 }
 
 /** Loads an entry module and everything it imports (dependencies first). Reusable: the REPL adds entries one at a time. */
@@ -54,7 +75,7 @@ export class Loader {
   private loaded = new Map<string, { ast: A.Module; file: string; isStd: boolean; deps: string[] }>();
   private registered = new Set<string>();
   fatal = false;
-  constructor(private resolve: (name: string) => ResolvedModule | undefined) {}
+  constructor(private resolve: (name: string) => ResolvedModule | undefined, private foreign?: ForeignInfo) {}
 
   private fail(e: unknown) {
     if (e instanceof CompileError) { this.diagnostics.push(...e.diagnostics); this.fatal = true; return; }
@@ -64,21 +85,92 @@ export class Loader {
   private load(name: string, r: ResolvedModule | { file: string; text: string; isStd: boolean; ast?: A.Module }, stack: string[], order: string[]) {
     if (this.loaded.has(name)) { if (!order.includes(name) && !this.registered.has(name)) order.push(name); return; }
     stack.push(name);
-    let ast: A.Module;
-    try { ast = (r as any).ast ?? parse(new Source(r.file, r.text)); } catch (e) { this.fail(e); stack.pop(); return; }
+    let rawAst: A.Module;
+    try { rawAst = (r as any).ast ?? parse(new Source(r.file, r.text)); } catch (e) { this.fail(e); stack.pop(); return; }
+    // Expand `import pkg.{sub1, sub2}` and `from pkg import sub1, sub2` when `pkg.sub1` resolves to a Mycel submodule.
+    const expandedDecls: A.Decl[] = [];
+    for (const d of rawAst.decls) {
+      if (d.k === "import" && d.names && !d.flag && !(d as any).foreign) {
+        const base = d.path.join(".");
+        const rest: typeof d.names = [];
+        for (const n of d.names) {
+          const sub = `${base}.${n.name}`;
+          if (this.registered.has(sub) || this.resolve(sub)) {
+            expandedDecls.push({ k: "import", path: [...d.path, n.name], alias: n.alias, all: false, pub: d.pub, span: n.span });
+          } else {
+            rest.push(n);
+          }
+        }
+        if (rest.length) expandedDecls.push({ ...d, names: rest });
+        else if (rest.length === 0 && d.names.length === 0) expandedDecls.push(d);
+        continue;
+      }
+      expandedDecls.push(d);
+    }
+    let ast: A.Module = expandedDecls.length === rawAst.decls.length && expandedDecls.every((x, i) => x === rawAst.decls[i]) ? rawAst : { ...rawAst, decls: expandedDecls };
     if (ast.script && stack.length > 1) {
       this.diagnostics.push({ severity: "error", code: "E0206", message: `module ${name} has top-level statements`, span: ast.script, why: "statements outside a function only run in the file you start, not in files that are imported", suggestion: "put them in a function (`fn setup() { ... }`) and call it from the main file" });
       this.fatal = true;
     }
+    const isInternal = name.includes(":");
+    if (!r.isStd && !isInternal) {
+      for (const d of ast.decls) {
+        if (d.k !== "import") continue;
+        if (!d.flag && !d.quoted && d.path[0] === "std" && d.path.length === 2 && STD_MODULES.has(d.path[1])) {
+          const mod = d.path[1];
+          const fix = d.fromForm ? `from ${mod} import ${(d.names ?? []).map((x) => x.name + (x.alias ? ` as ${x.alias}` : "")).join(", ")}` : `import ${mod}${d.alias ? ` as ${d.alias}` : ""}`;
+          this.diagnostics.push({ severity: "warning", code: "W0202", span: d.span, message: `\`std.\` prefix on built-in modules is deprecated`, suggestion: `write \`${fix}\`` });
+        }
+        if (!d.flag && !d.quoted && d.path[0] !== "std" && STD_MODULES.has(d.path[0])) {
+          const sf = (this.resolve as any).shadowOf?.(d.path[0]);
+          if (sf) {
+            this.diagnostics.push({
+              severity: "error", code: "E0208", span: d.span,
+              message: `module name \`${d.path[0]}\` conflicts with Mycel's built-in module \`${d.path[0]}\` (also exists at ${sf})`,
+              why: "built-in modules have no `std.` prefix and cannot be shadowed by a project file",
+              suggestion: `rename \`${sf}\` (for example \`my_${d.path[0]}.myc\`) and import that`,
+            });
+            this.fatal = true;
+          }
+        }
+        if (d.braceForm && d.names) {
+          const fix = `from ${d.path.join(".")} import ${d.names.map((x) => x.name + (x.alias ? ` as ${x.alias}` : "")).join(", ")}`;
+          this.diagnostics.push({ severity: "warning", code: "W0201", span: d.span, message: `\`import ${d.path.join(".")}.{...}\` is deprecated`, suggestion: `write \`${fix}\`` });
+        }
+      }
+      // foreign packages: rewrite `import requests --python` to its binding, or report missing/wrong flags
+      const fd = resolveForeignImports(ast, this.foreign, (n) => this.registered.has(n) || !!this.resolve(n));
+      if (fd.length) { this.diagnostics.push(...fd); this.fatal = true; }
+      // Expand `from javax.swing import JFrame --java` into per-class module imports
+      const javaDecls: A.Decl[] = [];
+      let expandedJava = false;
+      for (const d of ast.decls) {
+        if (d.k === "import" && (d as any).foreign?.runtime === "java" && d.fromForm && d.names?.length) {
+          const mod = (d as any).foreign.module as string;
+          const tail = mod.split(".").pop() ?? "";
+          if (!/^[A-Z]/.test(tail)) {
+            expandedJava = true;
+            for (const n of d.names) {
+              const cls = `${mod}.${n.name}`;
+              javaDecls.push({ k: "import", path: [`java:${cls}`], alias: n.alias ?? n.name, all: false, pub: d.pub, span: n.span, foreign: { runtime: "java", module: cls } } as any);
+            }
+            continue;
+          }
+        }
+        javaDecls.push(d);
+      }
+      if (expandedJava) ast = { ...ast, decls: javaDecls };
+    }
     const deps: string[] = [];
     this.loaded.set(name, { ast, file: r.file, isStd: r.isStd, deps });
+    const canon = (modPath: string, d: Extract<A.Decl, { k: "import" }>) => (!d.flag && !d.quoted && STD_MODULES.has(modPath) ? `std.${modPath}` : modPath);
     for (const d of ast.decls) {
       if (d.k !== "import") continue;
       // `import a.b.c` is module a.b.c, or member c of module a.b
       const full = d.path.join(".");
-      let target: string | undefined = full;
-      let res = this.registered.has(full) ? ({} as ResolvedModule) : this.resolve(full);
-      if (!res && d.path.length > 1) { target = d.path.slice(0, -1).join("."); res = this.registered.has(target) ? ({} as ResolvedModule) : this.resolve(target); }
+      let target: string | undefined = canon(full, d);
+      let res = this.registered.has(target) ? ({} as ResolvedModule) : this.resolve(target);
+      if (!res && d.path.length > 1) { target = canon(d.path.slice(0, -1).join("."), d); res = this.registered.has(target) ? ({} as ResolvedModule) : this.resolve(target); }
       if (!res || !target) continue; // the checker reports "cannot find module"
       if (stack.includes(target)) {
         this.diagnostics.push({ severity: "error", code: "E0205", message: `circular import: ${[...stack.slice(stack.indexOf(target)), target].join(" -> ")}`, span: d.span, why: "modules cannot import each other in a loop, because neither could be initialised first", suggestion: "move the shared declarations into a third module that both import" });
@@ -133,7 +225,8 @@ export class Loader {
 }
 
 export function compileProgram(input: ProgramInput): Program {
-  const loader = new Loader(input.resolve);
+  const loader = new Loader(input.resolve, input.foreign);
+  loader.checker.foreignNames = input.foreign ? Object.values(input.foreign.lock.python ?? {}).concat(Object.values(input.foreign.lock.npm ?? {})).concat(Object.values(input.foreign.lock.java ?? {})).flatMap((p) => p.provides) : [];
   const mods = loader.add(input.entry.name, input.entry);
   const diagnostics = [...loader.diagnostics, ...loader.checker.diags];
   const ok = !loader.fatal && !diagnostics.some((d) => d.severity === "error");

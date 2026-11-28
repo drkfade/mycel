@@ -1,0 +1,5 @@
+## System clipboard text access.
+## Requires `clipboard` capability (`--allow-clipboard` or `"capabilities": { "clipboard": true }`).
+
+pub extern fn get() -> Result<String, Error>
+pub extern fn set(text: String) -> Result<Void, Error>

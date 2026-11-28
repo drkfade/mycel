@@ -1,4 +1,4 @@
-// Assertions for `test "name" { ... }` blocks. A failed assertion fails the test with both values shown.
+# Assertions for `test "name" { ... }` blocks. A failed assertion fails the test with both values shown.
 pub extern fn assertEq(actual: Any, expected: Any, message: String = "")
 pub extern fn assertNe(actual: Any, unexpected: Any, message: String = "")
 pub fn assert(condition: Bool, message: String = "assertion failed") { if !condition { panic(message) } }

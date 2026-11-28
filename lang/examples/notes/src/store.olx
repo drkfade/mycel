@@ -1,5 +1,5 @@
-import std.db
-import std.files
+import db
+import files
 import models.Note
 
 pub class Notebook {

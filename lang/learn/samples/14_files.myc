@@ -1,11 +1,11 @@
-import std.fs
+import fs
 
 file = "data.txt"
 
-// Write text to a file
+# Write text to a file
 fs.writeText(file, "Hello from Mycel files!\nLine 2")
 
-// Read text back
+# Read text back
 match fs.readText(file) {
   .Ok(content) => {
     print("Read successfully:")
@@ -14,6 +14,6 @@ match fs.readText(file) {
   .Err(e) => print(f"Error: {e.message}")
 }
 
-// Clean up
+# Clean up
 fs.remove(file)
 print("Cleaned up file.")

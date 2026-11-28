@@ -1,8 +1,8 @@
-Mycel 0.1 alpha (0.1.0) for macOS Apple silicon (arm64)
+Mycel 0.2 alpha (0.2.0) for macOS Apple silicon (arm64)
 Copyright (c) 2026 drky. Open source: Apache-2.0 OR MIT, at your option.
 
 Install
-Download Mycel-0.1.0-alpha.pkg from https://ol1x.xyz/mycel/ when published.
+Download Mycel-0.2.0-alpha.pkg from https://ol1x.xyz/mycel/ when published.
 This preview package is unsigned and not notarized. Try right-click -> Open.
 On macOS versions that do not offer that override, try opening it once, then
 System Settings -> Privacy & Security -> Open Anyway. Confirm only if you trust

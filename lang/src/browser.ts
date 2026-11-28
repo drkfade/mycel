@@ -7,7 +7,9 @@
  * answer given so far; Math.random is seeded per session so a re-run makes the same choices (a guessing game keeps
  * its secret number). The page replaces its output panel with the full transcript of each run.
  */
-import { compile, execute, RunResult } from "./host";
+import { execute, RunResult, wrapGenerated } from "./host";
+import { compileProgram, makeResolver } from "./modules";
+import { generate } from "./codegen";
 import { DiagnosticJson } from "./diag";
 import { renderDiagnostics } from "./modules";
 import { Panic, LiveValue } from "./runtime";
@@ -40,10 +42,17 @@ function seeded(seed: number): () => number {
   return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
 
-export async function runSource(source: string, opts: { inputs?: string[]; seed?: number; maxMillis?: number; onOutput?: (t: string) => void; onUi?: (msg: any) => void; live?: boolean } = {}): Promise<BrowserRun> {
+export async function runSource(source: string, opts: { inputs?: string[]; seed?: number; maxMillis?: number; onOutput?: (t: string) => void; onUi?: (msg: any) => void; live?: boolean; files?: Record<string, string> } = {}): Promise<BrowserRun> {
   const t0 = Date.now();
   if (opts.seed !== undefined) Math.random = seeded(opts.seed);
-  const c = compile({ source, file: "main.myc", entryName: "main", liveValues: opts.live });
+  const files = opts.files ?? {};
+  const fallback = makeResolver({ roots: [] });
+  const program = compileProgram({ entry: { name: "main", file: "main.myc", text: source }, resolve: (name) => {
+    if (/^(?!std(?:\.|$)|prelude$|main$)[A-Za-z_][\w]*(?:\.[A-Za-z_][\w]*)*$/.test(name) && Object.hasOwn(files, name))
+      return { file: name.replace(/\./g, "/") + ".myc", text: files[name], isStd: false };
+    return fallback(name);
+  } });
+  const c = program.ok ? { ...wrapGenerated(generate(program.checker, program.modules, { live: opts.live ? "main" : undefined }), "main"), program } : { program, entry: "main", hostNative: {} };
   const diagnostics = c.program.diagnostics.filter((d) => !(d.span && /^\/std\//.test(d.span.src.name)));
   const diagnosticsText = diagnostics.length ? renderDiagnostics(diagnostics) : "";
   const inputs = [...(opts.inputs ?? [])];
@@ -68,4 +77,4 @@ export async function runSource(source: string, opts: { inputs?: string[]; seed?
   return { ok: r.ok || needInput, output: chunks.join(""), needInput, ui: activeUi ?? undefined, diagnostics: r.diagnostics, diagnosticsText, error: err, millis: Date.now() - t0, live: r.live };
 }
 
-export const VERSION = "0.1.0";
+export const VERSION = "0.2.0";
