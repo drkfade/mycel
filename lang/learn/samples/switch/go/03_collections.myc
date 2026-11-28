@@ -1,0 +1,16 @@
+# Slices, maps, brace closures, and .extract()
+let nums = [2, 6, 3, 9, 4, 8]
+let big = nums.filter { it > 5 }
+let doubled = big.map { it * 2 }
+let total = big.reduce(0) { (a, b) => a + b }
+print(f"big={big}, doubled={doubled}, total={total}")
+
+let counts = {"ok": 3, "err": 1}
+for (k, v) in counts {
+  print(f"{k}={v}")
+}
+print(counts.getOr("warn", 0), "ok" in counts)
+
+# Pull metric numbers out of text without regexp
+let spikes = "cpu=4% mem=72% disk=91%".extract(Int) { it > 5 }
+print(spikes)

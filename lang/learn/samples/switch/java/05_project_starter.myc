@@ -1,0 +1,7 @@
+# Mini CLI tool starter: log latency analyzer
+import env
+
+let args = env.args()
+let line = if len(args) > 0 { args.join(" ") } else { "GET 12ms POST 140ms ping 4ms search 65ms" }
+# TODO: extract latencies > 10ms, report count, average, and slow (>50ms)
+print(line)

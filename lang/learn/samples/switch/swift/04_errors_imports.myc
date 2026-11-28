@@ -1,0 +1,21 @@
+# Optionals, Result/?, plain imports, and tensor via ply
+import http
+import json
+import tensor
+
+fn parseMinutes(raw: String) -> Result<Int, String> {
+  if let m = raw.toInt() {
+    if m > 0 { return Ok(m) }
+    return Err("minutes must be > 0")
+  }
+  return Err(f"bad number: {raw}")
+}
+
+let maybe: Int? = 24
+if let n = maybe { print(f"got {n}") }
+print(maybe ?? 0)
+print(parseMinutes("24"), parseMinutes("bad"))
+
+let res = http.text("ok", status: 200)
+let t = tensor.array([4.0, 5.0, 6.0])
+print(res.status, json.encode({"mean": t.mean().item()}))

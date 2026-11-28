@@ -1,0 +1,20 @@
+# Optionals, Result/?, plain imports, and tensor via ply
+import http
+import json
+import tensor
+
+fn parseReading(raw: String) -> Result<Int, String> {
+  if let v = raw.toInt() {
+    if v >= 0 { return Ok(v) }
+    return Err("negative reading")
+  }
+  return Err(f"bad reading: {raw}")
+}
+
+let fallback: Int? = nil
+print(fallback ?? -1)
+print(parseReading("42"), parseReading("err"))
+
+let res = http.text("ok", status: 200)
+let t = tensor.array([1.0, 2.0, 3.0])
+print(res.status, json.encode({"sum": t.sum().item()}))

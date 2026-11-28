@@ -137,7 +137,8 @@ function collectPackageNatives(modules: ModuleInfo[], packages?: Record<string, 
 }
 
 function hasAnyPackageGrant(declared: Capabilities | undefined, granted: Capabilities | undefined): boolean {
-  if (declared?.compute) return true;
+  // compute alone is pure maths with no outside access; any other declared capability still needs its grant
+  if (declared?.compute && Object.keys(declared).every((k) => k === "compute")) return true;
   if (!declared || !granted) return false;
   if (declared.control && granted.control) return true;
   if (declared.screen && granted.screen) return true;

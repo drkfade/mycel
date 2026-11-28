@@ -1,5 +1,5 @@
 // Renders site/public/mycel/learn/lessons.js into the static part of site/public/mycel/learn/index.html
-// (between <!-- tour:start --> and <!-- tour:end -->), so every level, lesson and challenge is readable without
+// (between <!-- tour:start --> and <!-- tour:end -->), so every unit, node, lesson and challenge is readable without
 // JavaScript and by search engines. `node lang/learn/build-tour.mjs` writes; check-tour.mjs verifies sync and stamps.
 import fs from "node:fs";
 import path from "node:path";
@@ -31,33 +31,58 @@ export function render(lessons, levels = []) {
     items: lessons.map((l, idx) => ({ l, idx })).filter(({ l }) => l.level === lv.num)
   }));
 
-  const levelListHtml = byLevel.map(({ lv, items }) => {
+  const pathUnitsHtml = byLevel.map(({ lv, items }) => {
     const lvPts = items.reduce((a, { l }) => a + (l.points || 0), 0);
-    const lis = items.map(({ l, idx }) => {
-      const chTag = l.challenge ? ` <span class="ch-tag">challenge</span>` : "";
-      const ptsTag = `<span class="pts-tag">${l.points} pts</span>`;
-      return `<li><a href="#${l.id}">${idx + 1}. ${esc(l.title)}</a>${chTag} ${ptsTag}</li>`;
-    }).join("");
-    const skipBtn = lv.num > 0
-      ? ` <button type="button" class="skip-btn" data-unlock="${lv.num}" hidden>Skip ahead</button>`
-      : "";
-    return `<div class="lvl-card" data-level="${lv.num}">
-<div class="lvl-head">
-  <div class="lvl-title"><b>Level ${lv.num} · ${esc(lv.title)}</b> <span class="lvl-pts">0 / ${lvPts} pts</span></div>
-  <div class="lvl-meta"><span class="lvl-badge" data-badge="${lv.num}">${esc(lv.badge)} badge</span>${skipBtn}</div>
-</div>
-<p class="lvl-desc">${esc(lv.desc)}</p>
-<div class="lvl-bar" aria-hidden="true"><div class="lvl-fill" data-fill="${lv.num}"></div></div>
-<ol>${lis}</ol>
+    const lanes = [0, -1, 0, 1];
+    const nodesHtml = items.map(({ l, idx }, stepIdx) => {
+      const lane = lanes[stepIdx % lanes.length];
+      const tag = l.challenge ? "Challenge" : `${l.points} XP`;
+      return `<div class="path-row" data-lane="${lane}" data-node-row="${l.id}">
+  <a href="#${l.id}" class="path-node${l.challenge ? " is-challenge" : ""}${lv.num > 0 ? " is-locked" : ""}" data-node="${l.id}" data-go="${idx}" data-level="${lv.num}">
+    <span class="node-dot" aria-hidden="true">${l.challenge ? "★" : idx + 1}</span>
+    <span class="node-info">
+      <span class="node-title">${idx + 1}. ${esc(l.title)}</span>
+      <span class="node-meta">Step ${stepIdx + 1} of ${items.length} &middot; ${tag}</span>
+    </span>
+    <span class="node-pill">${lv.num === 0 && stepIdx === 0 ? "Start" : lv.num > 0 ? "Locked" : "Ready"}</span>
+  </a>
 </div>`;
+    }).join("\n");
+    const skipBtn = lv.num > 0
+      ? `<button type="button" class="skip-btn" data-unlock="${lv.num}" hidden>Skip ahead</button>`
+      : "";
+    return `<section class="unit-card${lv.num > 0 ? " is-locked" : ""}" data-level="${lv.num}" aria-labelledby="unit-h-${lv.num}">
+<div class="unit-head">
+  <div>
+    <div class="unit-title" id="unit-h-${lv.num}"><span class="unit-kicker">Unit ${lv.num}</span> ${esc(lv.title)}</div>
+    <p class="unit-desc">${esc(lv.desc)}</p>
+  </div>
+  <div class="unit-right">
+    <span class="unit-count" data-unit-count="${lv.num}">0 / ${items.length} &middot; ${lvPts} XP</span>
+    <span class="unit-award" data-badge="${lv.num}">${esc(lv.badge)} badge</span>
+    ${skipBtn}
+  </div>
+</div>
+<div class="unit-bar" aria-hidden="true"><div class="unit-fill" data-fill="${lv.num}"></div></div>
+<div class="path-track">
+${nodesHtml}
+</div>
+</section>`;
   }).join("\n");
 
   const body = lessons.map((l, i) => {
     const lv = levels.find((x) => x.num === l.level);
+    const siblings = byLevel.find((b) => b.lv.num === l.level)?.items || [];
+    const stepPos = siblings.findIndex((s) => s.l.id === l.id) + 1;
+    const stepDots = siblings.map((_, sIdx) => `<span class="step-dot${sIdx + 1 === stepPos ? " cur" : ""}"></span>`).join("");
     const meta = lv
-      ? `<p class="lesson-meta">Level ${lv.num} (${esc(lv.title)}) &middot; ${l.challenge ? "<b>Challenge</b>" : "Lesson"} &middot; ${l.points} pts</p>`
+      ? `<p class="lesson-meta">Unit ${lv.num} (${esc(lv.title)}) &middot; ${l.challenge ? "<b>Challenge</b>" : "Lesson"} &middot; ${l.points} XP</p>`
       : "";
-    return `<section class="lesson${l.challenge ? " is-challenge" : ""}" id="${l.id}" data-level="${l.level ?? 0}" aria-labelledby="h-${l.id}">
+    return `<section class="lesson${l.challenge ? " is-challenge" : ""}" id="${l.id}" data-level="${l.level ?? 0}" data-step="${stepPos}" data-steps="${siblings.length}" aria-labelledby="h-${l.id}">
+<div class="step-bar" data-step-bar="${l.id}">
+  <span class="step-label">Unit ${lv ? lv.num : 0} &middot; Step ${stepPos} of ${siblings.length}</span>
+  <span class="step-dots" aria-hidden="true">${stepDots}</span>
+</div>
 ${meta}
 <h2 id="h-${l.id}" tabindex="-1"><span class="num">${i + 1}.</span> ${esc(l.title)}</h2>
 ${l.text}
@@ -67,18 +92,29 @@ ${l.text}
   }).join("\n");
 
   return `<!-- tour:start -->
-<div id="tour-status" class="tour-status" hidden>
-  <span id="points">0 / ${totalPts} pts</span>
+<div id="learn-hud" class="learn-hud" hidden>
+  <span id="points">0 / ${totalPts} XP</span>
   <span id="badges-summary">0 / ${levels.length} badges</span>
   <span id="progress"></span>
 </div>
-<div id="level-strip" class="level-strip" hidden></div>
-<details id="toc"><summary>All levels &amp; ${lessons.length} lessons <span id="toc-progress"></span></summary>
-<div class="levels-grid">
-${levelListHtml}
+<div id="next-hero" class="next-hero" hidden>
+  <div>
+    <div class="next-hero-meta" id="hero-meta">Up next &middot; Unit 0</div>
+    <h2 class="next-hero-title" id="hero-title">1. Print something</h2>
+    <p class="next-hero-sub" id="hero-sub">Step 1 of 5 &middot; 10 XP</p>
+  </div>
+  <button type="button" class="big-go-btn" id="hero-go-btn">Start lesson &rarr;</button>
 </div>
-</details>
+<div id="view-tabs" class="view-tabs" hidden>
+  <button type="button" class="tab-btn active" id="tab-path" aria-pressed="true">Learning path (${lessons.length})</button>
+  <button type="button" class="tab-btn" id="tab-lesson" aria-pressed="false">Current lesson</button>
+</div>
+<div id="learning-path" class="learning-path" data-total="${lessons.length}">
+${pathUnitsHtml}
+</div>
+<div id="lessons-wrap">
 ${body}
+</div>
 <!-- tour:end -->`;
 }
 
@@ -103,11 +139,22 @@ export function stamp(html) {
   // the tour runs the playground's worker; follow its build stamp so both pages load the same compiler
   const playV = (fs.readFileSync(path.join(mycelDir, "play/index.html"), "utf8").match(/worker\.js\?v=([0-9a-z]+)/) || [])[1];
   if (playV) html = html.replace(/data-worker="\/mycel\/play\/worker\.js\?v=[0-9a-z]+"/, `data-worker="/mycel/play/worker.js?v=${playV}"`);
-  for (const a of ["site.css", "learn/lessons.js", "learn/tour.js", "docs/docs.js"]) {
+  for (const a of [
+    "site.css",
+    "learn/learn.css",
+    "learn/ide.css",
+    "learn/ide.js",
+    "learn/progress.js",
+    "learn/lessons.js",
+    "learn/tour.js",
+    "learn/ai/ai-lessons.js",
+    "learn/ai/ai-learn.js",
+    "docs/docs.js"
+  ]) {
     const filePath = path.join(mycelDir, a);
     if (!fs.existsSync(filePath)) continue;
     const v = assetHash(filePath);
-    html = html.replace(new RegExp(`/mycel/${a.replace(".", "\\.")}(\\?v=[0-9a-z]+)?"`, "g"), `/mycel/${a}?v=${v}"`);
+    html = html.replace(new RegExp(`/mycel/${a.replace(/\./g, "\\.")}(\\?v=[0-9a-z]+)?\"`, "g"), `/mycel/${a}?v=${v}"`);
   }
   return html;
 }

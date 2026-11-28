@@ -1,0 +1,15 @@
+# Variables, classes, properties, and functions
+class InvoiceItem {
+  let name: String
+  var qty: Int
+  let unitPrice: Float
+
+  fn total() -> Float {
+    return self.qty * self.unitPrice
+  }
+}
+
+let item = InvoiceItem(name: "Notebook", qty: 3, unitPrice: 4.5)
+print(f"{item.name}: {item.total():.2f}")
+fn discount(amount: Float, rate: Float = 0.1) => amount * (1.0 - rate)
+print(f"after discount: {discount(item.total()):.2f}")

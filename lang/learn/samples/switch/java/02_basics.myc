@@ -1,0 +1,13 @@
+# Variables, types, and functions
+class Counter {
+  var value: Int = 0
+  fn bump(step: Int = 1) -> Int {
+    self.value += step
+    return self.value
+  }
+}
+
+let c = Counter()
+print(c.bump(), c.bump(step: 2))
+fn label(n: Int) => f"count={n}"
+print(label(c.value))

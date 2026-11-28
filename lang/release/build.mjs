@@ -22,7 +22,7 @@ fs.mkdirSync(work, { recursive: true });
 const compiler = path.join(work, 'compiler');
 fs.mkdirSync(compiler, { recursive: true });
 const sourceHashes = {};
-for (const name of ['src', 'std', 'lsp', 'tools', 'package.json', 'tsconfig.json']) {
+for (const name of ['src', 'std', 'lsp', 'tools', 'bridges', 'package.json', 'tsconfig.json']) {
   const dest = path.join(compiler, name);
   fs.rmSync(dest, { recursive: true, force: true });
   fs.cpSync(path.join(lang, name), dest, { recursive: true });
@@ -64,6 +64,8 @@ run('npx', ['--yes', '--cache', path.join(work, 'npm-cache'), 'postject@1.0.0-al
   'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2', '--macho-segment-name', 'NODE_SEA']);
 run('/usr/bin/codesign', ['--sign', '-', '--identifier', 'xyz.ol1x.mycel', binary]);
 fs.chmodSync(binary, 0o755);
-fs.writeFileSync(path.join(dist, 'ply'), '#!/bin/sh\nexec "$(dirname "$0")/mycel" "$@"\n', { mode: 0o755 });
+for (const alias of ['myc', 'ply']) {
+  fs.writeFileSync(path.join(dist, alias), '#!/bin/sh\nexec "$(dirname "$0")/mycel" "$@"\n', { mode: 0o755 });
+}
 checkArtifact(binary);
 run(binary, ['--version']);

@@ -1,4 +1,4 @@
-Mycel 0.2 alpha — Windows x64
+Mycel 0.2.1 alpha — Windows x64
 Copyright (c) 2026 drky. Open source: Apache-2.0 OR MIT, at your option; see LICENSE.txt.
 
 STATUS: Windows executable and installers are untested on real Windows until
@@ -27,7 +27,7 @@ Or run .\mycel.exe directly from the extracted directory.
 
 Files use .myc (.olx also supported). CRLF and LF source files are supported.
 Quote paths containing spaces. mycel.exe is the CLI and package manager;
-ply.cmd is its sibling alias and forwards arguments using normal cmd rules.
+myc.cmd and ply.cmd are its sibling aliases and forward arguments using normal cmd rules.
 From PowerShell: & "C:\path with spaces\mycel.exe" run .\hello.myc
 
 Filesystem/process/network access needs explicit capabilities, for example:

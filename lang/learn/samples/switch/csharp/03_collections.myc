@@ -1,0 +1,16 @@
+# Lists, dictionaries, brace closures, and .extract()
+let nums = [2, 6, 3, 9, 4, 8]
+let big = nums.filter { it > 5 }
+let doubled = big.map { it * 2 }
+let total = big.reduce(0) { (a, b) => a + b }
+print(f"big={big}, doubled={doubled}, total={total}")
+
+let stock = {"pens": 12, "pads": 4}
+for (k, v) in stock {
+  print(f"{k}: {v}")
+}
+print(stock.getOr("tape", 0), "pens" in stock)
+
+# Extract quantities directly without Regex.Matches
+let qtys = "pens:12, clips:3, folders:8".extract(Int) { it > 5 }
+print(qtys)

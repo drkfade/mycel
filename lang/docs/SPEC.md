@@ -1,7 +1,7 @@
 # Mycel language specification (v0.1)
 
 Mycel (formerly Ply) is statically typed, expression-friendly, and compiles to JavaScript that runs in a capability sandbox.
-File extension `.myc` (`.olx` is accepted everywhere); project manifest `ply.json`. A file may be just statements
+File extension `.myc` (`.olx` is accepted everywhere); project manifest `ply.json`; CLI `mycel` (short alias `myc`: `myc file.myc`), package manager `ply`. A file may be just statements
 (`print("hi")` is a whole program): top-level statements become the implicit `fn main()`.
 
 ## 1. Lexical structure
@@ -156,17 +156,16 @@ A file is a module named by its path under `src/` (`src/models/user.olx` → `mo
 or `path:../dir`, installed flat into `ply_modules/` with `ply.lock` (sha256 integrity, verified by `ply install`).
 `ply publish` copies a package to the local registry (`$PLY_REGISTRY`, default `~/.ply/registry`); versions are immutable.
 
-**Python and npm packages**: `ply install requests --python` / `ply install lodash --npm` (the runtime flag may
-stand anywhere among the arguments; two runtimes in one command are refused with both commands to type; Java, Rust,
+**Python, npm and Java packages**: `ply install requests --python` / `ply install lodash --npm` / `ply install group:artifact --java` (the runtime flag may
+stand anywhere among the arguments; two runtimes in one command are refused with both commands to type; Rust,
 Go and Swift flags are recognised and refused as "not supported yet"). ply.json lists exact versions under `python` /
-`npm`; ply.lock's `foreign` section records hashes (sha256 / npm integrity) and the modules each package provides.
-Imports use the module's real name: `import requests`, `import numpy as np`, `from requests import get`,
-`import "@scope/pkg" as pkg` (a name that is not an identifier is quoted and needs `as`). A runtime flag in the import
-(`import json --python`, the same flags as `ply install`, anywhere in the statement) is needed only when two runtimes
-provide the name or for Python's standard library; a Mycel module of the same name wins without a flag. Mistakes are
+`npm` / `java`; ply.lock's `foreign` section records hashes (sha256 / npm integrity) and the modules each package provides.
+Imports use the module's real name: `import requests --python`, `import numpy as np --python`, `from requests import get --python`,
+`from java.util import ArrayList --java`, `import "@scope/pkg" as pkg --npm` (a name that is not an identifier is quoted and needs `as`).
+JDK classes (`java.*`, `javax.*`) need no `ply install`; Maven jars go in `.ply/java/` and require `--allow-java` (`capabilities.java: true`).
+Python/npm calls require `capabilities.packages` (or `--allow-pkg`), because a foreign package runs with the full power of the user's account. Mistakes are
 E0207 with the fix (installed under another name, wrong runtime, not installed). Each foreign module becomes a
-generated Mycel module whose functions return `Result<foreign.Value, Error>` (`foreign`); calling one needs
-`capabilities.packages` (or `--allow-pkg`), because a package runs with the full power of the user's account.
+generated Mycel module whose functions return `Result<foreign.Value, Error>` (`foreign`).
 `mycel translate file.py` turns beginner Python into Mycel using Python's own parser; `pycompat` keeps Python's
 printing and arithmetic where the two languages differ.
 

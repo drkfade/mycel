@@ -92,5 +92,8 @@ console.log('learn-mycel.html self-contained structure and tests PASSED.');
 // (Runs before the tour check, which exits the process on its own failures.)
 await import('./check-ai.mjs');
 
+// The 5-part "Switching to Mycel" lessons under /mycel/for/<lang>/lessons/.
+await import('./check-switch.mjs');
+
 // The interactive tour on /mycel/learn/ and the site pages, through the playground bundle visitors run.
 await import('./check-tour.mjs');

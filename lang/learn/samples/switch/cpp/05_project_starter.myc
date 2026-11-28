@@ -1,0 +1,7 @@
+# Mini CLI tool starter: sensor reading filter
+import env
+
+let args = env.args()
+let raw = if len(args) > 0 { args.join(" ") } else { "s1:4 s2:18 s3:74 s4:29" }
+# TODO: extract readings > 5, print count, average, and peak
+print(raw)

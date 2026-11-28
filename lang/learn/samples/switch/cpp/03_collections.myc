@@ -1,0 +1,16 @@
+# Vectors, maps, brace closures, and .extract()
+let nums = [2, 6, 3, 9, 4, 8]
+let big = nums.filter { it > 5 }
+let doubled = big.map { it * 2 }
+let total = big.reduce(0) { (a, b) => a + b }
+print(f"big={big}, doubled={doubled}, total={total}")
+
+let sensors = {"temp": 24, "volt": 12}
+for (k, v) in sensors {
+  print(f"{k}={v}")
+}
+print(sensors.getOr("rpm", 0), "temp" in sensors)
+
+# Extract integers directly without <regex> or std::istringstream
+let readings = "t=4ms ok=12ms warn=88ms".extract(Int) { it > 5 }
+print(readings)

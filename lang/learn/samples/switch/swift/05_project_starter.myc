@@ -1,0 +1,7 @@
+# Mini CLI tool starter: split-time analyzer
+import env
+
+let args = env.args()
+let raw = if len(args) > 0 { args.join(" ") } else { "lap1 285s lap2 310s lap3 268s" }
+# TODO: extract split seconds > 60, compute average and fastest
+print(raw)

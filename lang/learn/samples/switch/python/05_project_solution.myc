@@ -1,0 +1,20 @@
+# Mini CLI tool solution: expense line analyzer
+import env
+import json
+
+fn summarize(raw: String) -> Result<String, String> {
+  let nums = raw.extract(Int) { it > 5 }
+  if len(nums) == 0 {
+    return Err("no expenses over 5 found")
+  }
+  let total = nums.reduce(0) { (a, b) => a + b }
+  let best = max(nums)
+  return Ok(json.encode({"count": len(nums), "over5": nums, "total": total, "max": best}))
+}
+
+let args = env.args()
+let raw = if len(args) > 0 { args.join(" ") } else { "coffee 4 lunch 14 snack 3 book 22" }
+match summarize(raw) {
+  .Ok(summary) => print(summary)
+  .Err(msg) => print(f"error: {msg}")
+}

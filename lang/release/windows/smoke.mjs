@@ -19,8 +19,9 @@ function run(label, args, { status = 0, output, error, input = '', alias = false
   if (alias && !bundled) {
     if (process.platform !== 'win32') throw new Error('The Windows alias needs Windows');
     command = process.env.ComSpec ?? path.join(process.env.SystemRoot, 'System32/cmd.exe');
+    const shim = typeof alias === 'string' ? alias : 'ply.cmd';
     // Only fixed smoke arguments are joined. Production process execution never uses a shell.
-    argv = ['/d', '/s', '/c', `""${path.join(path.dirname(artifact), 'ply.cmd')}" ${args.map(a => '"' + a + '"').join(' ')}"`];
+    argv = ['/d', '/s', '/c', `""${path.join(path.dirname(artifact), shim)}" ${args.map(a => '"' + a + '"').join(' ')}"`];
   }
   // verbatim for the cmd.exe alias: Node would otherwise re-quote the whole /c string (first real-Windows run:
   // '""D:\\…\\ply.cmd" "--version""' is not recognized as an internal or external command).
@@ -33,7 +34,7 @@ function run(label, args, { status = 0, output, error, input = '', alias = false
   return r;
 }
 try {
-  run('version', ['--version'], { output: 'mycel 0.2.0\n' });
+  run('version', ['--version'], { output: 'mycel 0.2.1\n' });
   run('welcome', [], { output: /Welcome to Mycel/ });
   fs.mkdirSync(path.join(work, 'nested'));
   fs.writeFileSync(path.join(work, 'nested/greet.olx'), 'pub fn message() -> String => "hello Ω"\r\n');
@@ -71,8 +72,10 @@ try {
   run('project tests', ['test'], { output: /1 passed, 0 failed/ });
   run('package help', ['help', 'install'], { output: /install/ });
   if (!bundled) {
-    run('ply alias version', ['--version'], { alias: true, output: 'mycel 0.2.0\n' });
-    run('ply alias project', ['run'], { alias: true, output: 'Hello, world!\n' });
+    run('ply alias version', ['--version'], { alias: 'ply.cmd', output: 'mycel 0.2.1\n' });
+    run('ply alias project', ['run'], { alias: 'ply.cmd', output: 'Hello, world!\n' });
+    run('myc alias version', ['--version'], { alias: 'myc.cmd', output: 'mycel 0.2.1\n' });
+    run('myc alias project', ['run'], { alias: 'myc.cmd', output: 'Hello, world!\n' });
   }
   const library = path.join(work, 'library'); fs.mkdirSync(path.join(library, 'src'), { recursive: true });
   fs.writeFileSync(path.join(library, 'ply.json'), JSON.stringify({ name: 'supply', version: '1.0.0' }));

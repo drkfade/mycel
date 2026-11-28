@@ -1,0 +1,25 @@
+# Optionals, Result/?, plain imports, and tensor via ply
+import http
+import json
+import tensor
+
+fn parseTimeout(raw: String) -> Result<Int, String> {
+  if let ms = raw.toInt() {
+    if ms > 0 { return Ok(ms) }
+    return Err("timeout must be > 0")
+  }
+  return Err(f"bad timeout: {raw}")
+}
+
+fn doubleTimeout(raw: String) -> Result<Int, String> {
+  let ms = parseTimeout(raw)?
+  return Ok(ms * 2)
+}
+
+let opt: Int? = nil
+print(opt ?? 500)
+print(doubleTimeout("250"), doubleTimeout("abc"))
+
+let reply = http.text("healthy", status: 200)
+let t = tensor.array([1.0, 2.0, 3.0])
+print(reply.status, json.encode({"sum": t.sum().item()}))

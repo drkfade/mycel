@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <installer-gui-script minSpecVersion="2">
-  <title>Mycel 0.2 alpha</title>
+  <title>Mycel 0.2.1 alpha</title>
   <welcome file="welcome.html" mime-type="text/html"/>
   <license file="LICENSE.txt" mime-type="text/plain"/>
   <conclusion file="conclusion.html" mime-type="text/html"/>
@@ -11,5 +11,5 @@
   <choice id="mycel" visible="false" title="Mycel compiler and ply">
     <pkg-ref id="xyz.ol1x.mycel.pkg"/>
   </choice>
-  <pkg-ref id="xyz.ol1x.mycel.pkg" version="0.2.0" onConclusion="none">mycel-core.pkg</pkg-ref>
+  <pkg-ref id="xyz.ol1x.mycel.pkg" version="0.2.1" onConclusion="none">mycel-core.pkg</pkg-ref>
 </installer-gui-script>

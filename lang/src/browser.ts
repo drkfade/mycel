@@ -12,6 +12,7 @@ import { compileProgram, makeResolver } from "./modules";
 import { generate } from "./codegen";
 import { DiagnosticJson } from "./diag";
 import { renderDiagnostics } from "./modules";
+import { EXPLANATIONS, normalizeCode } from "./explain";
 import { Panic, LiveValue } from "./runtime";
 import { dispatchUiEvent } from "./stdlib";
 
@@ -27,11 +28,22 @@ export interface BrowserRun {
   diagnostics: DiagnosticJson[];
   /** Compile errors / warnings rendered like the terminal (with the fix-it lines). */
   diagnosticsText: string;
+  /** Plain-word explanations from lang/src/explain.ts keyed by diagnostic code. */
+  explanations?: Record<string, { code: string; title: string; text: string }>;
   error?: { kind: string; message: string; human: string; line?: number; col?: number };
   millis: number;
   /** with `live`: the value of each binding/value line (Swift playgrounds), for the editor's right-hand column */
   live?: LiveValue[];
 }
+
+export function explainDiagnostic(rawCode: string): { code: string; title: string; text: string; bad?: string; good?: string } | undefined {
+  const code = normalizeCode(rawCode);
+  const entry = EXPLANATIONS[code];
+  if (!entry) return undefined;
+  return { code, title: entry.title, text: entry.text, bad: entry.bad, good: entry.good };
+}
+
+export { EXPLANATIONS };
 
 export function handleUiEvent(msg: { id: string; event: string; value?: string }): any {
   return dispatchUiEvent(msg.id, msg.event, msg.value);
@@ -74,7 +86,14 @@ export async function runSource(source: string, opts: { inputs?: string[]; seed?
   });
   if (!activeUi && (r as any).ui) activeUi = (r as any).ui;
   const err = r.error && !needInput ? { kind: r.error.kind, message: r.error.message, human: r.error.human, line: r.error.trace[0]?.line, col: r.error.trace[0]?.col } : undefined;
-  return { ok: r.ok || needInput, output: chunks.join(""), needInput, ui: activeUi ?? undefined, diagnostics: r.diagnostics, diagnosticsText, error: err, millis: Date.now() - t0, live: r.live };
+  const explanations: Record<string, { code: string; title: string; text: string }> = {};
+  for (const d of r.diagnostics) {
+    if (d.code && !explanations[d.code] && EXPLANATIONS[d.code]) {
+      const e = EXPLANATIONS[d.code];
+      explanations[d.code] = { code: d.code, title: e.title, text: e.text };
+    }
+  }
+  return { ok: r.ok || needInput, output: chunks.join(""), needInput, ui: activeUi ?? undefined, diagnostics: r.diagnostics, diagnosticsText, explanations: Object.keys(explanations).length ? explanations : undefined, error: err, millis: Date.now() - t0, live: r.live };
 }
 
 export const VERSION = "0.2.0";

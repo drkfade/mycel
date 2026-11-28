@@ -27,6 +27,7 @@ function crc32(bytes) {
 }
 const entries = [
   ['mycel.exe', fs.readFileSync(path.join(dist, 'mycel.exe'))],
+  ['myc.cmd', Buffer.from('@echo off\r\n"%~dp0mycel.exe" %*\r\n')],
   ['ply.cmd', Buffer.from('@echo off\r\n"%~dp0mycel.exe" %*\r\n')],
   ...['LICENSE.txt', 'NODE-LICENSE.txt'].map(name => [name, fs.readFileSync(path.join(here, name))]),
   ...['README-windows.txt', 'install.ps1', 'uninstall.ps1'].map(name => [name, fs.readFileSync(path.join(windows, name))]),
@@ -47,7 +48,7 @@ for (const [name, data] of entries) {
 }
 const size = directory.reduce((n, b) => n + b.length, 0);
 const end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50); end.writeUInt16LE(entries.length, 8); end.writeUInt16LE(entries.length, 10); end.writeUInt32LE(size, 12); end.writeUInt32LE(offset, 16);
-const name = 'Mycel-0.2.0-alpha-windows-x64.zip';
+const name = 'Mycel-0.2.1-alpha-windows-x64.zip';
 fs.writeFileSync(path.join(dist, name), Buffer.concat([...locals, ...directory, end]));
 const hash = sha(path.join(dist, name));
 fs.writeFileSync(path.join(dist, name + '.sha256'), `${hash}  ${name}\n`);

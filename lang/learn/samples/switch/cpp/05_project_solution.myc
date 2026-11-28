@@ -1,0 +1,17 @@
+# Mini CLI tool solution: sensor reading filter
+import env
+import json
+
+fn summarizeSensors(raw: String) -> Result<String, String> {
+  let vals = raw.extract(Int) { it > 5 }
+  if len(vals) == 0 { return Err("no readings > 5") }
+  let avg = sum(vals) / len(vals)
+  return Ok(json.encode({"count": len(vals), "values": vals, "avg": avg, "peak": max(vals)}))
+}
+
+let args = env.args()
+let raw = if len(args) > 0 { args.join(" ") } else { "s1:4 s2:18 s3:74 s4:29" }
+match summarizeSensors(raw) {
+  .Ok(report) => print(report)
+  .Err(msg) => print(f"error: {msg}")
+}

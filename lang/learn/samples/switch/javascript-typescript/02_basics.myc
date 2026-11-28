@@ -1,0 +1,14 @@
+# Variables, types, and functions
+let language = "Mycel"
+var counter: Int = 0
+counter += 3
+
+fn greet(who: String, times: Int = 1) -> String {
+  return f"hi {who} x{times}"
+}
+
+let square = (n: Int) => n * n
+
+print(language, counter)
+print(greet("Ada", times: 2))
+print(square(6))

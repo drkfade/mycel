@@ -1,0 +1,25 @@
+# Optionals, Result/?, plain imports, and tensor via ply
+import http
+import json
+import tensor
+
+fn findUser(users: {String: String}, id: String) -> String? {
+  return users.get(id)
+}
+
+fn parseAge(raw: String) -> Result<Int, String> {
+  if let age = raw.toInt() {
+    if age >= 0 { return Ok(age) }
+    return Err("negative age")
+  }
+  return Err(f"bad age: {raw}")
+}
+
+let users = {"u1": "Ada"}
+print(findUser(users, "u1") ?? "guest")
+print(findUser(users, "u9") ?? "guest")
+print(parseAge("28"), parseAge("x"))
+
+let res = http.text("ok", status: 200)
+let t = tensor.array([10.0, 20.0])
+print(res.status, json.encode({"mean": t.mean().item()}))

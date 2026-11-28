@@ -51,7 +51,7 @@ console.log(`Verified Node release signature ${signer}; node.exe SHA-256 ${expec
 // Keep this snapshot separate from the existing macOS release work.
 const compiler = path.join(work, 'compiler'); fs.mkdirSync(compiler, { recursive: true });
 const sources = {};
-for (const name of ['src', 'std', 'lsp', 'tools', 'package.json', 'tsconfig.json']) {
+for (const name of ['src', 'std', 'lsp', 'tools', 'bridges', 'package.json', 'tsconfig.json']) {
   const dest = path.join(compiler, name); fs.rmSync(dest, { force: true, recursive: true });
   fs.cpSync(path.join(lang, name), dest, { recursive: true });
   function hash(file) {

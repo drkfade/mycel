@@ -1,0 +1,18 @@
+# Mini CLI tool solution: safe int extractor and sum
+import env
+import json
+
+fn stats(text: String) -> Result<String, String> {
+  let nums = text.extract(Int) { it > 5 }
+  if len(nums) == 0 { return Err("no integers > 5 found") }
+  let total = nums.reduce(0) { (a, b) => a + b }
+  let prod = nums.reduce(1) { (a, b) => a * b }
+  return Ok(json.encode({"nums": nums, "sum": total, "product": prod}))
+}
+
+let args = env.args()
+let text = if len(args) > 0 { args.join(" ") } else { "batch 12, 45, 3, 19, 8" }
+match stats(text) {
+  .Ok(report) => print(report)
+  .Err(msg) => print(f"error: {msg}")
+}

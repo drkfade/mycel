@@ -19,7 +19,7 @@ fs.rmSync(root, { recursive: true, force: true });
 const bin = path.join(root, 'usr/local/bin');
 const share = path.join(root, 'usr/local/share/mycel');
 fs.mkdirSync(bin, { recursive: true }); fs.mkdirSync(share, { recursive: true });
-for (const name of ['mycel', 'ply']) {
+for (const name of ['mycel', 'myc', 'ply']) {
   checkArtifact(path.join(dist, name));
   fs.copyFileSync(path.join(dist, name), path.join(bin, name));
   fs.chmodSync(path.join(bin, name), 0o755);
@@ -31,10 +31,10 @@ for (const name of ['LICENSE.txt', 'README.txt', 'NODE-LICENSE.txt', 'uninstall.
 for (const dir of ['usr', 'usr/local', 'usr/local/bin', 'usr/local/share', 'usr/local/share/mycel']) fs.chmodSync(path.join(root, dir), 0o755);
 const run = (cmd, args) => execFileSync(cmd, args, { cwd: here, stdio: 'inherit' });
 run('/usr/bin/pkgbuild', ['--root', root, '--install-location', '/', '--ownership', 'recommended',
-  '--identifier', 'xyz.ol1x.mycel.pkg', '--version', '0.2.0', path.join(work, 'mycel-core.pkg')]);
+  '--identifier', 'xyz.ol1x.mycel.pkg', '--version', '0.2.1', path.join(work, 'mycel-core.pkg')]);
 run('/usr/bin/productbuild', ['--distribution', path.join(here, 'Distribution.xml'), '--resources', resources,
-  '--package-path', work, path.join(dist, 'Mycel-0.2.0-alpha.pkg')]);
-run('/usr/sbin/pkgutil', ['--payload-files', path.join(dist, 'Mycel-0.2.0-alpha.pkg')]);
+  '--package-path', work, path.join(dist, 'Mycel-0.2.1-alpha.pkg')]);
+run('/usr/sbin/pkgutil', ['--payload-files', path.join(dist, 'Mycel-0.2.1-alpha.pkg')]);
 // Unsigned is deliberate; pkgutil returns nonzero when no signature is present.
-try { run('/usr/sbin/pkgutil', ['--check-signature', path.join(dist, 'Mycel-0.2.0-alpha.pkg')]); }
+try { run('/usr/sbin/pkgutil', ['--check-signature', path.join(dist, 'Mycel-0.2.1-alpha.pkg')]); }
 catch (e) { if (e.status !== 1) throw e; }

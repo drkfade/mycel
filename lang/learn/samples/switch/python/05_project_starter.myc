@@ -1,0 +1,7 @@
+# Mini CLI tool starter: expense line analyzer
+import env
+
+let args = env.args()
+let raw = if len(args) > 0 { args.join(" ") } else { "coffee 4 lunch 14 snack 3 book 22" }
+# TODO: extract integer amounts > 5, print count, total, and max
+print(f"raw: {raw}")

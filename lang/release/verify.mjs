@@ -16,8 +16,9 @@ const cwd = path.join(root, 'fresh project café');
 const home = path.join(root, 'home');
 const bin = path.join(root, 'bin');
 for (const d of [cwd, home, bin]) fs.mkdirSync(d);
-for (const name of ['mycel', 'ply']) fs.copyFileSync(path.join(path.dirname(input), name), path.join(bin, name));
+for (const name of ['mycel', 'myc', 'ply']) fs.copyFileSync(path.join(path.dirname(input), name), path.join(bin, name));
 const mycel = path.join(bin, 'mycel');
+const myc = path.join(bin, 'myc');
 const ply = path.join(bin, 'ply');
 const env = { PATH: '/usr/bin:/bin', HOME: home, TMPDIR: root, LANG: 'en_US.UTF-8' };
 const receipts = [];
@@ -43,16 +44,29 @@ try {
   }
   console.log('PASS artifact scanner: 4 contamination probes rejected');
   run('no Node on PATH', ['-c', 'command -v node'], { command: '/bin/sh', status: 1, output: '' });
-  run('version', ['--version'], { output: 'mycel 0.2.0\n' });
-  run('welcome', [], { output: /Welcome to Mycel 0\.2\.0/ });
+  run('version', ['--version'], { output: 'mycel 0.2.1\n' });
+  run('welcome', [], { output: /Welcome to Mycel 0\.2\.1/ });
   source('hello.myc', 'print("hi")\n');
   run('hello shorthand', ['hello.myc'], { output: 'hi\n' });
+  run('myc alias version', ['--version'], { command: myc, output: 'mycel 0.2.1\n' });
+  run('myc alias hello', ['hello.myc'], { command: myc, output: 'hi\n' });
   run('new demo', ['new', 'demo'], { output: /created demo/ });
   const demo = path.join(cwd, 'demo');
   run('demo run', ['run'], { dir: demo, output: /Hello/ });
   run('demo test', ['test'], { dir: demo, output: /1 passed, 0 failed/ });
   run('ply help install', ['help', 'install'], { command: ply, output: /--python[\s\S]*--swift/ });
   run('ply run alias', ['run', 'hello.myc'], { command: ply, output: 'hi\n' });
+  run('rust stub rejected honestly', ['install', 'serde_json', '--rust'], { command: ply, dir: demo, status: 2, error: /not supported yet/ });
+  if (spawnSync('java', ['-version'], { env, encoding: 'utf8' }).status === 0) {
+    source('java_test.myc', 'from java.util import ArrayList --java\nlet a = ArrayList()\na.add(3)\nprint(a.size())\n');
+    run('java JDK import in packaged binary', ['run', 'java_test.myc', '--allow-java'], { output: '1\n' });
+    const cacheRoot = path.join(home, '.mycel', 'cache', 'bridges');
+    assert.ok(fs.existsSync(cacheRoot) && fs.readdirSync(cacheRoot).length >= 1, 'Java bridge cache dir missing');
+  }
+  if (spawnSync('python3', ['--version'], { env, encoding: 'utf8' }).status === 0) {
+    source('py_stdlib.myc', 'import json --python\nprint(json.dumps({"ok": true}).asString)\n');
+    run('python stdlib import in packaged binary', ['run', 'py_stdlib.myc', '--allow-pkg=json'], { output: '{"ok": true}\n' });
+  }
 
   const ctx = { self: {} };
   vm.runInNewContext(fs.readFileSync(path.join(here, '../../site/public/mycel/play/examples.js'), 'utf8'), ctx);

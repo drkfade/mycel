@@ -31,7 +31,7 @@ test("init → run → test → fmt --check → build works end to end", () => {
   assert.equal(ply(p, ["build"]).code, 0);
   const built = spawnSync("node", [path.join(p, "build", "app.js")], { encoding: "utf8" });
   assert.equal(built.stdout, "Hello, world!\n");
-  assert.equal(ply(p, ["--version"]).out.trim(), "mycel 0.2.0");
+  assert.equal(ply(p, ["--version"]).out.trim(), "mycel 0.2.1");
 });
 
 test("multi-file project: nested modules, imports, visibility, cycles", () => {
@@ -240,9 +240,11 @@ test("Mycel naming: .myc and .olx import each other, `ply` is an alias, bare `my
   assert.equal(ply(d, ["test"]).code, 0);
 });
 
-test("`mycel file.myc args` runs the file like `python file.py`", () => {
+test("`mycel file.myc args` and `myc file.myc args` run the file directly", () => {
   const d = mk();
   write(path.join(d, "hi.myc"), `import env\nprint(f"hi {env.args()}")\n`);
-  const r = spawnCli(path.resolve(__dirname, "..", "..", "bin", "mycel"), ["hi.myc", "a", "b"], { cwd: d, encoding: "utf8" });
-  assert.equal(r.stdout, 'hi ["a", "b"]\n', r.stderr);
+  for (const cmd of ["mycel", "myc"]) {
+    const r = spawnCli(path.resolve(__dirname, "..", "..", "bin", cmd), ["hi.myc", "a", "b"], { cwd: d, encoding: "utf8" });
+    assert.equal(r.stdout, 'hi ["a", "b"]\n', r.stderr);
+  }
 });

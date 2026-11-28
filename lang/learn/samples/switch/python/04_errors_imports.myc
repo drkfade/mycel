@@ -1,0 +1,24 @@
+# Optionals, Result/?, plain imports, and tensor via ply
+import http
+import json
+import tensor
+
+fn parse_positive(raw: String) -> Result<Int, String> {
+  if let n = raw.toInt() {
+    if n > 0 { return Ok(n) }
+    return Err("must be > 0")
+  }
+  return Err(f"not an integer: {raw}")
+}
+
+fn double_positive(raw: String) -> Result<Int, String> {
+  let n = parse_positive(raw)?
+  return Ok(n * 2)
+}
+
+print(double_positive("21"))
+print(double_positive("oops"))
+
+let reply = http.text("ok", status: 200)
+let weights = tensor.array([1.0, 2.0, 3.0])
+print(reply.status, json.encode({"sum": weights.sum().item()}))

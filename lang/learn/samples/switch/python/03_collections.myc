@@ -1,0 +1,16 @@
+# Lists, maps, brace closures, comprehensions, and .extract()
+nums = [2, 6, 3, 9, 4, 8]
+big = nums.filter { it > 5 }
+doubled = big.map { it * 2 }
+total = big.reduce(0) { (acc, x) => acc + x }
+print(f"big={big}, doubled={doubled}, total={total}")
+
+scores = {"ana": 91, "bo": 78}
+for i, item in ["tea", "cake"] {
+  print(f"{i}: {item}")
+}
+print(scores.get("zoe", 0), "ana" in scores)
+
+# Pull numbers straight out of messy text (no regex)
+amounts = "tea 4, cake 9, coffee 6".extract(Int) { it > 5 }
+print(amounts)

@@ -1,0 +1,17 @@
+# Mini CLI tool solution: invoice quantity parser
+import env
+import json
+
+fn parseInvoice(raw: String) -> Result<String, String> {
+  let qtys = raw.extract(Int) { it > 5 }
+  if len(qtys) == 0 { return Err("no bulk quantities > 5") }
+  let total = qtys.reduce(0) { (a, b) => a + b }
+  return Ok(json.encode({"items": len(qtys), "qtys": qtys, "units": total}))
+}
+
+let args = env.args()
+let raw = if len(args) > 0 { args.join(" ") } else { "pens:12 notebooks:4 erasers:15" }
+match parseInvoice(raw) {
+  .Ok(out) => print(out)
+  .Err(err) => print(f"error: {err}")
+}

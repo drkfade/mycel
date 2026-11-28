@@ -1,0 +1,10 @@
+# Hello from JS / TS to Mycel
+from math import sqrt
+
+let name = "Ada"
+let exact = 7 / 2
+let whole = 7 // 2
+let negDiv = -7 // 2
+let negMod = -7 % 3
+print(f"Hello, {name}! sqrt(25)={sqrt(25.0)}")
+print(f"exact={exact}, whole={whole}, negDiv={negDiv}, negMod={negMod}")

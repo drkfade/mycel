@@ -2,7 +2,7 @@
 
 Mycel is a friendly, typed programming language for your first program and your
 hundredth. It compiles to sandboxed JavaScript and runs on Node, with no runtime
-dependencies. Programs run with `mycel`; packages install with `ply`.
+dependencies. Programs run with `mycel` (or its short alias `myc`: `myc hello.myc`); packages install with `ply`.
 
 ```mycel
 print("hi")

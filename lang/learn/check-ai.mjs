@@ -9,9 +9,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import assert from "node:assert/strict";
-import { lessons } from "./ai-course.mjs";
-import { render, aiPagePath, samplesAiDir } from "./build-ai.mjs";
-import { mycelDir } from "./build-tour.mjs";
+import { lessons, units } from "./ai-course.mjs";
+import { render, renderAiLessonsJs, aiPagePath, aiLessonsJsPath, samplesAiDir } from "./build-ai.mjs";
+import { mycelDir, learnDir } from "./build-tour.mjs";
+import vm from "node:vm";
+import { createRequire } from "node:module";
 import os from "node:os";
 import { datasets, dataDir, transcriptDir, maxFileBytes, maxTotalBytes } from "./ai-data.mjs";
 import { renderDataPage, renderReadme, dataPagePath, readmePath } from "./build-ai-data.mjs";
@@ -122,6 +124,54 @@ if (onDisk === expected) {
   failed++;
   console.error("  ✘ learn/ai/index.html is out of date: run node lang/learn/build-ai.mjs");
 }
+
+const expectedJs = renderAiLessonsJs();
+const onDiskJs = fs.existsSync(aiLessonsJsPath) ? fs.readFileSync(aiLessonsJsPath, "utf8") : "";
+if (onDiskJs === expectedJs) {
+  console.log("  ✔ learn/ai/ai-lessons.js matches build-ai.mjs");
+} else {
+  failed++;
+  console.error("  ✘ learn/ai/ai-lessons.js is out of date: run node lang/learn/build-ai.mjs");
+}
+
+const aiNodes = [...onDisk.matchAll(/data-node="([^"]+)"/g)].map((m) => m[1]);
+if (aiNodes.length === lessons.length && lessons.every((l) => aiNodes.includes(l.id)) && units.length === 3) {
+  console.log(`  ✔ learn/ai/index.html path renders all ${aiNodes.length} lessons across ${units.length} units`);
+} else {
+  failed++;
+  console.error(`  ✘ learn/ai/index.html path nodes (${aiNodes.length}) do not cover all ${lessons.length} lessons`);
+}
+
+// Verify every AI exercise has hints & commonMistakes, and sampleWrong triggers its matching explanation
+const require = createRequire(import.meta.url);
+require(path.join(mycelDir, "play/mycel.js"));
+const progCtx = { self: {}, TextEncoder, TextDecoder, btoa, atob };
+vm.runInNewContext(fs.readFileSync(path.join(learnDir, "progress.js"), "utf8"), progCtx);
+const ML = progCtx.self.MYCEL_LEARN;
+let aiMistakesChecked = 0;
+for (const l of lessons) {
+  if (!l.hints || l.hints.length < 2) { failed++; console.error(`  ✘ AI lesson ${l.id} needs >= 2 hints`); }
+  if (!l.commonMistakes || l.commonMistakes.length < 1) { failed++; console.error(`  ✘ AI lesson ${l.id} needs >= 1 commonMistakes entry`); continue; }
+  const solCode = fs.readFileSync(path.join(samplesAiDir, `${l.exercise.file}.myc`), "utf8").trim();
+  for (const m of l.commonMistakes) {
+    if (!m.sampleWrong || !m.reason || !m.concept) { failed++; console.error(`  ✘ AI lesson ${l.id} commonMistakes missing fields`); continue; }
+    if (m.reason.includes(solCode)) { failed++; console.error(`  ✘ AI lesson ${l.id} commonMistakes reason leaks full solution`); continue; }
+    let got = "";
+    if (l.browserRunnable) {
+      const r = await globalThis.Mycel.runSource(m.sampleWrong, { seed: 7, maxMillis: 5000 });
+      got = (r.output || "").replace(/\s+$/, "");
+      if (r.ok && got === l.exercise.out.trim()) {
+        failed++; console.error(`  ✘ AI lesson ${l.id}: sampleWrong accidentally matched expected output`); continue;
+      }
+    }
+    const matched = ML.matchMistake(l, m.sampleWrong, got);
+    if (matched !== m) {
+      failed++; console.error(`  ✘ AI lesson ${l.id}: sampleWrong did not trigger its commonMistakes entry (${m.concept})`); continue;
+    }
+    aiMistakesChecked++;
+  }
+}
+console.log(`  ✔ AI track: ${aiMistakesChecked} commonMistakes sampleWrong explanations verified`);
 
 const learnIndex = fs.readFileSync(path.join(mycelDir, "learn", "index.html"), "utf8");
 if (learnIndex.includes('href="/mycel/learn/ai/"')) {

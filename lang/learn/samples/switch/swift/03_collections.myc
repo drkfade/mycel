@@ -1,0 +1,17 @@
+# Arrays, dictionaries, brace closures, and .extract()
+let nums = [2, 6, 3, 9, 4, 8]
+let big = nums.filter { it > 5 }
+let doubled = big.map { it * 2 }
+let total = big.reduce(0) { (a, b) => a + b }
+print(f"big={big}, doubled={doubled}, total={total}")
+
+let splits = {"1k": 285, "2k": 292}
+for (k, v) in splits {
+  print(f"{k}: {v}s")
+}
+for i in 0..3 { write(f"{i} ") }
+print("")
+
+# Pull numbers from text cleanly
+let paces = "5k in 24m, 10k in 51m, 3k in 13m".extract(Int) { it > 5 }
+print(paces)

@@ -1,0 +1,22 @@
+# Optionals, Result/?, plain imports, and tensor via ply
+import http
+import json
+import tensor
+
+fn half(n: Int) -> Result<Int, String> {
+  if n % 2 != 0 { return Err(f"{n} is odd") }
+  return Ok(n // 2)
+}
+
+fn quarter(n: Int) -> Result<Int, String> {
+  let h = half(n)?
+  return half(h)
+}
+
+let maybe: Int? = 42
+if let v = maybe { print(f"got {v}") }
+print(quarter(8), quarter(6))
+
+let res = http.text("ok", status: 200)
+let t = tensor.array([1.0, 2.0, 3.0])
+print(res.status, json.encode({"sum": t.sum().item()}))

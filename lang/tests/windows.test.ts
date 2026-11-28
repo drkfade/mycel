@@ -106,17 +106,17 @@ test("both source aliases run CRLF nested mixed-extension imports with literal a
     fs.mkdirSync(path.join(dir, "nested"));
     fs.writeFileSync(path.join(dir, "nested", "greet.olx"), 'pub fn value() -> String => "hi Ω"\r\n');
     fs.writeFileSync(path.join(dir, "main.myc"), 'import nested.greet\r\nimport env\r\nprint(greet.value())\r\nprint(env.args())\r\n');
-    for (const command of ["mycel", "ply"]) {
+    for (const command of ["mycel", "myc", "ply"]) {
       const r = spawnCli(path.join(bin, command), ["run", "main.myc", "--", "a b", "&whoami", "100%"], { cwd: dir, encoding: "utf8" });
       assert.equal(r.status, 0, r.stderr);
       assert.equal(r.stdout, 'hi Ω\n["a b", "&whoami", "100%"]\n');
     }
     if (process.platform === "win32") {
-      for (const command of ["mycel", "ply"]) {
+      for (const command of ["mycel", "myc", "ply"]) {
         const r = spawnSync(process.env.ComSpec ?? "cmd.exe", ["/d", "/s", "/c", `""${path.join(bin, command + ".cmd")}" --version"`], { cwd: dir, encoding: "utf8", windowsHide: true, windowsVerbatimArguments: true });
         // verbatim: Node would otherwise re-quote the /c string ("\"\"C:\\…\\mycel.cmd\" --version\"" is not recognized)
         assert.equal(r.status, 0, r.stderr);
-        assert.equal(r.stdout.trim(), "mycel 0.2.0");
+        assert.equal(r.stdout.trim(), "mycel 0.2.1");
       }
     }
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }

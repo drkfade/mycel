@@ -100,7 +100,22 @@ what it learns. Every file is safe to share: a script made it, the Mycel project
 Together they are ${num(total)} bytes, and each file is under ${num(maxFileBytes / 1024)} KB.</p>
 <p>New here? Start with <a href="/mycel/learn/ai/">the AI track</a>, and do lesson 15 first, so the example and its settings make sense.</p>
 
-<h2>How to use a file</h2>
+<div class="reading-grid" style="margin-top:24px">
+<aside class="page-toc" aria-label="Training data contents">
+ <div class="page-toc-title">On this page</div>
+ <ul>
+  <li><a href="#how-to-use">How to use a file</a></li>
+  <li><a href="#the-sets">The sets</a></li>
+  ${datasets.map((d) => `<li><a href="#${d.id}">${esc(d.title)}</a></li>`).join("\n  ")}
+  <li><a href="#next">Back to the course</a></li>
+ </ul>
+ <div class="toc-actions">
+  <a href="/mycel/learn/ai/">AI track lessons &rarr;</a>
+  <a href="/mycel/learn/">Mycel beginner tour</a>
+ </div>
+</aside>
+<div class="reading-main">
+<h2 id="how-to-use">How to use a file</h2>
 <ol>
 <li>Download a file from the table below and save it in the same folder as your lesson 15 file.</li>
 <li>In that file, change the name in <code>fs.readText("names.txt")</code> to the name of the file you downloaded.</li>
@@ -110,11 +125,11 @@ Together they are ${num(total)} bytes, and each file is under ${num(maxFileBytes
 numbers below come from a full 600-step run on the Mac this page was built on. Your loss may differ a little, because the
 computer's arithmetic and the random numbers can vary between machines.</p>
 
-<h2>The sets</h2>
-<table>
+<h2 id="the-sets">The sets</h2>
+<div class="tblwrap"><table>
 <thead><tr><th>File</th><th>Bytes</th><th>Characters</th><th>What it is</th></tr></thead>
 <tbody>${rows}</tbody>
-</table>
+</table></div>
 <p>The set you train on is up to you. A short set trains fast and repeats itself; a long set takes longer and the model learns more varied text.</p>
 
 ${sections}
@@ -124,6 +139,8 @@ ${sections}
 <p>Lesson 15 of the <a href="/mycel/learn/ai/">AI track</a> has an exercise that trains on one of these files. You can also
 make your own file: any plain text with one item per line works, and the tiny GPT learns its letters and patterns.</p>
 </section>
+</div>
+</div>
 </main>
 
 ${FOOTER}

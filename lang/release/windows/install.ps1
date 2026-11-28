@@ -8,13 +8,13 @@ param([string]$SourceDir = $PSScriptRoot)
     if (-not [Environment]::Is64BitOperatingSystem -or $env:PROCESSOR_ARCHITECTURE -eq 'ARM64' -or $env:PROCESSOR_ARCHITEW6432 -eq 'ARM64') { throw 'This Mycel package requires Windows x64.' }
     $root = Join-Path $env:LOCALAPPDATA 'Mycel'
     $bin = Join-Path $root 'bin'
-    $files = @('mycel.exe', 'ply.cmd', 'LICENSE.txt', 'NODE-LICENSE.txt', 'README-windows.txt', 'install.ps1', 'uninstall.ps1')
+    $files = @('mycel.exe', 'myc.cmd', 'ply.cmd', 'LICENSE.txt', 'NODE-LICENSE.txt', 'README-windows.txt', 'install.ps1', 'uninstall.ps1')
     foreach ($name in $files) {
         if (-not [IO.File]::Exists((Join-Path $SourceDir $name))) { throw "Missing package file: $name" }
     }
     # Check the payload before changing an existing install or PATH.
     $version = & (Join-Path $SourceDir 'mycel.exe') --version
-    if ($LASTEXITCODE -ne 0 -or $version -ne 'mycel 0.2.0') { throw 'Mycel executable smoke test failed.' }
+    if ($LASTEXITCODE -ne 0 -or $version -ne 'mycel 0.2.1') { throw 'Mycel executable smoke test failed.' }
     # User PATH is read and written raw through the registry. [Environment]::GetEnvironmentVariable('Path','User')
     # returns the expanded value and SetEnvironmentVariable writes REG_SZ, which would hard-code entries such as
     # %USERPROFILE%\AppData\Local\Microsoft\WindowsApps on every install, rollback and uninstall.

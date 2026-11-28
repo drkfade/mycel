@@ -1,0 +1,17 @@
+# Mini CLI tool solution: metric threshold checker
+import env
+import json
+
+fn checkAlerts(raw: String) -> Result<String, String> {
+  let values = raw.extract(Int)
+  if len(values) == 0 { return Err("no metric values found") }
+  let alerts = values.filter { it > 50 }
+  return Ok(json.encode({"total": len(values), "alerts": alerts, "peak": max(values)}))
+}
+
+let args = env.args()
+let raw = if len(args) > 0 { args.join(" ") } else { "cpu=14 mem=82 disk=91 swap=3" }
+match checkAlerts(raw) {
+  .Ok(out) => print(out)
+  .Err(err) => print(f"error: {err}")
+}

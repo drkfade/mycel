@@ -1,8 +1,8 @@
-# Mycel 0.2 alpha release build
+# Mycel 0.2.1 alpha release build
 
 Mycel is open source (Apache-2.0 OR MIT, see `lang/LICENSE`); the compiler source
 is published as a repository, not inside the packages. The release deliverable is
-the `.pkg`.
+the `.pkg` and the macOS `.tar.gz`.
 
 Prerequisites: macOS on arm64, Node **24.13.0**, npm/npx, Apple Command Line Tools
 (`lipo`, `strip`, `codesign`, `pkgbuild`, `productbuild`, `pkgutil`). Network is
@@ -16,10 +16,11 @@ node lang/release/verify.mjs
 node lang/release/package.mjs
 node lang/release/verify-package.mjs
 node lang/release/regressions.mjs
-shasum -a 256 lang/release/dist/Mycel-0.2.0-alpha.pkg
+sh lang/release/package-tarball.sh
+shasum -a 256 lang/release/dist/Mycel-0.2.1-alpha.pkg lang/release/dist/mycel-0.2.1-alpha-macos-arm64.tar.gz
 ```
 
-`build.mjs` copies only compiler/CLI/std/LSP sources and manifests into
+`build.mjs` copies only compiler/CLI/std/LSP/bridge sources and manifests into
 `work/compiler`, installs the declared pinned development dependencies with
 hooks disabled, and compiles there. It never relies on the checkout's development
 `node_modules` symlink. `source-manifest.json` and `work/source-manifest.json` record the actual inputs.
@@ -27,9 +28,11 @@ The delivered macOS binary retains the inherited 48-file snapshot; concurrent
 Windows portability edits made later are excluded from it. A new build updates
 both manifests and requires full verification before replacing the package.
 `bundle.mjs` follows relative CommonJS requires, explicitly includes the computed
-worker/LSP entries, strips source-map links and embeds all std `.olx`/`.myc` files.
-Built-ins remain real Node requires; only reads of embedded std files and the
-bundled worker filename need adapters. There is no runtime extraction directory.
+worker/LSP entries, strips source-map links and embeds all std `.olx`/`.myc` files,
+`tools/*.py`, and `bridges/java/Bridge.java`.
+Built-ins remain real Node requires; only reads of embedded compiler assets and the
+bundled worker filename need adapters. Foreign Python tools extract to a hashed temp
+file on use, and `Bridge.java` extracts/compiles to `~/.mycel/cache/bridges/<sha>/` on first use.
 
 The installed universal Node is thinned to arm64; a thin-only Node binary is not
 currently supported by this local recipe. Debug symbols are stripped and the two
@@ -44,7 +47,7 @@ The final executable is ad-hoc signed; the installer is **unsigned**, and neithe
 is notarized. Intel/x64 binaries are not produced or tested. Only the arm64 slice
 is included; the Installer distribution enforces arm64/macOS 13.5+.
 
-`package.mjs` stages only two commands and four support files, includes the same
+`package.mjs` stages three commands (`mycel`, `myc`, `ply`) and four support files, includes the same
 LICENSE.txt (the dual licence assembled from `lang/` by `license.mjs`; packaging
 refuses a stale copy) in the payload and Installer license screen, and adds welcome
 and conclusion resources. `verify-package.mjs` expands it in a temporary directory

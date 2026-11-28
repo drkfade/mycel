@@ -1,0 +1,7 @@
+# Mini CLI tool starter: port list checker
+import env
+
+let args = env.args()
+let raw = if len(args) > 0 { args.join(" ") } else { "web:80 admin:8080 ssh:22 db:5432" }
+# TODO: extract ports > 1000 and return JSON summary
+print(raw)

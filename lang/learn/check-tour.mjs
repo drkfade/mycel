@@ -9,7 +9,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
-import { loadLessons, render, splice, pagePath, mycelDir, htmlPages, stamp } from "./build-tour.mjs";
+import vm from "node:vm";
+import { loadLessons, render, splice, pagePath, mycelDir, htmlPages, stamp, learnDir } from "./build-tour.mjs";
 import { renderDocs, spliceDocs, docsPagePath } from "./build-docs.mjs";
 
 const require = createRequire(import.meta.url);
@@ -69,13 +70,89 @@ for (const [i, L] of lessons.entries()) {
   if (sol) fail(`${tag}: the lesson's own solution fails its check: ${sol}`);
   if (!L.hints || L.hints.length < 2) fail(`${tag}: needs at least two hints`);
   if (!L.points || L.points <= 0) fail(`${tag}: missing positive points`);
+  if (!L.commonMistakes || L.commonMistakes.length < 1) fail(`${tag}: needs at least 1 commonMistakes entry`);
   if (fails.length === before) { interactive++; ok(`${tag}: starter output ok; check rejects starter ("${starter.split("\n")[0]}"); solution passes (${L.tests.length} test${L.tests.length === 1 ? "" : "s"})`); }
 }
 
-// 3. pages in sync with generators, assets stamped
+// 2b. Verify progress versioning, streak freeze, export/import, offline compiler explain, and every commonMistakes entry
+const progCtx = { self: {}, TextEncoder, TextDecoder, btoa, atob };
+vm.runInNewContext(fs.readFileSync(path.join(learnDir, "progress.js"), "utf8"), progCtx);
+const ML = progCtx.self.MYCEL_LEARN;
+if (!ML || ML.STORAGE_KEY !== "mycel.learn.v1" || ML.EXPORT_PREFIX !== "MYCEL1:") {
+  fail("progress.js must define versioned STORAGE_KEY (mycel.learn.v1) and EXPORT_PREFIX (MYCEL1:)");
+} else {
+  ok(`progress storage is versioned (${ML.STORAGE_KEY}, ${ML.EXPORT_PREFIX})`);
+}
+
+// Streak freeze: missing 1 day keeps streak using freeze; export/import round-trips
+{
+  const st = ML.defaultState();
+  ML.completeLesson(st, "tour", lessons[0], { today: "2026-11-20", allItems: lessons });
+  ML.completeLesson(st, "tour", lessons[1], { today: "2026-11-22", allItems: lessons }); // skipped 2026-11-21
+  if (st.streak.count !== 2 || st.streak.freezes !== 0) fail(`streak freeze failed: count=${st.streak.count}, freezes=${st.streak.freezes}`);
+  else ok("streak freeze preserves streak across 1 missed day");
+  const exported = ML.exportProgressCode(st);
+  const imported = ML.importProgressCode(exported);
+  if (!imported.ok || imported.state.xp !== st.xp || imported.state.streak.count !== 2) fail("progress export/import round-trip failed");
+  else ok("progress export/import round-trips cleanly");
+}
+
+// Compiler & panic explain offline in bundle
+{
+  const diagExp = Mycel.explainDiagnostic && Mycel.explainDiagnostic("E0101");
+  if (!diagExp || !diagExp.text) fail("Mycel.explainDiagnostic('E0101') missing in play/mycel.js");
+  const badCompile = await run("elif true {\n  print(1)\n}");
+  const compileAnalysis = ML.analyzeWrong({ lesson: lessons[0], code: "elif true {\n  print(1)\n}", runResult: badCompile });
+  if (compileAnalysis.kind !== "compile" || compileAnalysis.code !== "E0101" || !compileAnalysis.explainText) {
+    fail(`offline compile explanation failed: ${JSON.stringify(compileAnalysis)}`);
+  } else ok(`offline compile explanation uses explain.ts (${compileAnalysis.code}, line ${compileAnalysis.line})`);
+
+  const badPanic = await run("let xs = [1]\nprint(xs[5])");
+  const panicAnalysis = ML.analyzeWrong({ lesson: lessons[0], code: "let xs = [1]\nprint(xs[5])", runResult: badPanic });
+  if (panicAnalysis.kind !== "panic" || panicAnalysis.line !== 2 || !panicAnalysis.tip) {
+    fail(`offline panic explanation failed: ${JSON.stringify(panicAnalysis)}`);
+  } else ok(`offline panic explanation catches runtime line ${panicAnalysis.line}`);
+
+  const diff = ML.diffOutputs("3 x coffee = 13.50", "3 x coffee = 13.5");
+  if (diff.same || !diff.expHtml.includes("<mark class=\"diff-hi\">")) fail("diffOutputs did not highlight first difference");
+  else ok("diffOutputs highlights first difference side-by-side");
+}
+
+// Every lesson's commonMistakes sampleWrong triggers its matching explanation without leaking full solution
+let mistakeChecks = 0;
+for (const L of lessons) {
+  for (const m of L.commonMistakes || []) {
+    if (!m.sampleWrong || !m.reason || !m.concept) { fail(`${L.id}: commonMistakes entry missing sampleWrong/reason/concept`); continue; }
+    if (L.solution.length > 24 && m.reason.includes(L.solution)) { fail(`${L.id}: commonMistakes reason leaks full solution`); continue; }
+    const wrongVerdict = await grade(L, m.sampleWrong);
+    if (!wrongVerdict) { fail(`${L.id}: sampleWrong accidentally passed exercise check`); continue; }
+    const r = await run(m.sampleWrong, L.tests?.[0]?.inputs || L.inputs || []);
+    const got = (r.output || "").replace(/\s+$/, "");
+    const matched = ML.matchMistake(L, m.sampleWrong, got);
+    if (matched !== m) { fail(`${L.id}: sampleWrong did not trigger its commonMistakes entry (${m.concept})`); continue; }
+    mistakeChecks++;
+  }
+}
+ok(`verified ${mistakeChecks} commonMistakes sampleWrong explanations across all ${lessons.length} tour exercises`);
+
+// 3. pages in sync with generators, path renders all lessons, assets stamped, zero external requests
 const page = fs.readFileSync(pagePath, "utf8");
 if (splice(page, render(lessons, levels)) !== page) fail("learn/index.html is out of date with lessons.js: run node lang/learn/build-tour.mjs");
 else ok("learn/index.html static levels + lessons match lessons.js");
+
+const pathNodes = [...page.matchAll(/data-node="([^"]+)"/g)].map((m) => m[1]);
+if (pathNodes.length !== lessons.length || lessons.some((l) => !pathNodes.includes(l.id))) {
+  fail(`learn/index.html learning path nodes (${pathNodes.length}) do not cover all ${lessons.length} lessons`);
+} else {
+  ok(`learn/index.html learning path renders all ${pathNodes.length} lessons`);
+}
+
+for (const relLearn of ["index.html", "learn.css", "progress.js", "tour.js", "ai/index.html", "ai/ai-learn.js", "ai/data/index.html"]) {
+  const txt = fs.readFileSync(path.join(learnDir, relLearn), "utf8");
+  const badAsset = txt.match(/<(?:script|img|iframe)[^>]+src="https?:\/\/|<link[^>]+rel="stylesheet"[^>]+href="https?:\/\/|@import\s+["']https?:\/\/|\bfetch\s*\(\s*["']https?:\/\/|new\s+XMLHttpRequest/i);
+  if (badAsset) fail(`learn/${relLearn} makes an external request: ${badAsset[0]}`);
+}
+ok("learn pages & scripts make zero external requests");
 
 const docsPage = fs.readFileSync(docsPagePath, "utf8");
 const builtDocs = renderDocs();

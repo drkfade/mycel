@@ -1,0 +1,16 @@
+# Arrays, maps, brace closures, and .extract()
+let nums = [2, 6, 3, 9, 4, 8]
+let big = nums.filter { it > 5 }
+let doubled = big.map { it * 2 }
+let total = big.reduce(0) { (a, b) => a + b }
+print(f"big={big}, doubled={doubled}, total={total}")
+
+let scores = {"ana": 91, "bo": 78}
+for (k, v) in scores {
+  print(f"{k}: {v}")
+}
+print(scores.getOr("zoe", 0), "ana" in scores)
+
+# Pull numbers out of text without a regex
+let found = "id=42 port=8080 retry=2".extract(Int) { it > 5 }
+print(found)

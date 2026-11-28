@@ -1,7 +1,7 @@
 import { Worker, MessageChannel, MessagePort, receiveMessageOnPort } from "worker_threads";
 import * as fs from "fs";
 import * as path from "path";
-import { JavaBridge, JavaOptions, JavaBridgeError, MavenLockEntry, installMaven } from "./java";
+import { JavaBridge, JavaOptions, JavaBridgeError, MavenLockEntry, installMaven, resolveJavaBridge } from "./java";
 
 export { JavaBridge, JavaOptions, JavaBridgeError, MavenLockEntry, installMaven };
 
@@ -48,12 +48,12 @@ export class SyncJavaBridge {
     const jars = fs.existsSync(jarDir)
       ? fs.readdirSync(jarDir).filter((x) => x.endsWith(".jar")).sort().map((x) => path.join(jarDir, x))
       : [];
-    const source = options.source ?? path.resolve(__dirname, "../../../bridges/java/Bridge.java");
+    const bridge = resolveJavaBridge({ source: options.source, java: options.java });
     const headless = options.headless ?? process.env.MYCEL_JAVA_HEADLESS !== "0";
     const args = [
       ...(headless ? ["-Djava.awt.headless=true"] : []),
-      "-cp", [".", ...jars].join(path.delimiter),
-      source,
+      "-cp", [...bridge.classpath, ".", ...jars].join(path.delimiter),
+      bridge.target,
     ];
     const { port1, port2 } = new MessageChannel();
     this.port = port1;

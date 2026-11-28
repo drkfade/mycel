@@ -80,8 +80,11 @@ export function bundle(root = lang) {
   for (const file of fs.readdirSync(path.join(root, 'tools')).sort()) {
     if (/\.(py|js)$/.test(file)) std['tools/' + file.replace(/\.js$/, '')] = fs.readFileSync(path.join(root, 'tools', file), 'utf8');
   }
+  // Java bridge source: Java needs a real file/classpath on disk, so bridges/java.ts extracts+compiles it to cache
+  const javaBridge = path.join(root, 'bridges/java/Bridge.java');
+  if (fs.existsSync(javaBridge)) std['bridges/java/Bridge.java'] = fs.readFileSync(javaBridge, 'utf8');
   const data = { mods, std };
-  return `// Mycel 0.2 alpha. Copyright 2026 drky. All rights reserved.\n` +
+  return `// Mycel 0.2.1 alpha. Copyright 2026 drky. All rights reserved.\n` +
     `const app = (${boot.toString()})(require, ${JSON.stringify(data)});\n` +
     // exitCode, not process.exit(): exiting while a server's handles are still closing aborts Node on Windows
     // ("Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\\win\\async.c", exit 0xC0000409,

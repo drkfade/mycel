@@ -1,0 +1,18 @@
+# Mini CLI tool solution: log latency analyzer
+import env
+import json
+
+fn analyzeLog(line: String) -> Result<String, String> {
+  let latencies = line.extract(Int) { it > 10 }
+  if len(latencies) == 0 { return Err("no latencies > 10ms") }
+  let avg = sum(latencies) / len(latencies)
+  let slow = latencies.filter { it > 50 }
+  return Ok(json.encode({"count": len(latencies), "avgMs": avg, "slow": slow}))
+}
+
+let args = env.args()
+let line = if len(args) > 0 { args.join(" ") } else { "GET 12ms POST 140ms ping 4ms search 65ms" }
+match analyzeLog(line) {
+  .Ok(report) => print(report)
+  .Err(msg) => print(f"error: {msg}")
+}

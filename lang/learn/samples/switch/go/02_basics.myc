@@ -1,0 +1,13 @@
+# Structs, variables, and functions
+struct Point {
+  let x: Int
+  let y: Int
+}
+
+fn movePoint(p: Point, dx: Int = 1, dy: Int = 0) -> Point {
+  return Point(x: p.x + dx, y: p.y + dy)
+}
+
+var p = Point(x: 2, y: 3)
+p = movePoint(p, dy: 4)
+print(f"({p.x}, {p.y})")

@@ -1,0 +1,17 @@
+# Mini CLI tool solution: split-time analyzer
+import env
+import json
+
+fn analyzeSplits(raw: String) -> Result<String, String> {
+  let secs = raw.extract(Int) { it > 60 }
+  if len(secs) == 0 { return Err("no split times > 60s") }
+  let avg = sum(secs) / len(secs)
+  return Ok(json.encode({"laps": len(secs), "fastest": min(secs), "avgSec": avg}))
+}
+
+let args = env.args()
+let raw = if len(args) > 0 { args.join(" ") } else { "lap1 285s lap2 310s lap3 268s" }
+match analyzeSplits(raw) {
+  .Ok(summary) => print(summary)
+  .Err(msg) => print(f"error: {msg}")
+}

@@ -1,0 +1,16 @@
+# Mini CLI tool solution: port list checker
+import env
+import json
+
+fn highPorts(raw: String) -> Result<[Int], String> {
+  let ports = raw.extract(Int) { it > 1000 && it <= 65535 }
+  if len(ports) == 0 { return Err("no high ports found") }
+  return Ok(ports)
+}
+
+let args = env.args()
+let raw = if len(args) > 0 { args.join(" ") } else { "web:80 admin:8080 ssh:22 db:5432" }
+match highPorts(raw) {
+  .Ok(ports) => print(json.encode({"count": len(ports), "ports": ports, "max": max(ports)}))
+  .Err(msg) => print(f"error: {msg}")
+}

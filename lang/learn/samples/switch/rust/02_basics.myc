@@ -1,0 +1,14 @@
+# Immutable let, mutable var, and functions
+struct Point {
+  let x: Int
+  let y: Int
+}
+
+fn shift(p: Point, dx: Int = 1, dy: Int = 0) -> Point {
+  return Point(x: p.x + dx, y: p.y + dy)
+}
+
+var count: Int = 0
+count += 2
+let p = shift(Point(x: 3, y: 4), dy: 5)
+print(count, p.x, p.y)

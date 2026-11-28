@@ -1,0 +1,7 @@
+# Mini CLI tool starter: invoice quantity parser
+import env
+
+let args = env.args()
+let raw = if len(args) > 0 { args.join(" ") } else { "pens:12 notebooks:4 erasers:15" }
+# TODO: extract quantities > 5, compute total units and item count
+print(raw)

@@ -1,0 +1,9 @@
+{
+  "name": "mycel_switch_lessons",
+  "version": "0.1.0",
+  "description": "Runnable samples for the 5-part Switching to Mycel lessons",
+  "main": "python/01_hello.myc",
+  "dependencies": {
+    "tensor": "path:../../../packages/tensor"
+  }
+}

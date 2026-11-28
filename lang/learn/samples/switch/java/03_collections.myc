@@ -1,0 +1,16 @@
+# Lists, maps, brace closures, and .extract()
+let nums = [2, 6, 3, 9, 4, 8]
+let big = nums.filter { it > 5 }
+let doubled = big.map { it * 2 }
+let total = big.reduce(0) { (a, b) => a + b }
+print(f"big={big}, doubled={doubled}, total={total}")
+
+let ages = {"ana": 31, "bo": 25}
+for (name, age) in ages {
+  print(f"{name}: {age}")
+}
+print(ages.getOr("zoe", 0), "ana" in ages)
+
+# Pull numbers from a log line without Pattern/Matcher
+let ms = "GET /api 12ms, POST /pay 84ms, ping 3ms".extract(Int) { it > 5 }
+print(ms)

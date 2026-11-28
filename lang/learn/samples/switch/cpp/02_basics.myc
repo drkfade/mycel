@@ -1,0 +1,14 @@
+# Structs, immutable let, mutable var, and functions
+struct Vec2 {
+  let x: Float
+  let y: Float
+
+  fn norm() -> Float {
+    return (self.x * self.x + self.y * self.y).sqrt()
+  }
+}
+
+var steps = 0
+steps += 1
+let v = Vec2(x: 3.0, y: 4.0)
+print(steps, f"{v.norm():.1f}")

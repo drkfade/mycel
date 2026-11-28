@@ -38,8 +38,8 @@ expected. The final x64 PE, embedded blob and enabled fuse are checked, and both
 bundle and executable pass the existing forbidden-home/assistant byte scan.
 These inspections do not prove Windows execution.
 
-`package-windows.mjs` uses Node built-ins to write a seven-file ZIP: mycel.exe,
-ply.cmd, LICENSE.txt, NODE-LICENSE.txt, README-windows.txt, install.ps1 and
+`package-windows.mjs` uses Node built-ins to write an eight-file ZIP: mycel.exe,
+myc.cmd, ply.cmd, LICENSE.txt, NODE-LICENSE.txt, README-windows.txt, install.ps1 and
 uninstall.ps1. LICENSE.txt is the dual licence assembled by `license.mjs`, byte-identical to the
 macOS one. The packaged installer accepts an extracted directory and installs per
 user to `%LOCALAPPDATA%\Mycel\bin`, checks the executable version, stages a
@@ -49,7 +49,7 @@ only the known files and exact PATH entry, preserving user files and `.ply`.
 
 The separate `dist/install.ps1` is rendered from `windows/bootstrap.ps1` with
 the **actual ZIP SHA-256 pinned in the script**. It downloads
-`https://ol1x.xyz/mycel/download/Mycel-0.2.0-alpha-windows-x64.zip`, verifies it
+`https://ol1x.xyz/mycel/download/Mycel-0.2.1-alpha-windows-x64.zip`, verifies it
 before extracting/executing, validates archive names, and invokes the offline
 installer. Failures return to the caller; no installer uses `exit`, modifies
 machine PATH or changes machine execution policy. A trusted HTTPS copy of the

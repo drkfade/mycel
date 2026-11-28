@@ -1,0 +1,15 @@
+# let, var, structs, and functions
+struct Pace {
+  let km: Float
+  let mins: Int
+}
+
+fn formatPace(p: Pace, unit: String = "km") -> String {
+  let minsPerUnit = p.mins / p.km
+  return f"{minsPerUnit:.2f} min/{unit}"
+}
+
+var runs = 1
+runs += 1
+let today = Pace(km: 5.0, mins: 24)
+print(runs, formatPace(today))

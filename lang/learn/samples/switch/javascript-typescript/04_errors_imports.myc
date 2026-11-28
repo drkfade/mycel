@@ -1,0 +1,22 @@
+# Optionals, Result/?, plain imports, and tensor via ply
+import http
+import json
+import tensor
+
+fn parsePort(raw: String) -> Result<Int, String> {
+  if let p = raw.toInt() {
+    if p > 0 && p <= 65535 { return Ok(p) }
+    return Err("port out of range")
+  }
+  return Err(f"bad port: {raw}")
+}
+
+let fallback: Int? = nil
+print(fallback ?? 8080)
+print(parsePort("3000"))
+print(parsePort("nope"))
+
+let reply = http.text("ready", status: 200)
+let v: json.Json = {"ok": true, "status": 200}
+let t = tensor.array([2.0, 4.0, 6.0])
+print(v.stringify(), reply.status, t.sum().item())

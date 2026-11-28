@@ -19,13 +19,13 @@ import { PlyError, Project, addDependency, findProject, initProject, install, li
 import { startRepl } from "./repl";
 import { documentModule } from "./doc";
 
-export const VERSION = "0.2.0";
+export const VERSION = "0.2.1";
 
 const WELCOME = `Welcome to Mycel ${VERSION} — a friendly language for your first program and your hundredth.
 
   Try your first program:
     1. make a file called hello.myc containing one line:    print("hi")
-    2. run it:                                              mycel run hello.myc
+    2. run it:                                              mycel run hello.myc   (or: myc hello.myc)
 
   Or start a whole project:   mycel new my_project
   Play with it live:          mycel repl
@@ -34,9 +34,9 @@ const WELCOME = `Welcome to Mycel ${VERSION} — a friendly language for your fi
 
 const HELP = `mycel ${VERSION} — a friendly, typed language (files: .myc, and .olx keeps working)
 
-usage: mycel <command> [options]      (packages: ply install --py requests — see \`ply help install\`)
+usage: mycel <command> [options]      (short alias: myc; packages: ply install --py requests — see \`ply help install\`)
 
-  run [file] [-- args]   compile and run a file (default: the project's main)
+  run [file] [-- args]   compile and run a file (or: myc file.myc / mycel file.myc)
   web [file|project]     serve a browser UI on 127.0.0.1 (no browser is opened)
   check [file]           type-check without running (--json for machine-readable output)
   test [filter]          run every  test "name" { ... }  block (project: src/ and tests/)

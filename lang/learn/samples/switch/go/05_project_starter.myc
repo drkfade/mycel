@@ -1,0 +1,7 @@
+# Mini CLI tool starter: metric threshold checker
+import env
+
+let args = env.args()
+let raw = if len(args) > 0 { args.join(" ") } else { "cpu=14 mem=82 disk=91 swap=3" }
+# TODO: extract metrics > 50, return Result + JSON summary
+print(raw)

@@ -1,4 +1,4 @@
-# Mycel 0.2 alpha Windows x64. Publish this rendered script only after review.
+# Mycel 0.2.1 alpha Windows x64. Publish this rendered script only after review.
 # Usage: irm https://ol1x.xyz/mycel/install.ps1 | iex
 & {
     $ErrorActionPreference = 'Stop'
@@ -11,7 +11,7 @@
         $temporary = Join-Path ([IO.Path]::GetTempPath()) ('mycel-' + [Guid]::NewGuid().ToString('N'))
         [IO.Directory]::CreateDirectory($temporary) | Out-Null
         $archive = Join-Path $temporary 'mycel.zip'
-        $url = 'https://ol1x.xyz/mycel/download/Mycel-0.2.0-alpha-windows-x64.zip'
+        $url = 'https://ol1x.xyz/mycel/download/Mycel-0.2.1-alpha-windows-x64.zip'
         $expected = '@ZIP_SHA256@'
         Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $archive
         $actual = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
@@ -20,7 +20,7 @@
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         $zip = [IO.Compression.ZipFile]::OpenRead($archive)
         try {
-            $wanted = @('mycel.exe', 'ply.cmd', 'LICENSE.txt', 'NODE-LICENSE.txt', 'README-windows.txt', 'install.ps1', 'uninstall.ps1')
+            $wanted = @('mycel.exe', 'myc.cmd', 'ply.cmd', 'LICENSE.txt', 'NODE-LICENSE.txt', 'README-windows.txt', 'install.ps1', 'uninstall.ps1')
             if ($zip.Entries.Count -ne $wanted.Count) { throw 'Unexpected package entry count.' }
             foreach ($entry in $zip.Entries) {
                 if ($wanted -cnotcontains $entry.FullName -or $entry.Length -gt 200000000) { throw "Unexpected package entry: $($entry.FullName)" }

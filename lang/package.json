@@ -1,10 +1,10 @@
 {
   "name": "mycel-lang",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "license": "Apache-2.0 OR MIT",
   "description": "Mycel: a friendly, typed language that compiles to sandboxed JS (packages: ply)",
-  "bin": { "mycel": "bin/mycel", "ply": "bin/ply" },
+  "bin": { "mycel": "bin/mycel", "myc": "bin/myc", "ply": "bin/ply" },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "fuzz": "npm run build && node dist/fuzz/cli.js",

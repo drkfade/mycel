@@ -179,7 +179,8 @@ let stdlibCache: Set<string> | undefined;
 /** Python's own standard library (`from datetime import datetime --python` needs no install). */
 export function pythonStdlib(): Set<string> {
   if (stdlibCache) return stdlibCache;
-  const r = spawnSync(pythonFor(undefined), ["-c", "import sys,json;print(json.dumps(sorted(sys.stdlib_module_names)))"], { encoding: "utf8", timeout: 10000 });
+  const pyCode = 'import sys,json,pkgutil,os;n=getattr(sys,"stdlib_module_names",None) or (set(sys.builtin_module_names)|{m.name for m in pkgutil.iter_modules([os.path.dirname(os.__file__),os.path.join(os.path.dirname(os.__file__),"lib-dynload")])});print(json.dumps(sorted(n)))';
+  const r = spawnSync(pythonFor(undefined), ["-c", pyCode], { encoding: "utf8", timeout: 10000 });
   try { stdlibCache = new Set(JSON.parse(r.stdout)); } catch { stdlibCache = new Set(); }
   return stdlibCache;
 }

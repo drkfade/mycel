@@ -50,7 +50,13 @@ function ensureVenv(root: string): string {
   fs.mkdirSync(path.dirname(venvDir(root)), { recursive: true });
   sh(base, ["-m", "venv", venvDir(root)], root, "creating the project's Python environment (.ply/python/venv)");
   ignorePly(root);
-  return pythonFor(root);
+  // pip install --report needs pip >= 22.2; Apple's system Python 3.9 ships pip 21.x, so upgrade a fresh venv's pip (best effort).
+  const venvPy = pythonFor(root);
+  const ver = spawnSync(venvPy, ["-m", "pip", "--version"], { encoding: "utf8" }).stdout?.match(/pip (\d+)\.(\d+)/);
+  if (ver && (+ver[1] < 22 || (+ver[1] === 22 && +ver[2] < 2))) {
+    sh(venvPy, ["-m", "pip", "--disable-pip-version-check", "install", "--upgrade", "pip"], root, "upgrading pip in the project's Python environment (the system pip is too old)");
+  }
+  return venvPy;
 }
 const pip = (py: string, root: string, args: string[], what: string) => sh(py, ["-m", "pip", "--disable-pip-version-check", ...args], root, what);
 

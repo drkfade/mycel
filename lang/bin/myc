@@ -1,0 +1,11 @@
+#!/usr/bin/env node
+// Source checkout launcher; npm generates Windows .cmd shims from this Node shebang.
+const fs = require("node:fs");
+const path = require("node:path");
+const cli = path.resolve(__dirname, "../dist/src/cli.js");
+if (!fs.existsSync(cli)) {
+  const { spawnSync } = require("node:child_process");
+  const build = spawnSync(process.execPath, [require.resolve("typescript/bin/tsc"), "-p", path.resolve(__dirname, "../tsconfig.json")], { stdio: "inherit", windowsHide: true });
+  if (build.status !== 0) process.exit(build.status ?? 1);
+}
+require(cli).main(process.argv.slice(2)).then(code => { process.exitCode = code; }, error => { console.error(error); process.exitCode = 70; });

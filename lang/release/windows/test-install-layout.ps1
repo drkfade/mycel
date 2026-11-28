@@ -1,4 +1,4 @@
-# Filesystem acceptance on Windows; on macOS only the version-check child is a
+﻿# Filesystem acceptance on Windows; on macOS only the version-check child is a
 # synthetic executable. This does not prove Windows PE execution or user PATH.
 param([string]$Installer = (Join-Path $PSScriptRoot 'install.ps1'))
 $ErrorActionPreference = 'Stop'
@@ -21,11 +21,12 @@ try {
     foreach ($name in @('LICENSE.txt', 'NODE-LICENSE.txt')) { Copy-Item -LiteralPath (Join-Path $release $name) -Destination $source }
     foreach ($name in @('README-windows.txt', 'uninstall.ps1')) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination $source }
     Copy-Item -LiteralPath $Installer -Destination (Join-Path $source 'install.ps1')
+    [IO.File]::WriteAllText((Join-Path $source 'myc.cmd'), "@echo off`r`n`"%~dp0mycel.exe`" %*`r`n")
     [IO.File]::WriteAllText((Join-Path $source 'ply.cmd'), "@echo off`r`n`"%~dp0mycel.exe`" %*`r`n")
     $executable = Join-Path $source 'mycel.exe'
     if ($windowsHost) { Copy-Item -LiteralPath (Join-Path $release 'dist/mycel.exe') -Destination $executable }
     else {
-        [IO.File]::WriteAllText($executable, "#!/bin/sh`nprintf 'mycel 0.2.0\n'`n")
+        [IO.File]::WriteAllText($executable, "#!/bin/sh`nprintf 'mycel 0.2.1\n'`n")
         & /bin/chmod 755 $executable
         if ($LASTEXITCODE -ne 0) { throw 'Could not prepare synthetic child.' }
         $env:OS = 'Windows_NT'
@@ -62,7 +63,7 @@ try {
     Assert-True $caught 'Fault injection did not reach the replacement path.'
     Assert-True ([IO.File]::ReadAllText($userFile) -ceq 'unrelated bytes Ω') 'Rollback lost a user file.'
     Assert-True ([IO.File]::ReadAllText((Join-Path $userDirectory 'source.myc')) -ceq 'print(42)') 'Rollback lost a user directory.'
-    Assert-True ((& (Join-Path $bin 'mycel.exe') --version) -eq 'mycel 0.2.0') 'Rollback lost the old executable.'
+    Assert-True ((& (Join-Path $bin 'mycel.exe') --version) -eq 'mycel 0.2.1') 'Rollback lost the old executable.'
     Assert-True (@(Get-ChildItem -LiteralPath (Split-Path -Parent $bin) | Where-Object { $_.Name -ne 'bin' }).Count -eq 0) 'Install left staging/backup directories after recovery.'
     Write-Output "PASS: reinstall preserves unrelated file/directory bytes; injected mid-move failure restores old payload and user files ($($PSVersionTable.PSVersion), $windowsHost Windows host)."
 } finally {

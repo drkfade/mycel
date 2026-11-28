@@ -1,8 +1,8 @@
-Mycel 0.2 alpha (0.2.0) for macOS Apple silicon (arm64)
+Mycel 0.2.1 alpha (0.2.1) for macOS Apple silicon (arm64)
 Copyright (c) 2026 drky. Open source: Apache-2.0 OR MIT, at your option.
 
 Install
-Download Mycel-0.2.0-alpha.pkg from https://ol1x.xyz/mycel/ when published.
+Download Mycel-0.2.1-alpha.pkg from https://ol1x.xyz/mycel/ when published.
 This preview package is unsigned and not notarized. Try right-click -> Open.
 On macOS versions that do not offer that override, try opening it once, then
 System Settings -> Privacy & Security -> Open Anyway. Confirm only if you trust
@@ -27,15 +27,16 @@ One-line scripts; .myc and .olx files; typed/inferred variables; functions;
 f-strings; lists, maps and loops; classes, structs, enums and match; diagnostics;
 local module imports; check/test/fmt/doc/repl; stdin input(); worker-isolated runs;
 the std library, including JSON, math, files, time and explicit capability grants.
+The myc command is a short alias of mycel (`myc hello.myc`).
 The ply command runs the same CLI and shows package installation syntax with:
   ply help install
-Mycel package dependencies can use paths or the local registry; there is no
-public package registry in this alpha.
+Mycel package dependencies can use the package index, paths, or the local
+registry. Python (--python), npm (--npm), and Java (--java) packages also work
+when python3, npm, or a JDK are installed on your machine.
 
 Limits
-Foreign package imports/install (Python, JS/TS, Java, Rust, Go, Swift) are not
-available in this packaged alpha. Help lists their planned install flag syntax;
-that does not mean those adapters ship here.
+Rust, Go, Swift, and TypeScript-specific package adapters are recognised by
+`ply` and refused as not supported yet.
 std.ui has browser UI primitives; the macOS CLI has no native window renderer.
 The playground's Counter and Todo sources execute but display no window here.
 std.db is an early SQLite wrapper, not a production database API; SQLite uses

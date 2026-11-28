@@ -1,0 +1,20 @@
+# Optionals, Result/?, plain imports, and tensor via ply
+import http
+import json
+import tensor
+
+fn parseQty(raw: String) -> Result<Int, String> {
+  if let q = raw.toInt() {
+    if q > 0 { return Ok(q) }
+    return Err("quantity must be > 0")
+  }
+  return Err(f"not a number: {raw}")
+}
+
+let discount: Int? = nil
+print(discount ?? 0)
+print(parseQty("12"), parseQty("abc"))
+
+let res = http.text("ok", status: 200)
+let t = tensor.array([3.0, 6.0, 9.0])
+print(res.status, json.encode({"total": t.sum().item()}))

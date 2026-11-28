@@ -1,7 +1,7 @@
 # Mycel
 
 A friendly, typed programming language for your first program and your hundredth. It compiles to sandboxed
-JavaScript and runs on Node (no runtime dependencies). Programs run with `mycel`; packages install with `ply` (like
+JavaScript and runs on Node (no runtime dependencies). Programs run with `mycel` (or the short alias `myc`: `myc hello.myc`); packages install with `ply` (like
 Python's `pip`). Source files are `.myc`; `.olx` files work everywhere too. (Mycel was called Ply until 2026-11-06.)
 
 ```mycel
@@ -42,7 +42,8 @@ Requires Node 24+. There is no global install; run from the repository:
 cd lang
 npm install             # TypeScript and Node types are development dependencies only
 npm run build            # tsc → dist/ (bin/mycel builds on first use too)
-bin/mycel --version      # mycel 0.2.0
+bin/mycel --version      # mycel 0.2.1
+bin/myc hello.myc        # short alias of mycel (runs a file directly)
 ```
 
 ```sh
@@ -75,8 +76,8 @@ irm https://ol1x.xyz/mycel/install.ps1 | iex
 
 It installs per user into `%LOCALAPPDATA%\Mycel\bin`, verifies the ZIP's
 SHA-256 and adds that directory to the user PATH. For a source checkout on
-Windows with Node 24 installed, use `bin\mycel.cmd` and `bin\ply.cmd`
-(or `node bin/mycel` and `node bin/ply`).
+Windows with Node 24 installed, use `bin\mycel.cmd`, `bin\myc.cmd` and `bin\ply.cmd`
+(or `node bin/mycel`, `node bin/myc` and `node bin/ply`).
 
 ## Documents
 

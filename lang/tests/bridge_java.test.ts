@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { execFileSync } from "node:child_process";
-import { JavaBridge, installMaven } from "../src/bridges/java";
+import { JavaBridge, installMaven, extractJavaBridge } from "../src/bridges/java";
 
 const root = path.resolve(__dirname,"../../..");
 const temp = fs.mkdtempSync(path.join(os.tmpdir(),"mycel-java-"));
@@ -29,3 +29,28 @@ test("operations, values, overloads, callbacks and errors",async()=>{ const b=br
 test("crash fails pending calls",async()=>{const b=new JavaBridge({projectDir:temp,capabilities:{java:true},java:"/no/such/java",timeoutMs:1000}); await assert.rejects(b.importClass("x"),/Java bridge (failed to start|exited)/); b.close();});
 test("Maven fixture and transitive dependency",async()=>{const repo=path.join(temp,"repo"); function artifact(g:string,a:string,v:string,deps=""){const d=path.join(repo,g.replace(/\./g,"/"),a,v);fs.mkdirSync(d,{recursive:true});fs.writeFileSync(path.join(d,`${a}-${v}.pom`),`<project><dependencies>${deps}</dependencies></project>`);fs.writeFileSync(path.join(d,`${a}-${v}.jar`),a);}
  artifact("org.test","dep","1"); artifact("org.test","app","1",'<dependency><groupId>org.test</groupId><artifactId>dep</artifactId><version>1</version></dependency>'); const entries=await installMaven("org.test:app:1",temp,repo);assert.equal(entries.length,2);assert.match(entries[0].sha256,/^[a-f0-9]{64}$/);});
+test("extractJavaBridge caches Bridge.java and Bridge.class under MYCEL_HOME", async () => {
+  const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), "mycel-java-cache-"));
+  const prevHome = process.env.MYCEL_HOME;
+  process.env.MYCEL_HOME = fakeHome;
+  try {
+    const text = fs.readFileSync(path.join(root, "lang/bridges/java/Bridge.java"), "utf8");
+    const first = extractJavaBridge(text);
+    assert.ok(first.classpath.length === 1 || fs.existsSync(first.target));
+    const cacheRoot = path.join(fakeHome, "cache", "bridges");
+    const dirs = fs.readdirSync(cacheRoot);
+    assert.equal(dirs.length, 1);
+    const cacheDir = path.join(cacheRoot, dirs[0]);
+    assert.equal(fs.readFileSync(path.join(cacheDir, "Bridge.java"), "utf8"), text);
+    const second = extractJavaBridge(text);
+    assert.deepEqual(second, first);
+    if (first.classpath.length === 1) {
+      assert.equal(first.target, "Bridge");
+      assert.ok(fs.existsSync(path.join(cacheDir, "Bridge.class")));
+    }
+  } finally {
+    if (prevHome === undefined) delete process.env.MYCEL_HOME;
+    else process.env.MYCEL_HOME = prevHome;
+    fs.rmSync(fakeHome, { recursive: true, force: true });
+  }
+});

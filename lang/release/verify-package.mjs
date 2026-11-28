@@ -10,11 +10,11 @@ import { checkArtifact } from './check-artifact.mjs';
 import { checkReleaseLicense } from './license.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const pkg = path.join(here, 'dist/Mycel-0.2.0-alpha.pkg');
+const pkg = path.join(here, 'dist/Mycel-0.2.1-alpha.pkg');
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mycel-pkg-'));
 const expanded = path.join(root, 'expanded');
 const expected = [
-  'usr/local/bin/mycel', 'usr/local/bin/ply',
+  'usr/local/bin/mycel', 'usr/local/bin/myc', 'usr/local/bin/ply',
   'usr/local/share/mycel/LICENSE.txt', 'usr/local/share/mycel/README.txt',
   'usr/local/share/mycel/NODE-LICENSE.txt', 'usr/local/share/mycel/uninstall.sh',
 ].sort();

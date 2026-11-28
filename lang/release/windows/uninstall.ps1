@@ -49,7 +49,7 @@
         if ((Test-Path -LiteralPath $dir) -and ((Get-Item -LiteralPath $dir -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw "Refusing redirected installation directory: $dir" }
     }
     # Delete an allow-list, so user projects or files placed beside the app survive.
-    foreach ($name in @('mycel.exe', 'ply.cmd', 'LICENSE.txt', 'NODE-LICENSE.txt', 'README-windows.txt', 'install.ps1', 'uninstall.ps1')) {
+    foreach ($name in @('mycel.exe', 'myc.cmd', 'ply.cmd', 'LICENSE.txt', 'NODE-LICENSE.txt', 'README-windows.txt', 'install.ps1', 'uninstall.ps1')) {
         $file = Join-Path $bin $name
         if (Test-Path -LiteralPath $file -PathType Leaf) { Remove-Item -LiteralPath $file -Force }
     }

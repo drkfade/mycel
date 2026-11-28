@@ -1,0 +1,7 @@
+# Mini CLI tool starter: safe int extractor and sum
+import env
+
+let args = env.args()
+let text = if len(args) > 0 { args.join(" ") } else { "batch 12, 45, 3, 19, 8" }
+# TODO: extract ints > 5, return Result with count, sum, and product
+print(text)

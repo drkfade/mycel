@@ -1,9 +1,66 @@
-import { spawn, ChildProcessWithoutNullStreams } from "child_process";
+import { spawn, spawnSync, ChildProcessWithoutNullStreams } from "child_process";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import * as readline from "readline";
 import * as crypto from "crypto";
 import * as https from "https";
+
+export interface ResolvedJavaBridge {
+  classpath: string[];
+  target: string;
+}
+
+/** Extract embedded Bridge.java to a SHA-keyed cache dir (~/.mycel/cache/bridges/<sha>/) and compile once with javac when available. */
+export function extractJavaBridge(text: string, javaBin?: string): ResolvedJavaBridge {
+  const sha = crypto.createHash("sha256").update(text).digest("hex").slice(0, 16);
+  const mycelHome = process.env.MYCEL_HOME || path.join(os.homedir(), ".mycel");
+  let cacheDir = path.join(mycelHome, "cache", "bridges", sha);
+  try {
+    fs.mkdirSync(cacheDir, { recursive: true });
+  } catch {
+    cacheDir = path.join(os.tmpdir(), `mycel-bridges-${sha}`);
+    fs.mkdirSync(cacheDir, { recursive: true });
+  }
+  const javaFile = path.join(cacheDir, "Bridge.java");
+  const classFile = path.join(cacheDir, "Bridge.class");
+  if (!fs.existsSync(javaFile) || fs.readFileSync(javaFile, "utf8") !== text) {
+    const tmp = `${javaFile}.${process.pid}.tmp`;
+    fs.writeFileSync(tmp, text);
+    fs.renameSync(tmp, javaFile);
+  }
+  if (!fs.existsSync(classFile)) {
+    const javac = javaBin && path.basename(javaBin) !== javaBin
+      ? path.join(path.dirname(javaBin), process.platform === "win32" ? "javac.exe" : "javac")
+      : "javac";
+    const tmpOut = path.join(cacheDir, `.compile-${process.pid}`);
+    try {
+      fs.mkdirSync(tmpOut, { recursive: true });
+      const res = spawnSync(javac, ["-d", tmpOut, javaFile], { encoding: "utf8", timeout: 15000, windowsHide: true });
+      if (res.status === 0 && fs.existsSync(path.join(tmpOut, "Bridge.class"))) {
+        for (const f of fs.readdirSync(tmpOut)) {
+          if (!f.endsWith(".class")) continue;
+          try { fs.renameSync(path.join(tmpOut, f), path.join(cacheDir, f)); }
+          catch { if (!fs.existsSync(path.join(cacheDir, f))) fs.copyFileSync(path.join(tmpOut, f), path.join(cacheDir, f)); }
+        }
+      }
+    } catch { /* JRE-only without javac: fall back to Bridge.java on disk */ }
+    finally { try { fs.rmSync(tmpOut, { recursive: true, force: true }); } catch { /* ignore */ } }
+  }
+  if (fs.existsSync(classFile)) return { classpath: [cacheDir], target: "Bridge" };
+  return { classpath: [], target: javaFile };
+}
+
+/** Resolve Bridge.java on disk (dev checkout) or extract/compile the embedded bridge into ~/.mycel/cache/bridges/<sha>/. */
+export function resolveJavaBridge(options: { source?: string; java?: string } = {}): ResolvedJavaBridge {
+  if (options.source) return { classpath: [], target: options.source };
+  const sourcePath = path.resolve(__dirname, "../../../bridges/java/Bridge.java");
+  // statSync is real fs (the SEA embeddedFs only intercepts existsSync/readFileSync), so this distinguishes dev vs SEA.
+  try {
+    if (fs.statSync(sourcePath).isFile()) return { classpath: [], target: sourcePath };
+  } catch { /* embedded inside SEA */ }
+  return extractJavaBridge(fs.readFileSync(sourcePath, "utf8"), options.java);
+}
 
 export interface JavaOptions { projectDir: string; capabilities?: { java?: boolean }; timeoutMs?: number; source?: string; java?: string; headless?: boolean; }
 type WireHandle = { $h: number; type: string };
@@ -28,8 +85,8 @@ export class JavaBridge {
     if (this.child) return;
     const jarDir = path.join(this.options.projectDir, ".ply", "java");
     const jars = fs.existsSync(jarDir) ? fs.readdirSync(jarDir).filter(x => x.endsWith(".jar")).sort().map(x => path.join(jarDir, x)) : [];
-    const source = this.options.source ?? path.resolve(__dirname, "../../../bridges/java/Bridge.java");
-    const args = [...(this.options.headless ? ["-Djava.awt.headless=true"] : []), "-cp", [".", ...jars].join(path.delimiter), source];
+    const bridge = resolveJavaBridge({ source: this.options.source, java: this.options.java });
+    const args = [...(this.options.headless ? ["-Djava.awt.headless=true"] : []), "-cp", [...bridge.classpath, ".", ...jars].join(path.delimiter), bridge.target];
     const child = spawn(this.options.java ?? "java", args, { stdio: "pipe" }); this.child = child;
     child.stderr.on("data", () => {});
     readline.createInterface({ input: child.stdout }).on("line", line => { try { void this.onMessage(JSON.parse(line)); } catch (e) { this.fail(new Error(`Java bridge sent invalid JSON: ${String(e)}`)); } });
